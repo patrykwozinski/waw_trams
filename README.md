@@ -174,6 +174,13 @@ WawTrams.DelayEvent.hot_spot_summary()
 - [x] Marker popups with delay details (count, lines, total time)
 - [x] Marker clustering for dense areas
 
+**Line Analysis (`/line/:number`):**
+- [x] Query function for delays by hour for a given line
+- [x] `/line` page with line selector dropdown
+- [x] Worst hours table (sorted by total delay time)
+- [x] Visual bar chart by hour
+- [ ] Hour × Day heatmap (future)
+
 **Analytics:**
 - [ ] Historical analysis queries
 

@@ -20,6 +20,8 @@ defmodule WawTramsWeb.Router do
     get "/", PageController, :home
     live "/dashboard", DashboardLive
     live "/map", MapLive
+    live "/line", LineLive
+    live "/line/:line", LineLive
   end
 
   # Other scopes may use custom stacks.

@@ -69,9 +69,8 @@ defmodule WawTramsWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <div class="min-h-screen bg-gray-950 text-gray-100">
-        <div class="max-w-[1600px] mx-auto px-6 py-8">
+    <div class="min-h-screen bg-gray-950 text-gray-100">
+      <div class="max-w-[1600px] mx-auto px-6 py-8">
           <%!-- Header --%>
           <div class="mb-8 flex flex-wrap items-start justify-between gap-6">
             <div>
@@ -290,13 +289,18 @@ defmodule WawTramsWeb.DashboardLive do
           <%!-- Most Impacted Lines --%>
           <div class="mt-8">
             <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-800">
-                <h2 class="font-semibold text-lg">
-                  🚋 Most Impacted Lines (24h)
-                </h2>
-                <p class="text-gray-500 text-sm mt-1">
-                  Tram lines ranked by total intersection delay time
-                </p>
+              <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
+                <div>
+                  <h2 class="font-semibold text-lg">
+                    🚋 Most Impacted Lines (24h)
+                  </h2>
+                  <p class="text-gray-500 text-sm mt-1">
+                    Tram lines ranked by total intersection delay time
+                  </p>
+                </div>
+                <.link navigate={~p"/line"} class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors">
+                  ⏰ Analyze by Hour
+                </.link>
               </div>
               <div class="overflow-x-auto">
                 <%= if @impacted_lines == [] do %>
@@ -358,7 +362,6 @@ defmodule WawTramsWeb.DashboardLive do
           </div>
         </div>
       </div>
-    </Layouts.app>
     """
   end
 
