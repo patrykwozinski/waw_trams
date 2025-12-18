@@ -106,6 +106,21 @@ See [Data Sources Guide](guides/data_sources.md) for details on stops and inters
 
 ~1,250 intersections from OpenStreetMap with PostGIS geometry.
 
+## Mix Tasks
+
+```bash
+# Import stops from GTFS
+mix waw_trams.import_stops
+
+# Import intersections from CSV
+mix waw_trams.import_intersections
+
+# Cleanup delay events
+mix waw_trams.cleanup                    # Delete all
+mix waw_trams.cleanup --resolved         # Delete only resolved
+mix waw_trams.cleanup --older-than 7     # Delete older than N days
+```
+
 ## Query Examples
 
 ```elixir
@@ -140,6 +155,7 @@ WawTrams.Stop.terminal_count()
 - [x] DelayEvent persistence (only significant delays stored)
 - [x] Terminal filtering (no false positives at pętla/zajezdnia)
 - [x] Real-time dashboard (Phoenix LiveView at `/dashboard`)
+- [x] Cleanup task (`mix waw_trams.cleanup`)
 - [x] Test coverage for spatial queries
 
 ### Planned
