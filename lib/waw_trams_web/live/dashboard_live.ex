@@ -86,11 +86,11 @@ defmodule WawTramsWeb.DashboardLive do
               <div class="text-gray-400 font-medium mb-2">Classification Legend</div>
               <div class="flex flex-wrap gap-x-6 gap-y-1">
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">delay</span>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">delay</span>
                   <span class="text-gray-500">30s – 3min stop</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">blockage</span>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">blockage</span>
                   <span class="text-gray-500">> 3min stop</span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -321,8 +321,8 @@ defmodule WawTramsWeb.DashboardLive do
     end
   end
 
-  defp classification_color("delay"), do: "bg-red-500/20 text-red-400"
-  defp classification_color("blockage"), do: "bg-orange-500/20 text-orange-400"
+  defp classification_color("delay"), do: "bg-orange-500/20 text-orange-400"
+  defp classification_color("blockage"), do: "bg-red-500/20 text-red-400"
   defp classification_color(_), do: "bg-gray-500/20 text-gray-400"
 
   defp rank_color(1), do: "bg-red-500 text-white"
