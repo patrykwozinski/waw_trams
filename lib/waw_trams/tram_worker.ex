@@ -295,7 +295,9 @@ defmodule WawTrams.TramWorker do
     end
   end
 
-  defp should_persist?(classification) do
+  @doc false
+  # Exposed for testing - determines if a classification should be persisted
+  def should_persist?(classification) do
     # Only persist actionable delays:
     # - :blockage (>180s at stop) - something is wrong
     # - :delay (>30s NOT at stop) - traffic/signal issue
@@ -307,7 +309,9 @@ defmodule WawTrams.TramWorker do
     DateTime.diff(DateTime.utc_now(), since, :second)
   end
 
-  defp classify_delay(duration, at_stop) do
+  @doc false
+  # Exposed for testing - classifies a delay based on duration and location
+  def classify_delay(duration, at_stop) do
     cond do
       # At stop: only flag if >3 minutes (real problem)
       at_stop and duration < 180 -> :normal_dwell

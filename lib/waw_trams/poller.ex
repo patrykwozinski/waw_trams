@@ -176,8 +176,10 @@ defmodule WawTrams.Poller do
     end
   end
 
-  defp is_tram_line?(nil), do: false
-  defp is_tram_line?(line) do
+  @doc false
+  # Exposed for testing
+  def is_tram_line?(nil), do: false
+  def is_tram_line?(line) do
     # Warsaw tram lines are 1-79
     # Bus lines are 100+, night buses N*, etc.
     case Integer.parse(line) do
