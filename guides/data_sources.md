@@ -14,17 +14,25 @@ Warsaw stop locations from the community-maintained GTFS feed by [mkuran.pl](htt
 
 > **Why mkuran.pl?** Cleaner than the raw ZTM FTP — deduplicated, validated, and actively maintained by a well-known member of the Warsaw transit community.
 
-### Download & Import
+### Import (Auto-Download)
 
 ```bash
-# Download the latest Warsaw GTFS
-wget https://mkuran.pl/gtfs/warsaw.zip -O /tmp/warsaw.zip
-
-# Extract just stops.txt to priv/data/
-unzip -j /tmp/warsaw.zip stops.txt -d priv/data/
-
-# Import into PostGIS (filters to Warsaw Zone 1 only)
+# Auto-downloads GTFS and imports (filters to Warsaw Zone 1 only)
 mix waw_trams.import_stops
+```
+
+The task automatically:
+1. Downloads GTFS from mkuran.pl (if not already cached)
+2. Extracts to `/tmp/waw_trams_gtfs/`
+3. Imports Zone 1 platforms into PostGIS
+
+**Options:**
+```bash
+# Use existing GTFS directory
+mix waw_trams.import_stops --dir /tmp/waw_trams_gtfs
+
+# Use specific file
+mix waw_trams.import_stops --file /path/to/stops.txt
 ```
 
 ### What Gets Imported

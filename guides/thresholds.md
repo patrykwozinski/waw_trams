@@ -23,7 +23,7 @@ All configurable values used in delay detection. See [Detection Logic](detection
 | **Stop proximity** | **50** | meters | "At a stop" if within this distance |
 | **Intersection proximity** | **50** | meters | "Near intersection" if within this distance |
 | **Terminal proximity** | **50** | meters | Line-specific terminal check |
-| **Clustering radius** | **30** | meters | Group nearby OSM nodes as one intersection |
+| **Clustering radius** | **55** | meters | Group nearby delay points as one intersection |
 
 **❓ Questions:**
 - Is 50m enough for long platforms?

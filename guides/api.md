@@ -31,7 +31,7 @@ WawTrams.DelayEvent.recent(100)
 ### Hot Spots (Intersection Analysis)
 
 ```elixir
-# Top problematic intersections (clustered within 30m)
+# Top problematic intersections (clustered within ~55m)
 WawTrams.DelayEvent.hot_spots(limit: 10)
 # => [%{cluster_id: 5, osm_ids: ["123", "124"], delay_count: 15, ...}, ...]
 
@@ -90,16 +90,18 @@ WawTrams.LineTerminal.terminals_for_line("14")
 ### Import Data
 
 ```bash
-# Import stops from GTFS (requires priv/data/stops.txt)
+# Import stops from GTFS (auto-downloads from mkuran.pl)
 mix waw_trams.import_stops
 
-# Import intersections from CSV (requires priv/data/intersections.csv)
+# Import intersections from CSV (uses priv/data/intersections.csv)
 mix waw_trams.import_intersections
 
-# Import line-specific terminals from GTFS
+# Import line-specific terminals from GTFS (auto-downloads)
 mix waw_trams.import_line_terminals
 mix waw_trams.import_line_terminals --dry-run  # preview only
 ```
+
+All GTFS tasks share the same cache at `/tmp/waw_trams_gtfs/`.
 
 ### Cleanup (Retention-Based)
 

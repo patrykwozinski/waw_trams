@@ -1,29 +1,29 @@
 defmodule Mix.Tasks.WawTrams.ImportStops do
   @moduledoc """
-  Imports public transport stops from a GTFS stops.txt file into the database.
+  Imports public transport stops from GTFS into the database.
 
+  Auto-downloads GTFS from mkuran.pl if no local file exists.
   Only imports Warsaw stops (Zone 1 and 1+2) that are actual platforms (location_type=0).
-  This includes both tram and bus stops, as they often share platforms in Warsaw.
-
-  The file should be standard GTFS format with header:
-      stop_id,stop_name,stop_code,platform_code,stop_lat,stop_lon,location_type,
-      parent_station,wheelchair_boarding,zone_id,stop_name_stem,town_name,street_name
 
   ## Usage
 
+      # Auto-download GTFS and import
       mix waw_trams.import_stops
 
-  ## Options
+      # Use existing file
+      mix waw_trams.import_stops --file /path/to/stops.txt
 
-      --file PATH  Path to stops.txt file (default: priv/data/stops.txt)
+      # Use existing GTFS directory (from import_line_terminals)
+      mix waw_trams.import_stops --dir /tmp/waw_trams_gtfs
   """
 
   use Mix.Task
   require Logger
 
-  @shortdoc "Import GTFS stops into PostGIS (Warsaw Zone 1 only)"
+  @shortdoc "Import GTFS stops into PostGIS (auto-downloads GTFS)"
 
-  @default_file "priv/data/stops.txt"
+  @gtfs_url "https://mkuran.pl/gtfs/warsaw.zip"
+  @gtfs_dir "/tmp/waw_trams_gtfs"
 
   # Column indices in GTFS stops.txt (0-based)
   @col_stop_id 0
@@ -39,21 +39,65 @@ defmodule Mix.Tasks.WawTrams.ImportStops do
 
   @impl Mix.Task
   def run(args) do
-    {opts, _, _} = OptionParser.parse(args, strict: [file: :string])
-    file_path = Keyword.get(opts, :file, @default_file)
+    {opts, _, _} = OptionParser.parse(args, strict: [file: :string, dir: :string])
 
     # Start the application to get Repo
     Mix.Task.run("app.start")
 
+    file_path = get_stops_file(opts)
+
     case import_stops(file_path) do
       {:ok, count, skipped} ->
         Mix.shell().info(
-          "Successfully imported #{count} stops (skipped #{skipped} outside Zone 1)"
+          "✅ Successfully imported #{count} stops (skipped #{skipped} outside Zone 1)"
         )
 
       {:error, reason} ->
         Mix.shell().error("Failed to import: #{inspect(reason)}")
         exit({:shutdown, 1})
+    end
+  end
+
+  defp get_stops_file(opts) do
+    cond do
+      # Explicit file path provided
+      opts[:file] ->
+        opts[:file]
+
+      # Explicit directory provided
+      opts[:dir] ->
+        Path.join(opts[:dir], "stops.txt")
+
+      # Check if GTFS already downloaded (from import_line_terminals)
+      File.exists?(Path.join(@gtfs_dir, "stops.txt")) ->
+        Mix.shell().info("📂 Using existing GTFS from #{@gtfs_dir}")
+        Path.join(@gtfs_dir, "stops.txt")
+
+      # Download fresh
+      true ->
+        download_gtfs()
+        Path.join(@gtfs_dir, "stops.txt")
+    end
+  end
+
+  defp download_gtfs do
+    Mix.shell().info("📥 Downloading GTFS from #{@gtfs_url}...")
+
+    zip_path = Path.join(System.tmp_dir!(), "warsaw_gtfs.zip")
+
+    case Req.get(@gtfs_url, into: File.stream!(zip_path)) do
+      {:ok, %{status: 200}} ->
+        Mix.shell().info("📦 Extracting to #{@gtfs_dir}...")
+        File.mkdir_p!(@gtfs_dir)
+        {:ok, _} = :zip.unzip(String.to_charlist(zip_path), cwd: String.to_charlist(@gtfs_dir))
+        File.rm(zip_path)
+        Mix.shell().info("✅ GTFS ready")
+
+      {:ok, %{status: status}} ->
+        Mix.raise("Failed to download GTFS: HTTP #{status}")
+
+      {:error, reason} ->
+        Mix.raise("Failed to download GTFS: #{inspect(reason)}")
     end
   end
 

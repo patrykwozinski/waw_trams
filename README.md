@@ -16,11 +16,10 @@ docker compose up -d
 mix deps.get
 mix ecto.setup
 
-# Import spatial data (see guides/data_sources.md for details)
-wget https://mkuran.pl/gtfs/warsaw.zip -O /tmp/warsaw.zip
-unzip -j /tmp/warsaw.zip stops.txt -d priv/data/
-mix waw_trams.import_stops
-mix waw_trams.import_intersections
+# Import spatial data (all auto-download GTFS as needed)
+mix waw_trams.import_intersections   # From repo (OSM data)
+mix waw_trams.import_stops           # Auto-downloads GTFS
+mix waw_trams.import_line_terminals  # Reuses downloaded GTFS
 
 # Run
 mix phx.server
@@ -30,10 +29,12 @@ mix phx.server
 
 | Route | Description |
 |-------|-------------|
-| `/dashboard` | Real-time delays, hot spots, impacted lines |
+| `/dashboard` | Real-time delays with **live timers**, hot spots, impacted lines |
 | `/map` | Leaflet map with clustered delay markers |
 | `/heatmap` | Hour × Day pattern visualization |
-| `/line` | Per-line analysis with hourly breakdown |
+| `/line/:number` | Per-line analysis with hourly breakdown |
+
+**Language:** Switch between 🇬🇧 English and 🇵🇱 Polish via the header buttons.
 
 ## Tech Stack
 

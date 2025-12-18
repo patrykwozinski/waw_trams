@@ -7,6 +7,7 @@ WawTrams.Application
 └── Supervisor
     ├── Registry (TramRegistry)
     ├── Poller (GenServer) ─── fetches GTFS-RT every 10s
+    ├── HourlyAggregator (GenServer) ─── aggregates at minute 5 of each hour
     └── TramSupervisor (DynamicSupervisor)
         └── TramWorker × ~300 ─── one process per active tram
                 │
@@ -18,6 +19,10 @@ WawTrams.Application
 ### Poller
 
 GenServer that fetches GTFS-Realtime vehicle positions every 10 seconds from mkuran.pl. Filters for tram vehicles (lines 1-79) and dispatches updates to individual TramWorkers.
+
+### HourlyAggregator
+
+GenServer that runs at minute 5 of each hour, aggregating the previous hour's raw `delay_events` into summary tables (`daily_intersection_stats`, `daily_line_stats`, `hourly_patterns`). On startup, automatically catches up any missed hours from the last 24 hours.
 
 ### TramSupervisor
 
@@ -61,11 +66,23 @@ Ecto schema for persisted delays. Only actionable delays are stored:
 
 ### `stops`
 
-~4,900 Warsaw Zone 1 transit platforms with PostGIS geometry. Includes `is_terminal` flag for pętla/zajezdnia/P+R stops (73 terminals).
+~4,900 Warsaw Zone 1 transit platforms with PostGIS geometry.
+
+### `line_terminals`
+
+~172 unique (line, stop_id) pairs extracted from GTFS trip data. Used for line-specific terminal detection — a stop like Pl. Narutowicza is a terminal for line 25 but a regular stop for line 15.
 
 ### `intersections`
 
 ~1,250 tram-road crossings from OpenStreetMap with PostGIS geometry.
+
+### Aggregation Tables
+
+| Table | Purpose |
+|-------|---------|
+| `daily_intersection_stats` | Per-location per-day delay summaries |
+| `daily_line_stats` | Per-line per-day delay summaries |
+| `hourly_patterns` | Cumulative hour × day-of-week counters |
 
 ## Data Flow
 
