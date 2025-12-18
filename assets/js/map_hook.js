@@ -1,4 +1,5 @@
 import L from "leaflet"
+import "leaflet.markercluster"
 
 // Fix Leaflet's default icon paths (broken by bundlers)
 delete L.Icon.Default.prototype._getIconUrl
@@ -25,8 +26,37 @@ const MapHook = {
       maxZoom: 19,
     }).addTo(this.map)
 
-    // Store markers layer
-    this.markersLayer = L.layerGroup().addTo(this.map)
+    // Create marker cluster group with custom styling
+    this.markersLayer = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      iconCreateFunction: (cluster) => {
+        const count = cluster.getChildCount()
+        const size = count < 5 ? 'small' : count < 10 ? 'medium' : 'large'
+        const sizes = { small: 30, medium: 40, large: 50 }
+        
+        return L.divIcon({
+          html: `<div style="
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            color: white;
+            border-radius: 50%;
+            width: ${sizes[size]}px;
+            height: ${sizes[size]}px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: ${size === 'large' ? 14 : 12}px;
+            border: 3px solid #1f2937;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">${count}</div>`,
+          className: 'marker-cluster-custom',
+          iconSize: L.point(sizes[size], sizes[size])
+        })
+      }
+    }).addTo(this.map)
 
     // Handle hot spots data from server
     this.handleEvent("hot_spots", ({ spots }) => {
@@ -85,7 +115,7 @@ const MapHook = {
       `
       
       marker.bindPopup(popupContent)
-      marker.addTo(this.markersLayer)
+      this.markersLayer.addLayer(marker)
     })
 
     // Fit bounds if we have spots

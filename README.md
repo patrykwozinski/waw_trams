@@ -169,12 +169,10 @@ WawTrams.DelayEvent.hot_spot_summary()
 
 ### Planned
 
-**Map Visualization (phased):**
-- [x] Phase 1: Basic `/map` page with Leaflet + OSM tiles + hot spot markers
-- [x] Phase 2: Marker popups with delay details (count, lines, total time)
-- [ ] Phase 3: Real-time active delay markers (trams currently stuck)
-- [ ] Phase 4: Marker clustering for performance
-- [ ] Phase 5: Dark theme map styling
+**Map Visualization:**
+- [x] `/map` page with Leaflet + OSM tiles + hot spot markers
+- [x] Marker popups with delay details (count, lines, total time)
+- [x] Marker clustering for dense areas
 
 **Analytics:**
 - [ ] Historical analysis queries
