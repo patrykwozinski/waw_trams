@@ -43,6 +43,7 @@ defmodule WawTrams.MixProject do
         "README.md",
         "guides/architecture.md",
         "guides/detection_logic.md",
+        "guides/thresholds.md",
         "guides/data_sources.md",
         "guides/data_aggregation.md",
         "guides/api.md"

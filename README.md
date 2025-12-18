@@ -47,6 +47,7 @@ mix phx.server
 
 - [Architecture](guides/architecture.md) — System design, OTP supervision tree
 - [Detection Logic](guides/detection_logic.md) — How delays are classified
+- [**Thresholds**](guides/thresholds.md) — All configurable values (for validation with TW)
 - [Data Sources](guides/data_sources.md) — Stops, intersections, GTFS-RT
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation for scalable analytics
 - [API Reference](guides/api.md) — Query functions and Mix tasks
