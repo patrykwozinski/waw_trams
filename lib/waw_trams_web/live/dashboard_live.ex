@@ -41,12 +41,16 @@ defmodule WawTramsWeb.DashboardLive do
     active_delays = DelayEvent.active()
     recent_resolved = get_recent_resolved(20)
     stats = DelayEvent.stats()
+    hot_spots = DelayEvent.hot_spots(limit: 10)
+    hot_spot_summary = DelayEvent.hot_spot_summary()
 
     socket
     |> assign(:active_delays, active_delays)
     |> assign(:active_count, length(active_delays))
     |> assign(:recent_resolved, recent_resolved)
     |> assign(:stats, stats)
+    |> assign(:hot_spots, hot_spots)
+    |> assign(:hot_spot_summary, hot_spot_summary)
     |> assign(:last_updated, DateTime.utc_now())
   end
 
@@ -179,6 +183,82 @@ defmodule WawTramsWeb.DashboardLive do
             </div>
           </div>
 
+          <%!-- Hot Spots Section --%>
+          <div class="mt-8">
+            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div class="px-5 py-4 border-b border-gray-800">
+                <h2 class="font-semibold text-lg">
+                  🔥 Problematic Intersections (24h)
+                </h2>
+                <p class="text-gray-500 text-sm mt-1">
+                  <%= @hot_spot_summary.intersection_count %> intersections caused
+                  <%= @hot_spot_summary.total_delays %> delays
+                  (<%= @hot_spot_summary.total_delay_minutes %> min total)
+                </p>
+              </div>
+              <div class="overflow-x-auto">
+                <%= if @hot_spots == [] do %>
+                  <div class="p-8 text-center text-gray-500">
+                    No intersection delays recorded yet
+                  </div>
+                <% else %>
+                  <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50">
+                      <tr class="text-left text-gray-400">
+                        <th class="px-5 py-3 font-medium">#</th>
+                        <th class="px-5 py-3 font-medium">Location</th>
+                        <th class="px-5 py-3 font-medium">Delays</th>
+                        <th class="px-5 py-3 font-medium">Total Time</th>
+                        <th class="px-5 py-3 font-medium">Avg</th>
+                        <th class="px-5 py-3 font-medium">Lines Affected</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                      <%= for {spot, idx} <- Enum.with_index(@hot_spots, 1) do %>
+                        <tr class="hover:bg-gray-800/50">
+                          <td class="px-5 py-3">
+                            <span class={[
+                              "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
+                              rank_color(idx)
+                            ]}>
+                              <%= idx %>
+                            </span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <div class="font-mono text-gray-300">
+                              (<%= Float.round(spot.lat, 4) %>, <%= Float.round(spot.lon, 4) %>)
+                            </div>
+                            <div class="text-gray-500 text-xs">
+                              <%= length(spot.osm_ids) %> OSM node<%= if length(spot.osm_ids) > 1, do: "s", else: "" %>
+                            </div>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="text-red-400 font-semibold"><%= spot.delay_count %></span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="text-amber-400"><%= format_duration(spot.total_delay_seconds) %></span>
+                          </td>
+                          <td class="px-5 py-3 text-gray-400">
+                            <%= spot.avg_delay_seconds %>s
+                          </td>
+                          <td class="px-5 py-3">
+                            <div class="flex flex-wrap gap-1">
+                              <%= for line <- spot.affected_lines do %>
+                                <span class="px-1.5 py-0.5 bg-gray-800 rounded text-xs text-amber-300">
+                                  <%= line %>
+                                </span>
+                              <% end %>
+                            </div>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
           <%!-- Footer --%>
           <div class="mt-8 text-center text-gray-600 text-sm">
             Data source: GTFS-RT via mkuran.pl • Polling every 10s
@@ -218,4 +298,19 @@ defmodule WawTramsWeb.DashboardLive do
   defp classification_color("delay"), do: "bg-red-500/20 text-red-400"
   defp classification_color("blockage"), do: "bg-orange-500/20 text-orange-400"
   defp classification_color(_), do: "bg-gray-500/20 text-gray-400"
+
+  defp rank_color(1), do: "bg-red-500 text-white"
+  defp rank_color(2), do: "bg-orange-500 text-white"
+  defp rank_color(3), do: "bg-amber-500 text-black"
+  defp rank_color(_), do: "bg-gray-700 text-gray-300"
+
+  defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"
+  defp format_duration(seconds) when seconds < 3600 do
+    "#{div(seconds, 60)}m #{rem(seconds, 60)}s"
+  end
+  defp format_duration(seconds) do
+    hours = div(seconds, 3600)
+    mins = div(rem(seconds, 3600), 60)
+    "#{hours}h #{mins}m"
+  end
 end

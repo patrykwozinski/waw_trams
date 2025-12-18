@@ -137,6 +137,14 @@ WawTrams.DelayEvent.recent(100)
 # Check terminal stops count
 WawTrams.Stop.terminal_count()
 # => 73
+
+# Hot spot analysis - top problematic intersections (clustered within 30m)
+WawTrams.DelayEvent.hot_spots(limit: 10)
+# => [%{cluster_id: 5, osm_ids: ["123", "124"], delay_count: 15, ...}, ...]
+
+# Summary of intersection delays
+WawTrams.DelayEvent.hot_spot_summary()
+# => %{intersection_count: 12, total_delays: 47, total_delay_minutes: 35}
 ```
 
 ## Project Status
@@ -156,12 +164,12 @@ WawTrams.Stop.terminal_count()
 - [x] Terminal filtering (no false positives at pętla/zajezdnia)
 - [x] Real-time dashboard (Phoenix LiveView at `/dashboard`)
 - [x] Cleanup task (`mix waw_trams.cleanup`)
+- [x] Intersection delay aggregation/ranking (hot spots)
 - [x] Test coverage for spatial queries
 
 ### Planned
 
-- [ ] Hot spot map visualization
-- [ ] Intersection delay aggregation/ranking
+- [ ] Hot spot map visualization (Leaflet/MapLibre)
 - [ ] Historical analysis queries
 
 ## Dashboard
