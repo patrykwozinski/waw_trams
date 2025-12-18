@@ -191,7 +191,7 @@ defmodule WawTrams.DelayEvent do
             lon: lon,
             delay_count: count,
             total_delay_seconds: total,
-            avg_delay_seconds: Float.round(avg * 1.0, 1),
+            avg_delay_seconds: to_float(avg),
             affected_lines: Enum.reject(lines, &is_nil/1) |> Enum.sort()
           }
         end)
@@ -306,4 +306,9 @@ defmodule WawTrams.DelayEvent do
         %{intersection_count: 0, total_delays: 0, total_delay_seconds: 0, total_delay_minutes: 0}
     end
   end
+
+  # Helper to safely convert Decimal/nil to float
+  defp to_float(nil), do: 0.0
+  defp to_float(%Decimal{} = d), do: Decimal.to_float(d) |> Float.round(1)
+  defp to_float(n) when is_number(n), do: Float.round(n * 1.0, 1)
 end
