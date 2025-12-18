@@ -13,6 +13,7 @@ defmodule WawTrams.Stop do
   schema "stops" do
     field :stop_id, :string
     field :name, :string
+    field :is_terminal, :boolean, default: false
     # geom is a PostGIS geometry column, handled via raw SQL
     field :geom, :map, load_in_query: false
 
@@ -45,10 +46,45 @@ defmodule WawTrams.Stop do
   end
 
   @doc """
+  Checks if a given lat/lon is within `radius_meters` of a terminal stop.
+  Terminal stops include: Pętla (loops), Zajezdnia (depots), P+R.
+
+  Used to filter out false positives — trams at terminals often wait
+  several minutes between trips, which is normal behavior.
+  """
+  def near_terminal?(lat, lon, radius_meters \\ 50) do
+    query = """
+    SELECT EXISTS(
+      SELECT 1 FROM stops
+      WHERE is_terminal = true
+        AND ST_DWithin(
+          geom::geography,
+          ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+          $3
+        )
+    )
+    """
+
+    case Repo.query(query, [lon, lat, radius_meters]) do
+      {:ok, %{rows: [[true]]}} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
   Returns the count of stops in the database.
   """
   def count do
     Repo.aggregate(__MODULE__, :count)
   end
-end
 
+  @doc """
+  Returns the count of terminal stops.
+  """
+  def terminal_count do
+    import Ecto.Query
+    __MODULE__
+    |> where([s], s.is_terminal == true)
+    |> Repo.aggregate(:count)
+  end
+end

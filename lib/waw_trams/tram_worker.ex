@@ -16,7 +16,7 @@ defmodule WawTrams.TramWorker do
   use GenServer
   require Logger
 
-  alias WawTrams.{Stop, Intersection}
+  alias WawTrams.{Stop, Intersection, DelayEvent}
 
   # Configuration
   @speed_threshold_kmh 3.0
@@ -31,8 +31,8 @@ defmodule WawTrams.TramWorker do
     status: :unknown,
     stopped_since: nil,
     last_update: nil,
-    # Delay tracking - to avoid duplicate logs
-    delay_logged: false,
+    # Delay tracking - persisted to DB
+    delay_event_id: nil,
     delay_classification: nil
   ]
 
@@ -152,23 +152,29 @@ defmodule WawTrams.TramWorker do
         %{state | status: :stopped, stopped_since: stopped_since}
 
       true ->
-        # Vehicle is moving - check if we need to log resolution
-        new_state = maybe_log_delay_resolved(state)
-        %{new_state | status: :moving, stopped_since: nil, delay_logged: false, delay_classification: nil}
+        # Vehicle is moving - resolve any active delay
+        new_state = maybe_resolve_delay(state)
+        %{new_state | status: :moving, stopped_since: nil, delay_event_id: nil, delay_classification: nil}
     end
   end
 
-  defp maybe_log_delay_resolved(state) do
-    if state.delay_logged and state.stopped_since do
-      duration = stopped_duration(state)
-      current_pos = List.first(state.positions)
+  defp maybe_resolve_delay(state) do
+    if state.delay_event_id do
+      case DelayEvent.find_unresolved(state.vehicle_id) do
+        nil ->
+          state
 
-      if current_pos do
-        Logger.info(
-          "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-          "moved after #{duration}s stop at (#{Float.round(current_pos.lat, 4)}, #{Float.round(current_pos.lon, 4)}) - " <>
-          "was: #{state.delay_classification}"
-        )
+        event ->
+          case DelayEvent.resolve(event) do
+            {:ok, resolved} ->
+              Logger.info(
+                "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
+                "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
+              )
+
+            {:error, reason} ->
+              Logger.warning("Failed to resolve delay event: #{inspect(reason)}")
+          end
       end
     end
 
@@ -229,32 +235,29 @@ defmodule WawTrams.TramWorker do
 
         if duration > 30 and current_pos do
           at_stop = Stop.near_stop?(current_pos.lat, current_pos.lon, 50)
-          near_intersection = Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
 
-          classification = classify_delay(duration, at_stop)
+          # Skip delay detection at terminal stops (pętla, zajezdnia)
+          # Trams normally wait several minutes at terminals between trips
+          at_terminal = at_stop and Stop.near_terminal?(current_pos.lat, current_pos.lon, 50)
 
-          # Only log once when classification becomes loggable
-          if should_log?(classification, duration, at_stop) and not already_logged?(state, classification) do
-            Logger.info(
-              "[DELAY] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-              "stopped for #{duration}s at (#{Float.round(current_pos.lat, 4)}, #{Float.round(current_pos.lon, 4)}) - " <>
-              "at_stop: #{at_stop}, near_intersection: #{near_intersection}, " <>
-              "classification: #{classification}"
-            )
-
-            %{state | delay_logged: true, delay_classification: classification}
+          if at_terminal do
+            # Don't log delays at terminals - this is normal behavior
+            state
           else
-            # Update classification if it changed (escalated)
-            if state.delay_logged and classification != state.delay_classification and should_log?(classification, duration, at_stop) do
-              Logger.info(
-                "[DELAY ESCALATED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-                "now #{duration}s at (#{Float.round(current_pos.lat, 4)}, #{Float.round(current_pos.lon, 4)}) - " <>
-                "#{state.delay_classification} -> #{classification}"
-              )
+            near_intersection = Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
+            classification = classify_delay(duration, at_stop)
 
-              %{state | delay_classification: classification}
-            else
-              state
+            cond do
+              # New delay detected - persist to DB
+              should_persist?(classification) and is_nil(state.delay_event_id) ->
+                persist_new_delay(state, current_pos, classification, at_stop, near_intersection)
+
+              # Delay escalated - update classification
+              state.delay_event_id && classification != state.delay_classification && should_persist?(classification) ->
+                escalate_delay(state, classification)
+
+              true ->
+                state
             end
           end
         else
@@ -266,8 +269,57 @@ defmodule WawTrams.TramWorker do
     end
   end
 
-  defp already_logged?(state, _classification) do
-    state.delay_logged
+  defp persist_new_delay(state, pos, classification, at_stop, near_intersection) do
+    attrs = %{
+      vehicle_id: state.vehicle_id,
+      line: state.line,
+      trip_id: state.trip_id,
+      lat: pos.lat,
+      lon: pos.lon,
+      started_at: state.stopped_since,
+      classification: Atom.to_string(classification),
+      at_stop: at_stop,
+      near_intersection: near_intersection
+    }
+
+    case DelayEvent.create(attrs) do
+      {:ok, event} ->
+        Logger.info(
+          "[DELAY] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
+          "stopped at (#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)}) - " <>
+          "#{classification}, at_stop: #{at_stop}, near_intersection: #{near_intersection}"
+        )
+        %{state | delay_event_id: event.id, delay_classification: classification}
+
+      {:error, reason} ->
+        Logger.warning("Failed to persist delay event: #{inspect(reason)}")
+        state
+    end
+  end
+
+  defp escalate_delay(state, new_classification) do
+    case DelayEvent.find_unresolved(state.vehicle_id) do
+      nil ->
+        state
+
+      event ->
+        case DelayEvent.escalate(event, Atom.to_string(new_classification)) do
+          {:ok, _} ->
+            Logger.info(
+              "[ESCALATED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
+              "#{state.delay_classification} -> #{new_classification}"
+            )
+            %{state | delay_classification: new_classification}
+
+          {:error, reason} ->
+            Logger.warning("Failed to escalate delay: #{inspect(reason)}")
+            state
+        end
+    end
+  end
+
+  defp should_persist?(classification) do
+    classification in [:extended_dwell, :blockage, :delay]
   end
 
   defp stopped_duration(%{stopped_since: nil}), do: 0
@@ -285,13 +337,4 @@ defmodule WawTrams.TramWorker do
     end
   end
 
-  defp should_log?(classification, duration, at_stop) do
-    case classification do
-      :normal_dwell -> false
-      :brief_stop -> false
-      :extended_dwell -> duration >= 60
-      :blockage -> true
-      :delay -> not at_stop and duration >= 30
-    end
-  end
 end
