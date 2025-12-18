@@ -44,12 +44,28 @@ All configurable values used in delay detection. See [Detection Logic](detection
 
 ### NOT at a Stop
 
-| Duration | Classification | Persisted? |
-|----------|---------------|------------|
-| ≤ 30s | `brief_stop` | ❌ No |
-| > 30s | `delay` | ✅ Yes |
+| Duration | Classification | Persisted? | Multi-Cycle? |
+|----------|---------------|------------|--------------|
+| ≤ 30s | `brief_stop` | ❌ No | - |
+| 30s – 120s | `delay` | ✅ Yes | ❌ No |
+| > 120s | `delay` | ✅ Yes | ⚡ Yes |
 
-**❓ Question:** What's the typical signal cycle time at major intersections?
+**Note:** Warsaw major intersections use 120s signal cycles. Delays >120s indicate tram missed multiple green phases (priority failure).
+
+### Multi-Cycle Logic
+
+`multi_cycle = true` requires BOTH:
+- Duration > 120s (exceeds one signal cycle)
+- Near intersection OR not at stop (excludes pure boarding delays)
+
+| Scenario | Duration | Multi-Cycle? |
+|----------|----------|--------------|
+| Delay at intersection | 150s | ⚡ Yes |
+| Delay NOT at stop | 150s | ⚡ Yes |
+| Blockage at stop (no intersection) | 200s | ❌ No |
+| Blockage at stop WITH intersection | 200s | ⚡ Yes |
+
+**❓ Question:** Are there intersections with different cycle lengths?
 
 ### At Terminal
 
@@ -66,6 +82,20 @@ All configurable values used in delay detection. See [Detection Logic](detection
 | **Poll interval** | 10 | seconds | GTFS-RT feed refresh |
 | **Worker timeout** | 300 | seconds | Terminate idle tram process |
 | **Position history** | 10 | positions | Speed calculation buffer |
+
+## 4.1 Double-Stop Merge (Signal Timing)
+
+When trams stop at a platform then immediately stop at a red light 20-60m ahead, we merge these into ONE event. See [Signal Timing](signal_timing.md) for details.
+
+| Parameter | Value | Unit | Purpose |
+|-----------|-------|------|---------|
+| **Merge distance** | **60** | meters | Stops within this distance are merged |
+| **Grace period** | **45** | seconds | Wait before finalizing delay resolution |
+
+**Logic:**
+1. Tram moves → delay resolution becomes "pending" (not finalized)
+2. If tram stops again within 60m AND within 45s → continue original delay
+3. If tram moves >60m OR >45s passes → finalize resolution
 
 ---
 
@@ -116,12 +146,31 @@ Position Update (10s)
 
 ---
 
-## 7. Code References
+## 7. Performance Optimizations
+
+| Optimization | Description |
+|--------------|-------------|
+| **Spatial cache** | `at_stop`, `near_intersection`, `at_terminal` cached per stop location |
+| **Pending tuple** | `started_at` stored in memory, no DB lookup on merge |
+| **Cache invalidation** | Cleared when tram moves, recalculated on next stop |
+
+**DB calls per update:**
+- Moving: **0 calls**
+- Stopped (first check): **3 calls** (spatial queries, cached)
+- Stopped (subsequent): **0 calls** (using cache)
+- Creating delay: **1 call** (insert)
+- Resolving delay: **1 call** (update)
+
+---
+
+## 8. Code References
 
 ```elixir
 # lib/waw_trams/tram_worker.ex
 @speed_threshold_kmh 3.0
 @idle_timeout_ms 5 * 60 * 1000
+@merge_distance_m 60      # Double-stop merge radius
+@merge_grace_period_s 45  # Grace period before finalizing
 
 # lib/waw_trams/stop.ex
 def near_stop?(lat, lon, radius_meters \\ 50)

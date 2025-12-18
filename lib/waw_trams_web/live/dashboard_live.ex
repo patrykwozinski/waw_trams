@@ -59,9 +59,10 @@ defmodule WawTramsWeb.DashboardLive do
     hot_spots = DelayEvent.hot_spots(limit: 10)
     hot_spot_summary = DelayEvent.hot_spot_summary()
     impacted_lines = DelayEvent.impacted_lines(limit: 10)
+    multi_cycle_count = DelayEvent.multi_cycle_count()
 
     # Summarize stats for cleaner display
-    stats_summary = summarize_stats(stats)
+    stats_summary = summarize_stats(stats, multi_cycle_count)
 
     socket
     |> assign(:active_delays, active_delays)
@@ -74,10 +75,16 @@ defmodule WawTramsWeb.DashboardLive do
     |> assign(:last_updated, DateTime.utc_now())
   end
 
-  defp summarize_stats(stats) do
+  defp summarize_stats(stats, multi_cycle_count) do
     delays = Enum.find(stats, %{count: 0}, &(&1.classification == "delay")).count
     blockages = Enum.find(stats, %{count: 0}, &(&1.classification == "blockage")).count
-    %{delays: delays, blockages: blockages, total: delays + blockages}
+
+    %{
+      delays: delays,
+      blockages: blockages,
+      total: delays + blockages,
+      multi_cycle: multi_cycle_count
+    }
   end
 
   defp get_recent_resolved(limit) do
@@ -170,6 +177,10 @@ defmodule WawTramsWeb.DashboardLive do
                   <span class="text-gray-500">{gettext("> 3min stop")}</span>
                 </div>
                 <div class="flex items-center gap-2">
+                  <span class="text-purple-400">⚡</span>
+                  <span class="text-gray-500">{gettext("multi-cycle (>120s)")}</span>
+                </div>
+                <div class="flex items-center gap-2">
                   <span class="text-orange-400">⚠️</span>
                   <span class="text-gray-500">{gettext("near traffic signal")}</span>
                 </div>
@@ -179,7 +190,7 @@ defmodule WawTramsWeb.DashboardLive do
         </div>
 
         <%!-- Stats Cards --%>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-red-400">{@active_count}</div>
             <div class="text-gray-400 text-sm mt-1">🔴 {gettext("Active Now")}</div>
@@ -191,6 +202,10 @@ defmodule WawTramsWeb.DashboardLive do
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-red-400">{@stats_summary.blockages}</div>
             <div class="text-gray-400 text-sm mt-1">{gettext("Blockages (24h)")}</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+            <div class="text-4xl font-bold text-purple-400">{@stats_summary.multi_cycle}</div>
+            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Multi-Cycle (24h)")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-amber-400">
@@ -420,9 +435,20 @@ defmodule WawTramsWeb.DashboardLive do
                           {delay.classification}
                         </span>
                         <span class="font-mono text-gray-400">L{delay.line}</span>
+                        <%= if delay.multi_cycle do %>
+                          <span
+                            class="text-purple-400 text-xs"
+                            title={gettext("Multi-cycle: tram waited through multiple signal cycles")}
+                          >
+                            ⚡
+                          </span>
+                        <% end %>
                       </div>
                       <div class="text-right">
-                        <span class="text-green-400 text-xs font-medium">
+                        <span class={[
+                          "text-xs font-medium",
+                          if(delay.multi_cycle, do: "text-purple-400", else: "text-green-400")
+                        ]}>
                           {format_duration(delay.duration_seconds)}
                         </span>
                         <span class="text-gray-600 text-xs ml-2">{time_ago(delay.resolved_at)}</span>

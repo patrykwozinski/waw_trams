@@ -33,12 +33,17 @@ defmodule WawTrams.DelayEvent do
     field :classification, :string
     field :at_stop, :boolean, default: false
     field :near_intersection, :boolean, default: false
+    # True if delay > 120s (Warsaw signal cycle) = priority system failure
+    field :multi_cycle, :boolean, default: false
 
     timestamps()
   end
 
+  # Warsaw signal cycle length in seconds
+  @signal_cycle_seconds 120
+
   @required_fields ~w(vehicle_id lat lon started_at classification)a
-  @optional_fields ~w(line trip_id resolved_at duration_seconds at_stop near_intersection)a
+  @optional_fields ~w(line trip_id resolved_at duration_seconds at_stop near_intersection multi_cycle)a
 
   def changeset(delay_event, attrs) do
     delay_event
@@ -57,6 +62,11 @@ defmodule WawTrams.DelayEvent do
   end
 
   @doc """
+  Gets a delay event by ID.
+  """
+  def get(id), do: Repo.get(__MODULE__, id)
+
+  @doc """
   Finds an unresolved delay event for a vehicle.
   """
   def find_unresolved(vehicle_id) do
@@ -69,13 +79,23 @@ defmodule WawTrams.DelayEvent do
 
   @doc """
   Resolves a delay event when the tram starts moving again.
+
+  Sets `multi_cycle: true` if:
+  - Duration exceeds Warsaw signal cycle (120s), AND
+  - Event is near an intersection (not just at a stop)
+
+  This flags signal priority failures specifically, not long boarding times.
   """
   def resolve(%__MODULE__{} = event) do
     now = DateTime.utc_now()
     duration = DateTime.diff(now, event.started_at, :second)
 
+    # Multi-cycle only applies to intersection delays, not stop blockages
+    multi_cycle =
+      duration > @signal_cycle_seconds and (event.near_intersection or not event.at_stop)
+
     event
-    |> changeset(%{resolved_at: now, duration_seconds: duration})
+    |> changeset(%{resolved_at: now, duration_seconds: duration, multi_cycle: multi_cycle})
     |> Repo.update()
   end
 
@@ -142,6 +162,20 @@ defmodule WawTrams.DelayEvent do
         avg_duration_seconds: avg_duration && Decimal.to_float(avg_duration)
       }
     end)
+  end
+
+  @doc """
+  Returns count of multi-cycle delays (priority failures) in a time period.
+
+  Multi-cycle means delay > 120s (Warsaw signal cycle), indicating the
+  tram missed multiple green phases due to broken priority.
+  """
+  def multi_cycle_count(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)) do
+    from(d in __MODULE__,
+      where: d.started_at >= ^since and d.multi_cycle == true,
+      select: count(d.id)
+    )
+    |> Repo.one()
   end
 
   # --- Hot Spot Analysis ---

@@ -227,4 +227,141 @@ defmodule WawTrams.DelayEventTest do
       assert count == 0
     end
   end
+
+  describe "multi_cycle flag" do
+    test "resolve sets multi_cycle=true for delays > 120s near intersection" do
+      # Delay started 150 seconds ago (> 120s signal cycle), near intersection
+      started_at = DateTime.add(DateTime.utc_now(), -150, :second)
+
+      attrs =
+        Map.merge(@valid_attrs, %{started_at: started_at, near_intersection: true, at_stop: false})
+
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      assert resolved.multi_cycle == true
+      assert resolved.duration_seconds >= 149
+    end
+
+    test "resolve sets multi_cycle=true for delays > 120s NOT at stop" do
+      # Delay started 150 seconds ago, not at stop (traffic/signal issue)
+      started_at = DateTime.add(DateTime.utc_now(), -150, :second)
+
+      attrs =
+        Map.merge(@valid_attrs, %{
+          started_at: started_at,
+          near_intersection: false,
+          at_stop: false
+        })
+
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      assert resolved.multi_cycle == true
+    end
+
+    test "resolve sets multi_cycle=false for delays > 120s at stop without intersection" do
+      # Blockage at stop (not a signal issue) - should NOT be multi_cycle
+      started_at = DateTime.add(DateTime.utc_now(), -200, :second)
+
+      attrs =
+        Map.merge(@valid_attrs, %{
+          started_at: started_at,
+          classification: "blockage",
+          near_intersection: false,
+          at_stop: true
+        })
+
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      # Long stop at platform without intersection = not a signal priority issue
+      assert resolved.multi_cycle == false
+    end
+
+    test "resolve sets multi_cycle=true for delays > 120s at stop WITH intersection" do
+      # Stop that's also near intersection - could be signal issue
+      started_at = DateTime.add(DateTime.utc_now(), -150, :second)
+
+      attrs =
+        Map.merge(@valid_attrs, %{
+          started_at: started_at,
+          near_intersection: true,
+          at_stop: true
+        })
+
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      assert resolved.multi_cycle == true
+    end
+
+    test "resolve sets multi_cycle=false for delays <= 120s" do
+      # Delay started 60 seconds ago (< 120s signal cycle)
+      started_at = DateTime.add(DateTime.utc_now(), -60, :second)
+      attrs = Map.merge(@valid_attrs, %{started_at: started_at, near_intersection: true})
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      assert resolved.multi_cycle == false
+      assert resolved.duration_seconds >= 59
+    end
+
+    test "resolve sets multi_cycle=false at exactly 120s boundary" do
+      # Delay started exactly 120 seconds ago (boundary case)
+      started_at = DateTime.add(DateTime.utc_now(), -120, :second)
+      attrs = Map.merge(@valid_attrs, %{started_at: started_at, near_intersection: true})
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      # At exactly 120s, multi_cycle should be false (> 120 required)
+      assert resolved.multi_cycle == false
+    end
+
+    test "multi_cycle defaults to false on create" do
+      {:ok, event} = DelayEvent.create(@valid_attrs)
+      assert event.multi_cycle == false
+    end
+  end
+
+  describe "multi_cycle_count/1" do
+    test "counts only multi_cycle=true events" do
+      now = DateTime.utc_now()
+
+      # Create delay that will be short (no multi_cycle)
+      {:ok, short} =
+        DelayEvent.create(
+          Map.merge(@valid_attrs, %{
+            vehicle_id: "V/1/1",
+            started_at: DateTime.add(now, -60, :second)
+          })
+        )
+
+      {:ok, _} = DelayEvent.resolve(short)
+
+      # Create delay that will be long (multi_cycle)
+      {:ok, long} =
+        DelayEvent.create(
+          Map.merge(@valid_attrs, %{
+            vehicle_id: "V/2/2",
+            started_at: DateTime.add(now, -200, :second)
+          })
+        )
+
+      {:ok, _} = DelayEvent.resolve(long)
+
+      # Only the long one should be counted
+      assert DelayEvent.multi_cycle_count() == 1
+    end
+
+    test "returns 0 when no multi_cycle events" do
+      assert DelayEvent.multi_cycle_count() == 0
+    end
+  end
 end

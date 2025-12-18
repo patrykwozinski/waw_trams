@@ -23,6 +23,11 @@ defmodule WawTrams.TramWorker do
   # 5 minutes without updates = terminate
   @idle_timeout_ms 5 * 60 * 1000
 
+  # Double-stop merge configuration
+  # See guides/signal_timing.md for rationale
+  @merge_distance_m 60
+  @merge_grace_period_s 45
+
   # State struct
   defstruct [
     :vehicle_id,
@@ -34,7 +39,13 @@ defmodule WawTrams.TramWorker do
     last_update: nil,
     # Delay tracking - persisted to DB
     delay_event_id: nil,
-    delay_classification: nil
+    delay_classification: nil,
+    # Cached spatial query results (reset when tram moves)
+    # Avoids repeated DB calls while stopped at same location
+    spatial_cache: nil,
+    # Double-stop merge tracking
+    # When set: {event_id, started_at, position, timestamp} - delay not yet finalized
+    pending_resolution: nil
   ]
 
   # --- Client API ---
@@ -144,37 +155,129 @@ defmodule WawTrams.TramWorker do
 
   defp calculate_status(state) do
     speed = calculate_speed(state.positions)
+    current_pos = List.first(state.positions)
 
     cond do
       speed == nil ->
-        %{state | status: :unknown}
+        # Unknown speed - check for pending resolution timeout
+        check_pending_resolution(state)
 
       speed < @speed_threshold_kmh ->
         # Vehicle is stopped or very slow
-        stopped_since = state.stopped_since || DateTime.utc_now()
-        %{state | status: :stopped, stopped_since: stopped_since}
+        handle_stopped(state, current_pos)
 
       true ->
-        # Vehicle is moving - resolve any active delay
-        new_state = maybe_resolve_delay(state)
-
-        %{
-          new_state
-          | status: :moving,
-            stopped_since: nil,
-            delay_event_id: nil,
-            delay_classification: nil
-        }
+        # Vehicle is moving
+        handle_moving(state, current_pos)
     end
   end
 
-  defp maybe_resolve_delay(state) do
-    if state.delay_event_id do
-      case DelayEvent.find_unresolved(state.vehicle_id) do
-        nil ->
-          state
+  # Vehicle stopped - check if we should resume a pending delay
+  defp handle_stopped(state, current_pos) do
+    stopped_since = state.stopped_since || DateTime.utc_now()
+    base_state = %{state | status: :stopped, stopped_since: stopped_since}
 
-        event ->
+    case state.pending_resolution do
+      {event_id, event_started_at, pending_pos, pending_time} when not is_nil(current_pos) ->
+        # Check if this stop is close enough and soon enough to merge
+        distance_m =
+          haversine_distance(current_pos.lat, current_pos.lon, pending_pos.lat, pending_pos.lon) *
+            1000
+
+        time_since = DateTime.diff(DateTime.utc_now(), pending_time, :second)
+
+        if distance_m <= @merge_distance_m and time_since <= @merge_grace_period_s do
+          # Within merge window - cancel pending resolution, continue original delay
+          Logger.debug(
+            "[MERGE] Vehicle #{state.vehicle_id} stopped again within #{round(distance_m)}m, " <>
+              "#{time_since}s - continuing original delay"
+          )
+
+          %{
+            base_state
+            | delay_event_id: event_id,
+              pending_resolution: nil,
+              # Use cached started_at from pending - no DB call needed
+              stopped_since: event_started_at || stopped_since,
+              # Clear spatial cache since we're resuming a different context
+              spatial_cache: nil
+          }
+        else
+          # Outside merge window - finalize pending, start fresh
+          finalize_pending_resolution(state)
+          %{base_state | pending_resolution: nil, spatial_cache: nil}
+        end
+
+      _ ->
+        # No pending resolution, normal stop
+        base_state
+    end
+  end
+
+  # Vehicle moving - set pending resolution instead of immediate resolve
+  defp handle_moving(state, current_pos) do
+    base_state = %{
+      state
+      | status: :moving,
+        stopped_since: nil,
+        # Clear spatial cache when moving - will recalculate on next stop
+        spatial_cache: nil
+    }
+
+    cond do
+      # Active delay that needs pending resolution
+      state.delay_event_id && is_nil(state.pending_resolution) && current_pos ->
+        Logger.debug(
+          "[PENDING] Vehicle #{state.vehicle_id} moving - delay resolution pending for #{@merge_grace_period_s}s"
+        )
+
+        # Include stopped_since in tuple to avoid DB lookup later
+        %{
+          base_state
+          | pending_resolution:
+              {state.delay_event_id, state.stopped_since, current_pos, DateTime.utc_now()},
+            delay_event_id: nil,
+            delay_classification: nil
+        }
+
+      # Already has pending resolution - check if should finalize
+      state.pending_resolution ->
+        check_pending_resolution(base_state)
+
+      # No active delay
+      true ->
+        base_state
+    end
+  end
+
+  # Check and potentially finalize a pending resolution
+  defp check_pending_resolution(%{pending_resolution: nil} = state), do: state
+
+  defp check_pending_resolution(
+         %{pending_resolution: {_event_id, _started_at, _pos, pending_time}} = state
+       ) do
+    time_since = DateTime.diff(DateTime.utc_now(), pending_time, :second)
+
+    if time_since > @merge_grace_period_s do
+      finalize_pending_resolution(state)
+    else
+      state
+    end
+  end
+
+  # Finalize a pending resolution - actually resolve the delay in DB
+  defp finalize_pending_resolution(%{pending_resolution: nil} = state), do: state
+
+  defp finalize_pending_resolution(
+         %{pending_resolution: {event_id, _started_at, _pos, _time}} = state
+       ) do
+    # Single DB call to get and resolve
+    case DelayEvent.get(event_id) do
+      nil ->
+        %{state | pending_resolution: nil}
+
+      event ->
+        if is_nil(event.resolved_at) do
           case DelayEvent.resolve(event) do
             {:ok, resolved} ->
               Logger.info(
@@ -182,16 +285,15 @@ defmodule WawTrams.TramWorker do
                   "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
               )
 
-              # Broadcast for live dashboard
               Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
 
             {:error, reason} ->
               Logger.warning("Failed to resolve delay event: #{inspect(reason)}")
           end
-      end
-    end
+        end
 
-    state
+        %{state | pending_resolution: nil}
+    end
   end
 
   @doc false
@@ -251,26 +353,24 @@ defmodule WawTrams.TramWorker do
         current_pos = List.first(state.positions)
 
         if duration > 30 and current_pos do
-          # Skip delay detection at line-specific terminals
-          # A stop is only a terminal for certain lines (e.g., Narutowicza for line 25 only)
-          at_terminal =
-            state.line &&
-              LineTerminal.terminal_for_line?(state.line, current_pos.lat, current_pos.lon)
+          # Use cached spatial results or compute them (once per stop location)
+          {state, spatial} = get_or_compute_spatial(state, current_pos)
 
-          if at_terminal do
+          if spatial.at_terminal do
             # Don't log delays at terminals - this is normal behavior
             state
           else
-            at_stop = Stop.near_stop?(current_pos.lat, current_pos.lon, 50)
-
-            near_intersection =
-              Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
-
-            classification = classify_delay(duration, at_stop)
+            classification = classify_delay(duration, spatial.at_stop)
 
             # New delay detected - persist to DB
             if should_persist?(classification) and is_nil(state.delay_event_id) do
-              persist_new_delay(state, current_pos, classification, at_stop, near_intersection)
+              persist_new_delay(
+                state,
+                current_pos,
+                classification,
+                spatial.at_stop,
+                spatial.near_intersection
+              )
             else
               state
             end
@@ -282,6 +382,30 @@ defmodule WawTrams.TramWorker do
       _ ->
         state
     end
+  end
+
+  # Get cached spatial data or compute it (single DB query batch per stop location)
+  defp get_or_compute_spatial(%{spatial_cache: cache} = state, _pos) when not is_nil(cache) do
+    # Cache hit - no DB calls
+    {state, cache}
+  end
+
+  defp get_or_compute_spatial(state, pos) do
+    # Cache miss - compute and store
+    # These 3 queries happen only ONCE when tram first stops at a location
+    at_terminal =
+      state.line && LineTerminal.terminal_for_line?(state.line, pos.lat, pos.lon)
+
+    at_stop = Stop.near_stop?(pos.lat, pos.lon, 50)
+    near_intersection = Intersection.near_intersection?(pos.lat, pos.lon, 50)
+
+    cache = %{
+      at_terminal: at_terminal,
+      at_stop: at_stop,
+      near_intersection: near_intersection
+    }
+
+    {%{state | spatial_cache: cache}, cache}
   end
 
   defp persist_new_delay(state, pos, classification, at_stop, near_intersection) do
