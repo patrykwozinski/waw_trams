@@ -23,11 +23,6 @@ defmodule WawTrams.TramWorker do
   # 5 minutes without updates = terminate
   @idle_timeout_ms 5 * 60 * 1000
 
-  # Double-stop merge configuration
-  # See guides/signal_timing.md for rationale
-  @merge_distance_m 60
-  @merge_grace_period_s 45
-
   # State struct
   defstruct [
     :vehicle_id,
@@ -41,11 +36,7 @@ defmodule WawTrams.TramWorker do
     delay_event_id: nil,
     delay_classification: nil,
     # Cached spatial query results (reset when tram moves)
-    # Avoids repeated DB calls while stopped at same location
-    spatial_cache: nil,
-    # Double-stop merge tracking
-    # When set: {event_id, started_at, position, timestamp} - delay not yet finalized
-    pending_resolution: nil
+    spatial_cache: nil
   ]
 
   # --- Client API ---
@@ -155,144 +146,57 @@ defmodule WawTrams.TramWorker do
 
   defp calculate_status(state) do
     speed = calculate_speed(state.positions)
-    current_pos = List.first(state.positions)
 
     cond do
       speed == nil ->
-        # Unknown speed - check for pending resolution timeout
-        check_pending_resolution(state)
+        %{state | status: :unknown}
 
       speed < @speed_threshold_kmh ->
         # Vehicle is stopped or very slow
-        handle_stopped(state, current_pos)
+        stopped_since = state.stopped_since || DateTime.utc_now()
+        %{state | status: :stopped, stopped_since: stopped_since}
 
       true ->
-        # Vehicle is moving
-        handle_moving(state, current_pos)
-    end
-  end
+        # Vehicle is moving - resolve any active delay
+        new_state = maybe_resolve_delay(state)
 
-  # Vehicle stopped - check if we should resume a pending delay
-  defp handle_stopped(state, current_pos) do
-    stopped_since = state.stopped_since || DateTime.utc_now()
-    base_state = %{state | status: :stopped, stopped_since: stopped_since}
-
-    case state.pending_resolution do
-      {event_id, event_started_at, pending_pos, pending_time} when not is_nil(current_pos) ->
-        # Check if this stop is close enough and soon enough to merge
-        distance_m =
-          haversine_distance(current_pos.lat, current_pos.lon, pending_pos.lat, pending_pos.lon) *
-            1000
-
-        time_since = DateTime.diff(DateTime.utc_now(), pending_time, :second)
-
-        if distance_m <= @merge_distance_m and time_since <= @merge_grace_period_s do
-          # Within merge window - cancel pending resolution, continue original delay
-          Logger.debug(
-            "[MERGE] Vehicle #{state.vehicle_id} stopped again within #{round(distance_m)}m, " <>
-              "#{time_since}s - continuing original delay"
-          )
-
-          %{
-            base_state
-            | delay_event_id: event_id,
-              pending_resolution: nil,
-              # Use cached started_at from pending - no DB call needed
-              stopped_since: event_started_at || stopped_since,
-              # Clear spatial cache since we're resuming a different context
-              spatial_cache: nil
-          }
-        else
-          # Outside merge window - finalize pending, start fresh
-          finalize_pending_resolution(state)
-          %{base_state | pending_resolution: nil, spatial_cache: nil}
-        end
-
-      _ ->
-        # No pending resolution, normal stop
-        base_state
-    end
-  end
-
-  # Vehicle moving - set pending resolution instead of immediate resolve
-  defp handle_moving(state, current_pos) do
-    base_state = %{
-      state
-      | status: :moving,
-        stopped_since: nil,
-        # Clear spatial cache when moving - will recalculate on next stop
-        spatial_cache: nil
-    }
-
-    cond do
-      # Active delay that needs pending resolution
-      state.delay_event_id && is_nil(state.pending_resolution) && current_pos ->
-        Logger.debug(
-          "[PENDING] Vehicle #{state.vehicle_id} moving - delay resolution pending for #{@merge_grace_period_s}s"
-        )
-
-        # Include stopped_since in tuple to avoid DB lookup later
         %{
-          base_state
-          | pending_resolution:
-              {state.delay_event_id, state.stopped_since, current_pos, DateTime.utc_now()},
+          new_state
+          | status: :moving,
+            stopped_since: nil,
             delay_event_id: nil,
-            delay_classification: nil
+            delay_classification: nil,
+            spatial_cache: nil
         }
-
-      # Already has pending resolution - check if should finalize
-      state.pending_resolution ->
-        check_pending_resolution(base_state)
-
-      # No active delay
-      true ->
-        base_state
     end
   end
 
-  # Check and potentially finalize a pending resolution
-  defp check_pending_resolution(%{pending_resolution: nil} = state), do: state
+  defp maybe_resolve_delay(state) do
+    if state.delay_event_id do
+      case DelayEvent.get(state.delay_event_id) do
+        nil ->
+          state
 
-  defp check_pending_resolution(
-         %{pending_resolution: {_event_id, _started_at, _pos, pending_time}} = state
-       ) do
-    time_since = DateTime.diff(DateTime.utc_now(), pending_time, :second)
+        event ->
+          if is_nil(event.resolved_at) do
+            case DelayEvent.resolve(event) do
+              {:ok, resolved} ->
+                Logger.info(
+                  "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
+                    "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
+                )
 
-    if time_since > @merge_grace_period_s do
-      finalize_pending_resolution(state)
+                Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
+
+              {:error, reason} ->
+                Logger.warning("Failed to resolve delay event: #{inspect(reason)}")
+            end
+          end
+
+          state
+      end
     else
       state
-    end
-  end
-
-  # Finalize a pending resolution - actually resolve the delay in DB
-  defp finalize_pending_resolution(%{pending_resolution: nil} = state), do: state
-
-  defp finalize_pending_resolution(
-         %{pending_resolution: {event_id, _started_at, _pos, _time}} = state
-       ) do
-    # Single DB call to get and resolve
-    case DelayEvent.get(event_id) do
-      nil ->
-        %{state | pending_resolution: nil}
-
-      event ->
-        if is_nil(event.resolved_at) do
-          case DelayEvent.resolve(event) do
-            {:ok, resolved} ->
-              Logger.info(
-                "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-                  "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
-              )
-
-              Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
-
-            {:error, reason} ->
-              Logger.warning("Failed to resolve delay event: #{inspect(reason)}")
-          end
-        end
-
-        %{state | pending_resolution: nil}
     end
   end
 

@@ -16,111 +16,24 @@ Based on validated data from Warsaw traffic signal operations.
 | Max Green (Priority) | 30-45s | Priority extension limit |
 | Min Green | 8-12s | Minimum crossing window |
 
-## Problem #1: Double Stop Trap 🔴 CRITICAL
+## Multi-Cycle Detection ✅ IMPLEMENTED
 
-### The Issue
-
-Many Warsaw stops have a traffic light **immediately after** the platform (within 20-60m). This creates a pattern:
-
-```
-Timeline:
-0s    - Tram arrives at PLATFORM, doors open
-20s   - Doors close, tram accelerates
-25s   - Tram stops at RED LIGHT (20m ahead)
-85s   - Light turns green, tram departs
-```
-
-### Current Behavior (Wrong)
-
-Our system sees TWO separate events:
-1. `normal_dwell` at platform (20s) - correctly ignored
-2. `delay` at light (60s) - correctly detected
-
-**This is actually correct!** ✅ We only count the light delay, not the platform dwell.
-
-### Real Problem: Rapid Re-Stop
-
-The actual issue is when the tram:
-1. Stops at platform (detected as potential delay)
-2. Moves briefly (delay "resolved")
-3. Immediately stops at light (NEW delay created)
-
-If both stops exceed thresholds, we count **two delays** for what's really **one journey interruption**.
-
-```
-Current (Wrong):
-  DELAY #1: Platform stop, 35s → resolved when tram moves
-  DELAY #2: Light stop, 60s → new delay created
-  Total: 2 events, 95s recorded separately
-
-Should be:
-  DELAY #1: Merged stop, 95s total
-  Total: 1 event, captures full interruption
-```
-
-### Solution: Merge Consecutive Stops
-
-When a delay is "resolved" (tram moves), don't immediately close the event. Instead:
-
-1. **Grace Period:** Wait 45 seconds before finalizing
-2. **Distance Check:** If tram stops again within 60m, extend the original delay
-3. **Final Resolution:** Only resolve when tram has moved >60m AND stayed moving for >45s
-
-### Implementation
-
-```elixir
-# TramWorker state additions
-%{
-  # ... existing fields ...
-  pending_resolution: nil,  # {delay_id, resolved_at, position}
-}
-
-# On tram movement (potential resolution)
-# Instead of immediately resolving:
-#   DelayEvent.resolve(delay_id)
-# 
-# Set pending:
-#   pending_resolution: {delay_id, now, {lat, lon}}
-
-# On next stop detection:
-# If within 60m and <45s of pending_resolution:
-#   - Cancel the pending resolution
-#   - Continue the original delay (don't create new)
-# Else:
-#   - Finalize the pending resolution
-#   - Start new delay if needed
-```
-
----
-
-## Problem #2: Multi-Cycle Detection 🟡 ENHANCEMENT
-
-### The Issue
-
-A delay of 30s might be normal (caught one red). A delay of **150s** means the tram missed **two full signal cycles** - clear evidence of priority system failure.
-
-### Current Behavior
-
-All delays >30s are classified the same:
-- 35s delay = `delay`
-- 150s delay = `delay`
-
-### Solution: Add Severity Classification
+A delay of 30s might be normal (caught one red). A delay of **150s** means the tram missed **two full signal cycles** — clear evidence of priority system failure.
 
 | Duration | Classification | Meaning |
 |----------|---------------|---------|
 | 30-120s | `delay` | Single cycle wait |
 | >120s | `delay` + `multi_cycle: true` | Priority failure |
 
-### Implementation
+The `multi_cycle` flag is set automatically when:
+- Duration > 120s AND
+- Near intersection OR not at stop (excludes pure boarding delays)
 
-Add `multi_cycle` boolean field to `delay_events`:
-- Set `true` when `duration_seconds > 120`
-- Use for filtering/highlighting in dashboard
+Dashboard shows ⚡ indicator for multi-cycle delays.
 
 ---
 
-## Problem #3: Priority Type Analysis 🟢 FUTURE
+## Priority Type Analysis 🟢 FUTURE
 
 ### The Concept
 
@@ -151,27 +64,18 @@ GROUP BY nearest_stop
 
 ---
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 1: Double Stop Merge ✅ COMPLETE
-- [x] Add `pending_resolution` state to TramWorker
-- [x] Implement grace period logic (45s, 60m)
-- [x] Add tests for merge scenarios
-- [x] Verify existing tests still pass (111 tests, 0 failures)
-
-### Phase 2: Multi-Cycle Flag ✅ COMPLETE
+### Multi-Cycle Flag ✅ COMPLETE
 - [x] Add migration for `multi_cycle` boolean
-- [x] Update `DelayEvent.resolve` to set flag when:
-  - Duration > 120s AND
-  - Near intersection OR not at stop (excludes pure boarding blockages)
+- [x] Update `DelayEvent.resolve` to set flag when duration > 120s at intersection
 - [x] Add `multi_cycle_count/1` query function
 - [x] Update dashboard: legend, stats card (purple ⚡), resolved list highlighting
-- [x] Add tests (9 tests covering all multi_cycle scenarios)
 
-### Phase 3: Priority Analysis (Future)
-- [ ] Add analysis query
+### Priority Type Analysis 🔮 FUTURE
+- [ ] Infer priority mode from average delay durations
 - [ ] Add to line analysis page
-- [ ] Consider intersection-level recommendations
+- [ ] Generate intersection-level recommendations
 
 ---
 
