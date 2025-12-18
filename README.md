@@ -47,9 +47,8 @@ Tram stopped (speed < 3 km/h):
 
 Example logs:
 ```
-[DELAY] Vehicle V/17/5 (Line 17) stopped at (52.2297, 21.0122) - delay, at_stop: false
-[ESCALATED] Vehicle V/17/5 (Line 17) delay -> blockage
-[RESOLVED] Vehicle V/17/5 (Line 17) moved after 215s - was: blockage
+[DELAY] Vehicle V/17/5 (Line 17) stopped at (52.2297, 21.0122) - delay, at_stop: false, near_intersection: true
+[RESOLVED] Vehicle V/17/5 (Line 17) moved after 45s - was: delay
 ```
 
 ## Tech Stack
@@ -140,14 +139,21 @@ WawTrams.Stop.terminal_count()
 - [x] TramWorker (per-vehicle state, speed calculation, delay detection)
 - [x] DelayEvent persistence (only significant delays stored)
 - [x] Terminal filtering (no false positives at pętla/zajezdnia)
+- [x] Real-time dashboard (Phoenix LiveView at `/dashboard`)
 - [x] Test coverage for spatial queries
 
 ### Planned
 
-- [ ] Real-time dashboard (Phoenix LiveView)
 - [ ] Hot spot map visualization
 - [ ] Intersection delay aggregation/ranking
 - [ ] Historical analysis queries
+
+## Dashboard
+
+Real-time dashboard available at `/dashboard`:
+- Active delays with live updates
+- Recently resolved delays
+- Statistics by classification
 
 ## License
 

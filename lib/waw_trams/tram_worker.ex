@@ -171,6 +171,8 @@ defmodule WawTrams.TramWorker do
                 "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
                 "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
               )
+              # Broadcast for live dashboard
+              Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
 
             {:error, reason} ->
               Logger.warning("Failed to resolve delay event: #{inspect(reason)}")
@@ -247,17 +249,11 @@ defmodule WawTrams.TramWorker do
             near_intersection = Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
             classification = classify_delay(duration, at_stop)
 
-            cond do
-              # New delay detected - persist to DB
-              should_persist?(classification) and is_nil(state.delay_event_id) ->
-                persist_new_delay(state, current_pos, classification, at_stop, near_intersection)
-
-              # Delay escalated - update classification
-              state.delay_event_id && classification != state.delay_classification && should_persist?(classification) ->
-                escalate_delay(state, classification)
-
-              true ->
-                state
+            # New delay detected - persist to DB
+            if should_persist?(classification) and is_nil(state.delay_event_id) do
+              persist_new_delay(state, current_pos, classification, at_stop, near_intersection)
+            else
+              state
             end
           end
         else
@@ -289,32 +285,13 @@ defmodule WawTrams.TramWorker do
           "stopped at (#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)}) - " <>
           "#{classification}, at_stop: #{at_stop}, near_intersection: #{near_intersection}"
         )
+        # Broadcast for live dashboard
+        Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_created, event})
         %{state | delay_event_id: event.id, delay_classification: classification}
 
       {:error, reason} ->
         Logger.warning("Failed to persist delay event: #{inspect(reason)}")
         state
-    end
-  end
-
-  defp escalate_delay(state, new_classification) do
-    case DelayEvent.find_unresolved(state.vehicle_id) do
-      nil ->
-        state
-
-      event ->
-        case DelayEvent.escalate(event, Atom.to_string(new_classification)) do
-          {:ok, _} ->
-            Logger.info(
-              "[ESCALATED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-              "#{state.delay_classification} -> #{new_classification}"
-            )
-            %{state | delay_classification: new_classification}
-
-          {:error, reason} ->
-            Logger.warning("Failed to escalate delay: #{inspect(reason)}")
-            state
-        end
     end
   end
 

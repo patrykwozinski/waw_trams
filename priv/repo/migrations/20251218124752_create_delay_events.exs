@@ -17,7 +17,7 @@ defmodule WawTrams.Repo.Migrations.CreateDelayEvents do
       add :duration_seconds, :integer       # computed on resolution
 
       # Classification
-      add :classification, :string, null: false  # extended_dwell, blockage, delay
+      add :classification, :string, null: false  # blockage, delay
       add :at_stop, :boolean, default: false
       add :near_intersection, :boolean, default: false
 

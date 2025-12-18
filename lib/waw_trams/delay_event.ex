@@ -80,15 +80,6 @@ defmodule WawTrams.DelayEvent do
   end
 
   @doc """
-  Updates classification if delay escalates (e.g., extended_dwell -> blockage).
-  """
-  def escalate(%__MODULE__{} = event, new_classification) do
-    event
-    |> changeset(%{classification: new_classification})
-    |> Repo.update()
-  end
-
-  @doc """
   Returns recent delay events for dashboard/visualization.
   """
   def recent(limit \\ 100) do
