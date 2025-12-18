@@ -167,18 +167,46 @@ config :waw_trams,
 
 ## Development
 
+### Prerequisites
+
+- Elixir 1.17+
+- Docker (for PostgreSQL + PostGIS)
+
+### Database Setup
+
+Start the database container:
+
 ```bash
-# Setup
+docker compose up -d
+```
+
+This runs PostgreSQL 17 with PostGIS 3.5 (ARM64/Apple Silicon compatible). Data persists in a named volume.
+
+To stop: `docker compose down`
+To reset (delete data): `docker compose down -v`
+
+### Application Setup
+
+```bash
+# Install dependencies
 mix deps.get
+
+# Create database and run migrations
 mix ecto.setup
 
-# Run
+# Start the server
 mix phx.server
+```
 
-# Tests
+### Running Tests
+
+```bash
 mix test
+```
 
-# Precommit checks
+### Before Committing
+
+```bash
 mix precommit
 ```
 
