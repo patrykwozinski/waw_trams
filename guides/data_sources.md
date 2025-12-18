@@ -1,5 +1,7 @@
 # Data Sources & Ingestion
 
+> **Audience:** Operators setting up or refreshing data
+
 This project relies on external data sources for spatial analysis:
 
 | Source | Data | Update Frequency |

@@ -1,5 +1,9 @@
 # Warsaw Signal Timing & Detection Improvements
 
+> **Audience:** Developers implementing signal-aware features
+>
+> **Related:** [Thresholds](thresholds.md) for configurable values, [Detection Logic](detection_logic.md) for classification rules
+
 Based on validated data from Warsaw traffic signal operations.
 
 ## Background: Warsaw Signal Parameters

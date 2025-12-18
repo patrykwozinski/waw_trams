@@ -1,8 +1,10 @@
 # Thresholds & Configuration
 
-**For validation with Tramwaje Warszawskie**
+> **Audience:** Tramwaje Warszawskie validation team, developers tuning parameters
+>
+> **Purpose:** Document all configurable values for validation and approval
 
-All configurable values used in delay detection. See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
+See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
 
 ---
 

@@ -1,5 +1,7 @@
 # Architecture
 
+> **Audience:** Developers understanding the system design
+
 ## OTP Supervision Tree
 
 ```
@@ -63,6 +65,7 @@ Ecto schema for persisted delays. Only actionable delays are stored:
 | `classification` | string | `blockage` or `delay` |
 | `at_stop` | boolean | Was near a platform? |
 | `near_intersection` | boolean | Was near a tram-road crossing? |
+| `multi_cycle` | boolean | Duration > 120s at intersection (priority failure) |
 
 ### `stops`
 

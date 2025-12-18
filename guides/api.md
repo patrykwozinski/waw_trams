@@ -1,5 +1,7 @@
 # API Reference
 
+> **Audience:** Developers using the query functions and Mix tasks
+
 ## Query Functions
 
 ### Active Delays
@@ -19,6 +21,10 @@ WawTrams.DelayEvent.stats()
 
 # Stats from custom period
 WawTrams.DelayEvent.stats(DateTime.add(DateTime.utc_now(), -7, :day))
+
+# Count of multi-cycle delays (priority failures, >120s at intersection)
+WawTrams.DelayEvent.multi_cycle_count()
+# => 12
 ```
 
 ### Recent Events

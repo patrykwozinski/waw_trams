@@ -46,12 +46,17 @@ mix phx.server
 
 ## Documentation
 
-- [Architecture](guides/architecture.md) — System design, OTP supervision tree
-- [Detection Logic](guides/detection_logic.md) — How delays are classified
-- [**Thresholds**](guides/thresholds.md) — All configurable values (for validation with TW)
-- [**Signal Timing**](guides/signal_timing.md) — Warsaw signal cycle info, double-stop merge
-- [Data Sources](guides/data_sources.md) — Stops, intersections, GTFS-RT
-- [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation for scalable analytics
+### For Everyone
+- [Detection Logic](guides/detection_logic.md) — Why we classify delays this way
+
+### For TW Validation
+- [**Thresholds**](guides/thresholds.md) — All configurable values, questions for TW
+
+### For Developers
+- [Architecture](guides/architecture.md) — OTP supervision tree, data flow
+- [Signal Timing](guides/signal_timing.md) — Warsaw-specific improvements (double-stop merge, multi-cycle)
+- [Data Sources](guides/data_sources.md) — How to import stops, intersections, terminals
+- [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
 
 ## License

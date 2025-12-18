@@ -1,5 +1,7 @@
 # Detection Logic
 
+> **Audience:** Everyone — explains WHY we classify delays the way we do
+
 ## The Problem
 
 **57% of tram-road intersections have a stop within 50m.** 
@@ -22,7 +24,12 @@ Instead of guessing in real-time, we:
 | At stop | ≤ 3 min | ✅ Ignored (normal boarding) |
 | At stop | > 3 min | 🔴 **Blockage** — something wrong |
 | Not at stop | ≤ 30s | ✅ Ignored (brief/GPS noise) |
-| Not at stop | > 30s | 🟠 **Delay** — traffic/signal issue |
+| Not at stop | 30s – 120s | 🟠 **Delay** — single signal cycle |
+| Not at stop | > 120s | ⚡ **Delay + Multi-Cycle** — priority failure |
+
+### Multi-Cycle Flag
+
+Warsaw intersections use 120-second signal cycles. If a tram waits **>120s** at an intersection, it means the tram missed multiple green phases — clear evidence of broken transit priority.
 
 > **For detailed thresholds and validation questions**, see [Thresholds](thresholds.md).
 

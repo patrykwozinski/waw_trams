@@ -1,5 +1,7 @@
 # Data Aggregation Strategy
 
+> **Audience:** Developers maintaining or extending the analytics pipeline
+
 As `delay_events` grows (~14k/day), complex spatial queries become expensive. This document outlines the aggregation strategy for long-term sustainability.
 
 ## Problem
