@@ -2,12 +2,11 @@ defmodule WawTrams.DelayEvent do
   @moduledoc """
   Schema for delay events detected by TramWorkers.
 
-  Only significant delays are persisted:
-  - `extended_dwell`: >60s at a stop (unusual passenger boarding)
-  - `blockage`: >120s at a stop (potential incident)
-  - `delay`: >30s NOT at a stop (traffic/signal issue)
+  Only actionable delays are persisted:
+  - `blockage`: >180s at a stop (potential incident, not normal boarding)
+  - `delay`: >30s NOT at a stop (traffic/signal issue - the gold!)
 
-  Normal dwell times (<60s at stops) and brief stops (<30s) are not stored.
+  Normal dwell times (<180s at stops) and brief stops (<30s) are not stored.
   """
 
   use Ecto.Schema
@@ -45,7 +44,7 @@ defmodule WawTrams.DelayEvent do
     delay_event
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
-    |> validate_inclusion(:classification, ~w(extended_dwell blockage delay))
+    |> validate_inclusion(:classification, ~w(blockage delay))
   end
 
   @doc """

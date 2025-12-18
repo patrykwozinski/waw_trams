@@ -36,15 +36,14 @@ Tram stopped (speed < 3 km/h):
 │   └── SKIP ─── normal layover behavior
 │
 ├── AT REGULAR STOP (within 50m)
-│   ├── < 60s   → normal_dwell (ignore)
-│   ├── 60-120s → extended_dwell (persist)
-│   └── > 120s  → blockage (persist)
+│   ├── < 180s  → normal_dwell (ignore)
+│   └── > 180s  → blockage (persist) ← something is wrong
 │
 └── NOT AT STOP
     └── > 30s   → delay (persist) ← traffic/signal issue!
 ```
 
-**Only significant delays are persisted** — no position updates, no normal dwell times.
+**Only actionable delays are persisted** — `delay` events (not at stop) are the gold for identifying problematic intersections.
 
 Example logs:
 ```
@@ -96,7 +95,7 @@ See [Data Sources Guide](guides/data_sources.md) for details on stops and inters
 | `started_at` | datetime | When delay began |
 | `resolved_at` | datetime | When tram moved (nullable) |
 | `duration_seconds` | integer | Total delay duration |
-| `classification` | string | `extended_dwell`, `blockage`, `delay` |
+| `classification` | string | `blockage`, `delay` |
 | `at_stop` | boolean | Was near a platform? |
 | `near_intersection` | boolean | Was near a tram-road crossing? |
 
