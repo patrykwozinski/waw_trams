@@ -20,6 +20,7 @@ defmodule WawTramsWeb.Router do
     get "/", PageController, :home
     live "/dashboard", DashboardLive
     live "/map", MapLive
+    live "/heatmap", HeatmapLive
     live "/line", LineLive
     live "/line/:line", LineLive
   end

@@ -78,4 +78,3 @@ defmodule WawTrams.StopTest do
     )
   end
 end
-

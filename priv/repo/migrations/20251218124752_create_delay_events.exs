@@ -13,11 +13,14 @@ defmodule WawTrams.Repo.Migrations.CreateDelayEvents do
 
       # Timing
       add :started_at, :utc_datetime_usec, null: false
-      add :resolved_at, :utc_datetime_usec  # null until tram moves
-      add :duration_seconds, :integer       # computed on resolution
+      # null until tram moves
+      add :resolved_at, :utc_datetime_usec
+      # computed on resolution
+      add :duration_seconds, :integer
 
       # Classification
-      add :classification, :string, null: false  # blockage, delay
+      # blockage, delay
+      add :classification, :string, null: false
       add :at_stop, :boolean, default: false
       add :near_intersection, :boolean, default: false
 
@@ -29,6 +32,9 @@ defmodule WawTrams.Repo.Migrations.CreateDelayEvents do
     create index(:delay_events, [:line])
     create index(:delay_events, [:vehicle_id, :started_at])
     # For finding unresolved delays
-    create index(:delay_events, [:vehicle_id], where: "resolved_at IS NULL", name: :delay_events_unresolved_idx)
+    create index(:delay_events, [:vehicle_id],
+             where: "resolved_at IS NULL",
+             name: :delay_events_unresolved_idx
+           )
   end
 end

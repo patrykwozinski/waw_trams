@@ -20,7 +20,13 @@ defmodule TransitRealtime do
     use Protobuf, syntax: :proto2
 
     field :gtfs_realtime_version, 1, required: true, type: :string
-    field :incrementality, 2, optional: true, type: TransitRealtime.FeedHeader.Incrementality, enum: true, default: :FULL_DATASET
+
+    field :incrementality, 2,
+      optional: true,
+      type: TransitRealtime.FeedHeader.Incrementality,
+      enum: true,
+      default: :FULL_DATASET
+
     field :timestamp, 3, optional: true, type: :uint64
   end
 
@@ -53,10 +59,24 @@ defmodule TransitRealtime do
     field :position, 2, optional: true, type: TransitRealtime.Position
     field :current_stop_sequence, 3, optional: true, type: :uint32
     field :stop_id, 7, optional: true, type: :string
-    field :current_status, 4, optional: true, type: TransitRealtime.VehiclePosition.VehicleStopStatus, enum: true, default: :IN_TRANSIT_TO
+
+    field :current_status, 4,
+      optional: true,
+      type: TransitRealtime.VehiclePosition.VehicleStopStatus,
+      enum: true,
+      default: :IN_TRANSIT_TO
+
     field :timestamp, 5, optional: true, type: :uint64
-    field :congestion_level, 6, optional: true, type: TransitRealtime.VehiclePosition.CongestionLevel, enum: true
-    field :occupancy_status, 9, optional: true, type: TransitRealtime.VehiclePosition.OccupancyStatus, enum: true
+
+    field :congestion_level, 6,
+      optional: true,
+      type: TransitRealtime.VehiclePosition.CongestionLevel,
+      enum: true
+
+    field :occupancy_status, 9,
+      optional: true,
+      type: TransitRealtime.VehiclePosition.OccupancyStatus,
+      enum: true
   end
 
   defmodule VehiclePosition.VehicleStopStatus do
@@ -112,7 +132,11 @@ defmodule TransitRealtime do
     field :direction_id, 6, optional: true, type: :uint32
     field :start_time, 2, optional: true, type: :string
     field :start_date, 3, optional: true, type: :string
-    field :schedule_relationship, 4, optional: true, type: TransitRealtime.TripDescriptor.ScheduleRelationship, enum: true
+
+    field :schedule_relationship, 4,
+      optional: true,
+      type: TransitRealtime.TripDescriptor.ScheduleRelationship,
+      enum: true
   end
 
   defmodule TripDescriptor.ScheduleRelationship do
@@ -150,8 +174,17 @@ defmodule TransitRealtime do
     @moduledoc "Service alert"
     use Protobuf, syntax: :proto2
 
-    field :cause, 6, optional: true, type: TransitRealtime.Alert.Cause, enum: true, default: :UNKNOWN_CAUSE
-    field :effect, 7, optional: true, type: TransitRealtime.Alert.Effect, enum: true, default: :UNKNOWN_EFFECT
+    field :cause, 6,
+      optional: true,
+      type: TransitRealtime.Alert.Cause,
+      enum: true,
+      default: :UNKNOWN_CAUSE
+
+    field :effect, 7,
+      optional: true,
+      type: TransitRealtime.Alert.Effect,
+      enum: true,
+      default: :UNKNOWN_EFFECT
   end
 
   defmodule Alert.Cause do

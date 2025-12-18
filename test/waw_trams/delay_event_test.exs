@@ -130,17 +130,22 @@ defmodule WawTrams.DelayEventTest do
     test "returns delays ordered by started_at desc" do
       now = DateTime.utc_now()
 
-      {:ok, _older} = DelayEvent.create(
-        Map.merge(@valid_attrs, %{vehicle_id: "V/1/1", started_at: DateTime.add(now, -60, :second)})
-      )
-      {:ok, _newer} = DelayEvent.create(
-        Map.merge(@valid_attrs, %{vehicle_id: "V/2/2", started_at: now})
-      )
+      {:ok, _older} =
+        DelayEvent.create(
+          Map.merge(@valid_attrs, %{
+            vehicle_id: "V/1/1",
+            started_at: DateTime.add(now, -60, :second)
+          })
+        )
+
+      {:ok, _newer} =
+        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/2/2", started_at: now}))
 
       recent = DelayEvent.recent(10)
 
       assert length(recent) == 2
-      assert hd(recent).vehicle_id == "V/2/2"  # newer first
+      # newer first
+      assert hd(recent).vehicle_id == "V/2/2"
     end
 
     test "respects limit" do
@@ -161,9 +166,10 @@ defmodule WawTrams.DelayEventTest do
       {:ok, d2} = DelayEvent.create(Map.put(@valid_attrs, :vehicle_id, "V/2/2"))
       {:ok, _} = DelayEvent.resolve(d2)
 
-      {:ok, _} = DelayEvent.create(
-        Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", classification: "blockage"})
-      )
+      {:ok, _} =
+        DelayEvent.create(
+          Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", classification: "blockage"})
+        )
 
       stats = DelayEvent.stats()
 

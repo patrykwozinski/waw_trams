@@ -47,7 +47,9 @@ defmodule Mix.Tasks.WawTrams.ImportStops do
 
     case import_stops(file_path) do
       {:ok, count, skipped} ->
-        Mix.shell().info("Successfully imported #{count} stops (skipped #{skipped} outside Zone 1)")
+        Mix.shell().info(
+          "Successfully imported #{count} stops (skipped #{skipped} outside Zone 1)"
+        )
 
       {:error, reason} ->
         Mix.shell().error("Failed to import: #{inspect(reason)}")
@@ -189,4 +191,3 @@ defmodule Mix.Tasks.WawTrams.ImportStops do
     "'#{escaped}'"
   end
 end
-

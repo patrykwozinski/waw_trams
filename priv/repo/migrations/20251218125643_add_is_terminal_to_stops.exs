@@ -13,10 +13,11 @@ defmodule WawTrams.Repo.Migrations.AddIsTerminalToStops do
     # - "Zajezdnia" = depot
     # - "P+R" = Park & Ride (often terminals)
     execute """
-    UPDATE stops SET is_terminal = true
-    WHERE name ILIKE '%Pętla%'
-       OR name ILIKE '%Zajezdnia%'
-       OR name ILIKE '%P+R%'
-    """, ""
+            UPDATE stops SET is_terminal = true
+            WHERE name ILIKE '%Pętla%'
+               OR name ILIKE '%Zajezdnia%'
+               OR name ILIKE '%P+R%'
+            """,
+            ""
   end
 end

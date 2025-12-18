@@ -18,8 +18,13 @@ defmodule WawTramsWeb.MapLive do
   def render(assigns) do
     ~H"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <style>.marker-cluster-custom { background: transparent !important; }</style>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <style>
+      .marker-cluster-custom { background: transparent !important; }
+    </style>
     <div class="h-screen flex flex-col bg-gray-950 text-gray-100">
       <%!-- Header --%>
       <div class="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">

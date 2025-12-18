@@ -116,4 +116,3 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
     "'#{escaped}'"
   end
 end
-

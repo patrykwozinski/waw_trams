@@ -240,7 +240,17 @@ defmodule WawTrams.DelayEvent do
 
     case Repo.query(query, [cluster_id, since, limit]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [id, vehicle_id, line, lat, lon, started_at, resolved_at, duration, classification] ->
+        Enum.map(rows, fn [
+                            id,
+                            vehicle_id,
+                            line,
+                            lat,
+                            lon,
+                            started_at,
+                            resolved_at,
+                            duration,
+                            classification
+                          ] ->
           %{
             id: id,
             vehicle_id: vehicle_id,
@@ -394,13 +404,27 @@ defmodule WawTrams.DelayEvent do
           total_delays: count(d.id),
           total_seconds: sum(d.duration_seconds),
           avg_seconds: avg(d.duration_seconds),
-          blockage_count: sum(fragment("CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END")),
+          blockage_count:
+            sum(fragment("CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END")),
           intersection_delays: sum(fragment("CASE WHEN near_intersection THEN 1 ELSE 0 END"))
         }
 
     case Repo.one(query) do
-      nil -> %{total_delays: 0, total_seconds: 0, avg_seconds: 0, blockage_count: 0, intersection_delays: 0}
-      result -> %{result | avg_seconds: to_float(result.avg_seconds), total_seconds: result.total_seconds || 0}
+      nil ->
+        %{
+          total_delays: 0,
+          total_seconds: 0,
+          avg_seconds: 0,
+          blockage_count: 0,
+          intersection_delays: 0
+        }
+
+      result ->
+        %{
+          result
+          | avg_seconds: to_float(result.avg_seconds),
+            total_seconds: result.total_seconds || 0
+        }
     end
   end
 
@@ -419,6 +443,90 @@ defmodule WawTrams.DelayEvent do
     |> Repo.all()
     |> Enum.sort_by(&String.to_integer/1)
     |> Enum.map(&to_string/1)
+  end
+
+  @doc """
+  Returns delay counts grouped by hour of day AND day of week.
+  Perfect for heatmap visualization showing when delays peak.
+
+  Returns a map like: %{{day_of_week, hour} => count}
+  where day_of_week is 1 (Monday) to 7 (Sunday)
+  """
+  def heatmap_data(opts \\ []) do
+    since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
+    classification = Keyword.get(opts, :classification, nil)
+
+    query = """
+    SELECT
+      EXTRACT(ISODOW FROM started_at) as day_of_week,
+      EXTRACT(HOUR FROM started_at) as hour,
+      COUNT(*) as delay_count,
+      COALESCE(SUM(duration_seconds), 0) as total_seconds
+    FROM delay_events
+    WHERE started_at >= $1
+      #{if classification, do: "AND classification = '#{classification}'", else: ""}
+    GROUP BY
+      EXTRACT(ISODOW FROM started_at),
+      EXTRACT(HOUR FROM started_at)
+    ORDER BY day_of_week, hour
+    """
+
+    case Repo.query(query, [since]) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [dow, hour, count, total] ->
+          %{
+            day_of_week: to_int(dow),
+            hour: to_int(hour),
+            delay_count: count,
+            total_seconds: total || 0
+          }
+        end)
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  @doc """
+  Returns heatmap data as a structured grid for easy rendering.
+  Hours 5-24 (typical tram operation), Days Mon-Sun.
+  """
+  def heatmap_grid(opts \\ []) do
+    data = heatmap_data(opts)
+
+    # Create a lookup map
+    lookup =
+      Enum.reduce(data, %{}, fn %{day_of_week: dow, hour: h} = row, acc ->
+        Map.put(acc, {dow, h}, row)
+      end)
+
+    # Find max for color scaling
+    max_count = data |> Enum.map(& &1.delay_count) |> Enum.max(fn -> 1 end)
+
+    # Build grid: hours 5-23 (typical operation), days 1-7
+    grid =
+      for hour <- 5..23 do
+        cells =
+          for day <- 1..7 do
+            case Map.get(lookup, {day, hour}) do
+              nil ->
+                %{day: day, hour: hour, count: 0, total: 0, intensity: 0}
+
+              row ->
+                %{
+                  day: row.day_of_week,
+                  hour: row.hour,
+                  count: row.delay_count,
+                  total: row.total_seconds,
+                  intensity: Float.round(row.delay_count / max_count, 2)
+                }
+            end
+          end
+
+        %{hour: hour, cells: cells}
+      end
+
+    %{grid: grid, max_count: max_count, total_delays: Enum.sum(Enum.map(data, & &1.delay_count))}
   end
 
   # Helper to safely convert Decimal/nil to float

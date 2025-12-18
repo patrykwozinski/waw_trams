@@ -41,7 +41,10 @@ defmodule WawTrams.MixProject do
       main: "readme",
       extras: [
         "README.md",
-        "guides/data_sources.md"
+        "guides/architecture.md",
+        "guides/detection_logic.md",
+        "guides/data_sources.md",
+        "guides/api.md"
       ],
       groups_for_extras: [
         Guides: ~r/guides\/.*/

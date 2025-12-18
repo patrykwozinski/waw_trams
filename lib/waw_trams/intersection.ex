@@ -47,4 +47,3 @@ defmodule WawTrams.Intersection do
     Repo.aggregate(__MODULE__, :count)
   end
 end
-

@@ -6,7 +6,10 @@ defmodule WawTrams.TramWorkerTest do
   describe "calculate_speed/1" do
     test "returns nil with less than 2 positions" do
       assert TramWorker.calculate_speed([]) == nil
-      assert TramWorker.calculate_speed([%{lat: 52.23, lon: 21.01, timestamp: DateTime.utc_now()}]) == nil
+
+      assert TramWorker.calculate_speed([
+               %{lat: 52.23, lon: 21.01, timestamp: DateTime.utc_now()}
+             ]) == nil
     end
 
     test "calculates speed from two positions" do
@@ -82,7 +85,8 @@ defmodule WawTrams.TramWorkerTest do
     test "calculates ~50m correctly" do
       # 50m north
       distance = TramWorker.haversine_distance(52.2297, 21.0122, 52.23015, 21.0122)
-      assert_in_delta distance, 0.05, 0.01  # ~50m = 0.05km
+      # ~50m = 0.05km
+      assert_in_delta distance, 0.05, 0.01
     end
   end
 

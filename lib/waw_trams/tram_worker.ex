@@ -20,7 +20,8 @@ defmodule WawTrams.TramWorker do
 
   # Configuration
   @speed_threshold_kmh 3.0
-  @idle_timeout_ms 5 * 60 * 1000  # 5 minutes without updates = terminate
+  # 5 minutes without updates = terminate
+  @idle_timeout_ms 5 * 60 * 1000
 
   # State struct
   defstruct [
@@ -136,7 +137,9 @@ defmodule WawTrams.TramWorker do
   defp update_line(state, %{line: line}) when is_binary(line), do: %{state | line: line}
   defp update_line(state, _), do: state
 
-  defp update_trip(state, %{trip_id: trip_id}) when is_binary(trip_id), do: %{state | trip_id: trip_id}
+  defp update_trip(state, %{trip_id: trip_id}) when is_binary(trip_id),
+    do: %{state | trip_id: trip_id}
+
   defp update_trip(state, _), do: state
 
   defp calculate_status(state) do
@@ -154,7 +157,14 @@ defmodule WawTrams.TramWorker do
       true ->
         # Vehicle is moving - resolve any active delay
         new_state = maybe_resolve_delay(state)
-        %{new_state | status: :moving, stopped_since: nil, delay_event_id: nil, delay_classification: nil}
+
+        %{
+          new_state
+          | status: :moving,
+            stopped_since: nil,
+            delay_event_id: nil,
+            delay_classification: nil
+        }
     end
   end
 
@@ -169,8 +179,9 @@ defmodule WawTrams.TramWorker do
             {:ok, resolved} ->
               Logger.info(
                 "[RESOLVED] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-                "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
+                  "moved after #{resolved.duration_seconds}s - was: #{resolved.classification}"
               )
+
               # Broadcast for live dashboard
               Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
 
@@ -196,10 +207,13 @@ defmodule WawTrams.TramWorker do
       time_diff_hours = time_diff_seconds / 3600
 
       # Distance using Haversine formula (in km)
-      distance_km = haversine_distance(
-        current.lat, current.lon,
-        previous.lat, previous.lon
-      )
+      distance_km =
+        haversine_distance(
+          current.lat,
+          current.lon,
+          previous.lat,
+          previous.lon
+        )
 
       # Speed in km/h
       distance_km / time_diff_hours
@@ -220,9 +234,10 @@ defmodule WawTrams.TramWorker do
     delta_lat = (lat2 - lat1) * :math.pi() / 180
     delta_lon = (lon2 - lon1) * :math.pi() / 180
 
-    a = :math.sin(delta_lat / 2) * :math.sin(delta_lat / 2) +
+    a =
+      :math.sin(delta_lat / 2) * :math.sin(delta_lat / 2) +
         :math.cos(lat1_rad) * :math.cos(lat2_rad) *
-        :math.sin(delta_lon / 2) * :math.sin(delta_lon / 2)
+          :math.sin(delta_lon / 2) * :math.sin(delta_lon / 2)
 
     c = 2 * :math.atan2(:math.sqrt(a), :math.sqrt(1 - a))
 
@@ -246,7 +261,9 @@ defmodule WawTrams.TramWorker do
             # Don't log delays at terminals - this is normal behavior
             state
           else
-            near_intersection = Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
+            near_intersection =
+              Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
+
             classification = classify_delay(duration, at_stop)
 
             # New delay detected - persist to DB
@@ -282,9 +299,10 @@ defmodule WawTrams.TramWorker do
       {:ok, event} ->
         Logger.info(
           "[DELAY] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-          "stopped at (#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)}) - " <>
-          "#{classification}, at_stop: #{at_stop}, near_intersection: #{near_intersection}"
+            "stopped at (#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)}) - " <>
+            "#{classification}, at_stop: #{at_stop}, near_intersection: #{near_intersection}"
         )
+
         # Broadcast for live dashboard
         Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_created, event})
         %{state | delay_event_id: event.id, delay_classification: classification}
@@ -305,6 +323,7 @@ defmodule WawTrams.TramWorker do
   end
 
   defp stopped_duration(%{stopped_since: nil}), do: 0
+
   defp stopped_duration(%{stopped_since: since}) do
     DateTime.diff(DateTime.utc_now(), since, :second)
   end
@@ -316,11 +335,9 @@ defmodule WawTrams.TramWorker do
       # At stop: only flag if >3 minutes (real problem)
       at_stop and duration < 180 -> :normal_dwell
       at_stop -> :blockage
-
       # Not at stop: flag after 30s (traffic/signal issue)
       duration < 30 -> :brief_stop
       true -> :delay
     end
   end
-
 end

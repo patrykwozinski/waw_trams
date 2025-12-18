@@ -85,11 +85,12 @@ defmodule WawTrams.Poller do
   defp do_poll(state) do
     case fetch_and_process() do
       {:ok, vehicle_count, tram_count} ->
-        %{state |
-          last_poll: DateTime.utc_now(),
-          last_vehicle_count: vehicle_count,
-          last_tram_count: tram_count,
-          total_polls: state.total_polls + 1
+        %{
+          state
+          | last_poll: DateTime.utc_now(),
+            last_vehicle_count: vehicle_count,
+            last_tram_count: tram_count,
+            total_polls: state.total_polls + 1
         }
 
       {:error, reason} ->
@@ -102,7 +103,6 @@ defmodule WawTrams.Poller do
     with {:ok, body} <- fetch_feed(),
          {:ok, feed} <- decode_feed(body),
          {:ok, vehicles} <- extract_vehicles(feed) do
-
       trams = filter_trams(vehicles)
 
       Logger.debug("Polled #{length(vehicles)} vehicles, #{length(trams)} trams")
@@ -166,7 +166,9 @@ defmodule WawTrams.Poller do
       _ ->
         # Fallback: try trip_id (format: "date:line:...")
         case vehicle.trip && vehicle.trip.trip_id do
-          nil -> nil
+          nil ->
+            nil
+
           trip_id ->
             case String.split(trip_id, ":") do
               [_date, line | _] -> line
@@ -179,6 +181,7 @@ defmodule WawTrams.Poller do
   @doc false
   # Exposed for testing
   def is_tram_line?(nil), do: false
+
   def is_tram_line?(line) do
     # Warsaw tram lines are 1-79
     # Bus lines are 100+, night buses N*, etc.

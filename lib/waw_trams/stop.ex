@@ -83,6 +83,7 @@ defmodule WawTrams.Stop do
   """
   def terminal_count do
     import Ecto.Query
+
     __MODULE__
     |> where([s], s.is_terminal == true)
     |> Repo.aggregate(:count)

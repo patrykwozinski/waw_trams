@@ -22,10 +22,11 @@ defmodule Mix.Tasks.WawTrams.Cleanup do
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _, _} = OptionParser.parse(args,
-      switches: [resolved: :boolean, older_than: :integer],
-      aliases: [r: :resolved, o: :older_than]
-    )
+    {opts, _, _} =
+      OptionParser.parse(args,
+        switches: [resolved: :boolean, older_than: :integer],
+        aliases: [r: :resolved, o: :older_than]
+      )
 
     import Ecto.Query
     alias WawTrams.{Repo, DelayEvent}
