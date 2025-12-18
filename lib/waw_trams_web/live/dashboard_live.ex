@@ -191,7 +191,7 @@ defmodule WawTramsWeb.DashboardLive do
                           <span class="font-mono text-gray-300">Line <%= delay.line %></span>
                         </div>
                         <span class="text-green-400 text-sm font-medium">
-                          <%= delay.duration_seconds %>s
+                          <%= format_duration(delay.duration_seconds) %>
                         </span>
                       </div>
                       <div class="text-gray-500 text-sm mt-1">
@@ -330,6 +330,7 @@ defmodule WawTramsWeb.DashboardLive do
   defp rank_color(3), do: "bg-amber-500 text-black"
   defp rank_color(_), do: "bg-gray-700 text-gray-300"
 
+  defp format_duration(nil), do: "-"
   defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"
   defp format_duration(seconds) when seconds < 3600 do
     "#{div(seconds, 60)}m #{rem(seconds, 60)}s"
