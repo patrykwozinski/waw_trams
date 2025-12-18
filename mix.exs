@@ -86,7 +86,8 @@ defmodule WawTrams.MixProject do
       {:bandit, "~> 1.5"},
       {:ex_doc, "~> 0.35", only: :dev, runtime: false},
       {:protobuf, "~> 0.13"},
-      {:castore, "~> 1.0"}
+      {:castore, "~> 1.0"},
+      {:tz, "~> 0.28"}
     ]
   end
 

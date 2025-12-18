@@ -2,6 +2,7 @@ defmodule WawTramsWeb.DashboardLive do
   use WawTramsWeb, :live_view
 
   alias WawTrams.DelayEvent
+  alias WawTrams.WarsawTime
 
   # 5 seconds
   @refresh_interval 5_000
@@ -395,7 +396,7 @@ defmodule WawTramsWeb.DashboardLive do
   # Helper functions
 
   defp format_time(datetime) do
-    Calendar.strftime(datetime, "%H:%M:%S")
+    WarsawTime.format_time(datetime)
   end
 
   defp duration_since(started_at) do

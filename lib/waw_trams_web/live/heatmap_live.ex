@@ -2,6 +2,7 @@ defmodule WawTramsWeb.HeatmapLive do
   use WawTramsWeb, :live_view
 
   alias WawTrams.QueryRouter
+  alias WawTrams.WarsawTime
 
   @day_names %{
     1 => "Mon",
@@ -204,7 +205,7 @@ defmodule WawTramsWeb.HeatmapLive do
   end
 
   defp format_hour(hour) do
-    "#{String.pad_leading(to_string(hour), 2, "0")}:00"
+    WarsawTime.format_hour(hour)
   end
 
   defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"

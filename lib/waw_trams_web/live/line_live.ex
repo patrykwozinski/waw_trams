@@ -2,6 +2,7 @@ defmodule WawTramsWeb.LineLive do
   use WawTramsWeb, :live_view
 
   alias WawTrams.QueryRouter
+  alias WawTrams.WarsawTime
 
   @impl true
   def mount(%{"line" => line}, _session, socket) do
@@ -154,11 +155,7 @@ defmodule WawTramsWeb.LineLive do
                       ]}>
                         <td class="px-5 py-3">
                           <span class="font-mono text-gray-200">
-                            {String.pad_leading("#{hour_data.hour}", 2, "0")}:00 - {String.pad_leading(
-                              "#{hour_data.hour + 1}",
-                              2,
-                              "0"
-                            )}:00
+                            {WarsawTime.format_hour_range(hour_data.hour)}
                           </span>
                         </td>
                         <td class="px-5 py-3">
@@ -205,7 +202,7 @@ defmodule WawTramsWeb.LineLive do
                     if max_seconds > 0, do: hour_data.total_seconds / max_seconds * 100, else: 0 %>
                   <div class="flex items-center gap-3">
                     <span class="w-16 text-gray-500 text-sm font-mono">
-                      {String.pad_leading("#{hour_data.hour}", 2, "0")}:00
+                      {WarsawTime.format_hour(hour_data.hour)}
                     </span>
                     <div class="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
                       <div
