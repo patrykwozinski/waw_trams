@@ -73,15 +73,16 @@ WawTrams.DelayEvent.heatmap_grid()
 WawTrams.Stop.near_stop?(52.2297, 21.0122)
 WawTrams.Stop.near_stop?(52.2297, 21.0122, 100)  # custom radius
 
-# Check if point is near a terminal
-WawTrams.Stop.near_terminal?(52.2297, 21.0122)
-
 # Check if point is near an intersection
 WawTrams.Intersection.near_intersection?(52.2297, 21.0122)
 
-# Terminal stop count
-WawTrams.Stop.terminal_count()
-# => 73
+# Check if point is a terminal for a specific line
+WawTrams.LineTerminal.terminal_for_line?("25", 52.2297, 21.0122)
+# => true if line 25 terminates here, false otherwise
+
+# Get all terminals for a line
+WawTrams.LineTerminal.terminals_for_line("14")
+# => ["100001", "100002"]
 ```
 
 ## Mix Tasks
@@ -94,22 +95,59 @@ mix waw_trams.import_stops
 
 # Import intersections from CSV (requires priv/data/intersections.csv)
 mix waw_trams.import_intersections
+
+# Import line-specific terminals from GTFS
+mix waw_trams.import_line_terminals
+mix waw_trams.import_line_terminals --dry-run  # preview only
 ```
 
-### Cleanup
+### Cleanup (Retention-Based)
+
+**Safe by default** - always shows preview first, requires `--execute` to delete.
 
 ```bash
-# Delete all delay events
+# Preview what would be deleted (DRY RUN)
 mix waw_trams.cleanup
 
+# Actually delete old events
+mix waw_trams.cleanup --execute
+
+# Delete events older than N days (default: 7)
+mix waw_trams.cleanup --older-than 14 --execute
+
 # Delete only resolved events
-mix waw_trams.cleanup --resolved
+mix waw_trams.cleanup --resolved-only --execute
 
-# Delete events older than N days
-mix waw_trams.cleanup --older-than 7
+# Skip aggregation safety check (DANGEROUS)
+mix waw_trams.cleanup --skip-aggregation-check --execute
+```
 
-# Combine options
-mix waw_trams.cleanup --resolved --older-than 3
+### Reset All Data (Nuclear Option)
+
+```bash
+# Preview what would be deleted
+mix waw_trams.cleanup --reset-all
+
+# Actually delete ALL data (requires confirmation)
+mix waw_trams.cleanup --reset-all --execute --i-know-what-i-am-doing
+```
+
+⚠️ **Safety**: In production (`MIX_ENV=prod`), the `--i-know-what-i-am-doing` flag is **required** or the command will fail.
+
+### Aggregation
+
+```bash
+# Aggregate yesterday's data
+mix waw_trams.aggregate_daily
+
+# Backfill last N days
+mix waw_trams.aggregate_daily --backfill 7
+
+# Aggregate specific date
+mix waw_trams.aggregate_daily --date 2025-12-15
+
+# Preview only
+mix waw_trams.aggregate_daily --dry-run
 ```
 
 ### Documentation
