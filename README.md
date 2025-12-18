@@ -177,6 +177,35 @@ WawTrams.DelayEvent.hot_spot_summary()
 **Analytics:**
 - [ ] Historical analysis queries
 
+**Data Retention (planned):**
+- [ ] Step 1: Create `daily_stats` table for aggregated metrics
+- [ ] Step 2: Create `mix waw_trams.aggregate_daily` task
+- [ ] Step 3: Update cleanup task to preserve aggregated data
+- [ ] Step 4: Dashboard trends view using aggregated data
+
+## Data Retention Strategy
+
+Raw events grow ~13k/day. Plan: aggregate + cleanup.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Raw Events (delay_events)     │  Keep 7 days          │
+│  - Full detail per delay       │  Then delete          │
+├─────────────────────────────────────────────────────────┤
+│  Daily Stats (daily_stats)     │  Keep 1 year          │
+│  - Per intersection: count, total_time, lines          │
+│  - Per line: count, blockages, total_time              │
+├─────────────────────────────────────────────────────────┤
+│  Estimated storage: <10 MB forever                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**What's preserved:** Delay counts, total time, affected lines, trends over time.
+
+**What's lost after 7 days:** Exact timestamps, individual vehicle IDs, precise coordinates.
+
+**Sufficient for advocacy** — patterns matter more than individual events.
+
 ## Dashboard
 
 Real-time dashboard available at `/dashboard`:
