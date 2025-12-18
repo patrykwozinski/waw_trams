@@ -10,6 +10,7 @@ defmodule WawTrams.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      docs: docs(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -34,6 +35,19 @@ defmodule WawTrams.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md",
+        "guides/data_sources.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r/guides\/.*/
+      ]
+    ]
+  end
 
   # Specifies your project dependencies.
   #
@@ -65,7 +79,8 @@ defmodule WawTrams.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:ex_doc, "~> 0.35", only: :dev, runtime: false}
     ]
   end
 

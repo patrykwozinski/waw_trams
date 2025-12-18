@@ -35,3 +35,5 @@ waw_trams-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Ignore .DS_Store
+.DS_Store
