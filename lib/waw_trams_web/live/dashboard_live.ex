@@ -43,6 +43,7 @@ defmodule WawTramsWeb.DashboardLive do
     stats = DelayEvent.stats()
     hot_spots = DelayEvent.hot_spots(limit: 10)
     hot_spot_summary = DelayEvent.hot_spot_summary()
+    impacted_lines = DelayEvent.impacted_lines(limit: 10)
 
     socket
     |> assign(:active_delays, active_delays)
@@ -51,6 +52,7 @@ defmodule WawTramsWeb.DashboardLive do
     |> assign(:stats, stats)
     |> assign(:hot_spots, hot_spots)
     |> assign(:hot_spot_summary, hot_spot_summary)
+    |> assign(:impacted_lines, impacted_lines)
     |> assign(:last_updated, DateTime.utc_now())
   end
 
@@ -275,6 +277,71 @@ defmodule WawTramsWeb.DashboardLive do
                                 </span>
                               <% end %>
                             </div>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <%!-- Most Impacted Lines --%>
+          <div class="mt-8">
+            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div class="px-5 py-4 border-b border-gray-800">
+                <h2 class="font-semibold text-lg">
+                  🚋 Most Impacted Lines (24h)
+                </h2>
+                <p class="text-gray-500 text-sm mt-1">
+                  Tram lines ranked by total intersection delay time
+                </p>
+              </div>
+              <div class="overflow-x-auto">
+                <%= if @impacted_lines == [] do %>
+                  <div class="p-8 text-center text-gray-500">
+                    No intersection delays recorded yet
+                  </div>
+                <% else %>
+                  <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50">
+                      <tr class="text-left text-gray-400">
+                        <th class="px-5 py-3 font-medium">#</th>
+                        <th class="px-5 py-3 font-medium">Line</th>
+                        <th class="px-5 py-3 font-medium">Delays</th>
+                        <th class="px-5 py-3 font-medium">Blockages</th>
+                        <th class="px-5 py-3 font-medium">Total Time</th>
+                        <th class="px-5 py-3 font-medium">Avg</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                      <%= for {line_data, idx} <- Enum.with_index(@impacted_lines, 1) do %>
+                        <tr class="hover:bg-gray-800/50">
+                          <td class="px-5 py-3">
+                            <span class={[
+                              "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
+                              rank_color(idx)
+                            ]}>
+                              <%= idx %>
+                            </span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-lg font-mono font-bold">
+                              <%= line_data.line %>
+                            </span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="text-orange-400 font-semibold"><%= line_data.delay_count %></span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="text-red-400 font-semibold"><%= line_data.blockage_count %></span>
+                          </td>
+                          <td class="px-5 py-3">
+                            <span class="text-amber-400"><%= format_duration(line_data.total_seconds) %></span>
+                          </td>
+                          <td class="px-5 py-3 text-gray-400">
+                            <%= line_data.avg_seconds %>s
                           </td>
                         </tr>
                       <% end %>

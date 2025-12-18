@@ -307,6 +307,40 @@ defmodule WawTrams.DelayEvent do
     end
   end
 
+  @doc """
+  Returns tram lines ranked by intersection delay impact.
+  """
+  def impacted_lines(opts \\ []) do
+    since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -24, :hour))
+    limit = Keyword.get(opts, :limit, 10)
+
+    query =
+      from d in __MODULE__,
+        where: d.started_at >= ^since and d.near_intersection == true,
+        group_by: d.line,
+        select: %{
+          line: d.line,
+          delay_count: count(d.id),
+          total_seconds: sum(d.duration_seconds),
+          avg_seconds: avg(d.duration_seconds),
+          blockage_count: sum(fragment("CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END"))
+        },
+        order_by: [desc: sum(d.duration_seconds)],
+        limit: ^limit
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn row ->
+      %{
+        line: row.line,
+        delay_count: row.delay_count,
+        total_seconds: row.total_seconds || 0,
+        avg_seconds: to_float(row.avg_seconds),
+        blockage_count: row.blockage_count || 0
+      }
+    end)
+  end
+
   # Helper to safely convert Decimal/nil to float
   defp to_float(nil), do: 0.0
   defp to_float(%Decimal{} = d), do: Decimal.to_float(d) |> Float.round(1)
