@@ -37,3 +37,6 @@ npm-debug.log
 
 # Ignore .DS_Store
 .DS_Store
+
+# GTFS data files (downloaded, not committed)
+/priv/data/stops.txt

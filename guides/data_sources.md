@@ -1,11 +1,67 @@
 # Data Sources & Ingestion
 
-This project relies on two primary external data sources: ZTM (Real-time) and OpenStreetMap (Infrastructure).
+This project relies on external data sources for spatial analysis:
 
-## 1. Traffic Signals (OpenStreetMap)
+| Source | Data | Update Frequency |
+|--------|------|------------------|
+| mkuran.pl GTFS | Stop locations | Weekly (download fresh) |
+| OpenStreetMap | Tram-road intersections | Rarely (committed to repo) |
+| ZTM API | Real-time tram positions | Every 10s (runtime) |
 
-We fetch traffic signal locations from OpenStreetMap using the Overpass API.
-Since this data changes rarely, we treat it as static seed data.
+## 1. Stops (GTFS)
+
+Warsaw stop locations from the community-maintained GTFS feed by [mkuran.pl](https://mkuran.pl/gtfs/).
+
+> **Why mkuran.pl?** Cleaner than the raw ZTM FTP — deduplicated, validated, and actively maintained by a well-known member of the Warsaw transit community.
+
+### Download & Import
+
+```bash
+# Download the latest Warsaw GTFS
+wget https://mkuran.pl/gtfs/warsaw.zip -O /tmp/warsaw.zip
+
+# Extract just stops.txt to priv/data/
+unzip -j /tmp/warsaw.zip stops.txt -d priv/data/
+
+# Import into PostGIS (filters to Warsaw Zone 1 only)
+mix waw_trams.import_stops
+```
+
+### What Gets Imported
+
+The importer filters the GTFS data:
+
+| Filter | Value | Reason |
+|--------|-------|--------|
+| `zone_id` | `1` or `1+2` | Warsaw proper (Zone 2 has no trams) |
+| `location_type` | `0` | Actual platforms, not stations or entrances |
+
+This yields ~5,000 stops from the original ~7,000 in the file.
+
+### Re-importing
+
+The import is idempotent (`ON CONFLICT DO NOTHING`). To refresh data:
+
+```bash
+# Re-download and re-run
+mix waw_trams.import_stops
+```
+
+To completely reset:
+
+```bash
+# In psql or via Ecto
+TRUNCATE stops RESTART IDENTITY;
+mix waw_trams.import_stops
+```
+
+---
+
+## 2. Intersections (OpenStreetMap)
+
+Tram-road intersection points from OpenStreetMap via Overpass API.
+
+> **Why commit to repo?** Unlike GTFS, intersection data changes rarely (new tram lines are infrequent). The CSV is small (~1,200 rows) and acts as static seed data.
 
 ### The Query
 To update the `intersections.csv` file, run this query at [Overpass Turbo](https://overpass-turbo.eu/).
