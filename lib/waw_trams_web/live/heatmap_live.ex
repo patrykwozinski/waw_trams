@@ -1,7 +1,7 @@
 defmodule WawTramsWeb.HeatmapLive do
   use WawTramsWeb, :live_view
 
-  alias WawTrams.DelayEvent
+  alias WawTrams.QueryRouter
 
   @day_names %{
     1 => "Mon",
@@ -14,8 +14,8 @@ defmodule WawTramsWeb.HeatmapLive do
   }
 
   def mount(_params, _session, socket) do
-    # Default to last 7 days
-    heatmap = DelayEvent.heatmap_grid(since: DateTime.add(DateTime.utc_now(), -7, :day))
+    # Default to last 7 days - will use HourlyPattern (aggregated)
+    heatmap = QueryRouter.heatmap_grid(since: DateTime.add(DateTime.utc_now(), -7, :day))
 
     {:ok,
      socket
@@ -26,7 +26,7 @@ defmodule WawTramsWeb.HeatmapLive do
 
   def handle_event("change_period", %{"period" => period}, socket) do
     since = period_to_since(period)
-    heatmap = DelayEvent.heatmap_grid(since: since)
+    heatmap = QueryRouter.heatmap_grid(since: since)
 
     {:noreply,
      socket

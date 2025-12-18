@@ -1,7 +1,7 @@
 defmodule WawTramsWeb.LineLive do
   use WawTramsWeb, :live_view
 
-  alias WawTrams.DelayEvent
+  alias WawTrams.QueryRouter
 
   @impl true
   def mount(%{"line" => line}, _session, socket) do
@@ -9,7 +9,7 @@ defmodule WawTramsWeb.LineLive do
   end
 
   def mount(_params, _session, socket) do
-    available_lines = DelayEvent.lines_with_delays()
+    available_lines = QueryRouter.lines_with_delays()
 
     {:ok,
      socket
@@ -35,10 +35,12 @@ defmodule WawTramsWeb.LineLive do
   end
 
   defp load_line_data(socket, line) do
-    hours_data = DelayEvent.delays_by_hour(line)
-    summary = DelayEvent.line_summary(line)
-    available_lines = DelayEvent.lines_with_delays()
-    hot_spots = DelayEvent.line_hot_spots(line, limit: 5)
+    # Use QueryRouter - routes to raw events for <7d, aggregated for 7d+
+    hours_data = QueryRouter.delays_by_hour(line)
+    summary = QueryRouter.line_summary(line)
+    available_lines = QueryRouter.lines_with_delays()
+    # Line hot spots always use raw for now (line-specific clustering)
+    hot_spots = QueryRouter.line_hot_spots(line, limit: 5)
 
     socket
     |> assign(:line, line)

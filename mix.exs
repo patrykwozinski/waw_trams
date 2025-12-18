@@ -44,6 +44,7 @@ defmodule WawTrams.MixProject do
         "guides/architecture.md",
         "guides/detection_logic.md",
         "guides/data_sources.md",
+        "guides/data_aggregation.md",
         "guides/api.md"
       ],
       groups_for_extras: [

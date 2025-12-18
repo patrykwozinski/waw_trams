@@ -9,7 +9,12 @@ import Config
 
 config :waw_trams,
   ecto_repos: [WawTrams.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # Data aggregation settings
+  # Keep raw delay_events for N days
+  raw_retention_days: 7,
+  # Decimal places for location rounding (~11m at 4)
+  aggregation_precision: 4
 
 # Configure the endpoint
 config :waw_trams, WawTramsWeb.Endpoint,

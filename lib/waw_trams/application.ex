@@ -18,6 +18,9 @@ defmodule WawTrams.Application do
       WawTrams.TramSupervisor,
       WawTrams.Poller,
 
+      # Hourly aggregation (runs at minute 5 of each hour)
+      WawTrams.HourlyAggregator,
+
       # Start to serve requests, typically the last entry
       WawTramsWeb.Endpoint
     ]
