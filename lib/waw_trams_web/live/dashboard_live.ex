@@ -47,15 +47,24 @@ defmodule WawTramsWeb.DashboardLive do
     hot_spot_summary = DelayEvent.hot_spot_summary()
     impacted_lines = DelayEvent.impacted_lines(limit: 10)
 
+    # Summarize stats for cleaner display
+    stats_summary = summarize_stats(stats)
+
     socket
     |> assign(:active_delays, active_delays)
     |> assign(:active_count, length(active_delays))
     |> assign(:recent_resolved, recent_resolved)
-    |> assign(:stats, stats)
+    |> assign(:stats_summary, stats_summary)
     |> assign(:hot_spots, hot_spots)
     |> assign(:hot_spot_summary, hot_spot_summary)
     |> assign(:impacted_lines, impacted_lines)
     |> assign(:last_updated, DateTime.utc_now())
+  end
+
+  defp summarize_stats(stats) do
+    delays = Enum.find(stats, %{count: 0}, &(&1.classification == "delay")).count
+    blockages = Enum.find(stats, %{count: 0}, &(&1.classification == "blockage")).count
+    %{delays: delays, blockages: blockages, total: delays + blockages}
   end
 
   defp get_recent_resolved(limit) do
@@ -135,29 +144,23 @@ defmodule WawTramsWeb.DashboardLive do
         <%!-- Stats Cards --%>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-orange-400">
-              {@hot_spot_summary.intersection_count}
-            </div>
-            <div class="text-gray-400 text-sm mt-1">Problem Intersections</div>
+            <div class="text-4xl font-bold text-red-400">{@active_count}</div>
+            <div class="text-gray-400 text-sm mt-1">🔴 Active Now</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+            <div class="text-4xl font-bold text-orange-400">{@stats_summary.delays}</div>
+            <div class="text-gray-400 text-sm mt-1">Delays (24h)</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+            <div class="text-4xl font-bold text-red-400">{@stats_summary.blockages}</div>
+            <div class="text-gray-400 text-sm mt-1">Blockages (24h)</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-amber-400">
-              {@hot_spot_summary.total_delay_minutes}
+              {format_time_lost(@hot_spot_summary.total_delay_minutes)}
             </div>
-            <div class="text-gray-400 text-sm mt-1">Minutes Lost (24h)</div>
+            <div class="text-gray-400 text-sm mt-1">⏱️ Time Lost (24h)</div>
           </div>
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-red-400">{@active_count}</div>
-            <div class="text-gray-400 text-sm mt-1">Active Now</div>
-          </div>
-          <%= for stat <- @stats do %>
-            <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-              <div class="text-4xl font-bold text-gray-300">{stat.count}</div>
-              <div class="text-gray-400 text-sm mt-1">
-                {String.capitalize(stat.classification)} (24h)
-              </div>
-            </div>
-          <% end %>
         </div>
 
         <%!-- KEY INSIGHTS: Hot Spots + Most Impacted Lines (side by side) --%>
@@ -438,6 +441,14 @@ defmodule WawTramsWeb.DashboardLive do
   defp format_duration(seconds) do
     hours = div(seconds, 3600)
     mins = div(rem(seconds, 3600), 60)
+    "#{hours}h #{mins}m"
+  end
+
+  defp format_time_lost(minutes) when minutes < 60, do: "#{minutes}m"
+
+  defp format_time_lost(minutes) do
+    hours = div(minutes, 60)
+    mins = rem(minutes, 60)
     "#{hours}h #{mins}m"
   end
 end
