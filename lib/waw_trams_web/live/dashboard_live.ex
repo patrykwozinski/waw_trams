@@ -69,15 +69,36 @@ defmodule WawTramsWeb.DashboardLive do
     ~H"""
     <Layouts.app flash={@flash}>
       <div class="min-h-screen bg-gray-950 text-gray-100">
-        <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="max-w-[1600px] mx-auto px-6 py-8">
           <%!-- Header --%>
-          <div class="mb-8">
-            <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
-              🚋 Warsaw Tram Delays
-            </h1>
-            <p class="text-gray-400 mt-1">
-              Real-time delay monitoring • Updated <%= format_time(@last_updated) %>
-            </p>
+          <div class="mb-8 flex flex-wrap items-start justify-between gap-6">
+            <div>
+              <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
+                🚋 Warsaw Tram Delays
+              </h1>
+              <p class="text-gray-400 mt-1">
+                Real-time delay monitoring • Updated <%= format_time(@last_updated) %>
+              </p>
+            </div>
+
+            <%!-- Legend --%>
+            <div class="bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-800 text-sm">
+              <div class="text-gray-400 font-medium mb-2">Classification Legend</div>
+              <div class="flex flex-wrap gap-x-6 gap-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">delay</span>
+                  <span class="text-gray-500">30s – 3min stop</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">blockage</span>
+                  <span class="text-gray-500">> 3min stop</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-orange-400">⚠️</span>
+                  <span class="text-gray-500">near traffic signal</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <%!-- Stats Cards --%>
