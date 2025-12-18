@@ -207,15 +207,20 @@ defmodule WawTramsWeb.DashboardLive do
           <%!-- Hot Spots Section --%>
           <div class="mt-8">
             <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-              <div class="px-5 py-4 border-b border-gray-800">
-                <h2 class="font-semibold text-lg">
-                  🔥 Problematic Intersections (24h)
-                </h2>
-                <p class="text-gray-500 text-sm mt-1">
-                  <%= @hot_spot_summary.intersection_count %> intersections caused
-                  <%= @hot_spot_summary.total_delays %> delays
-                  (<%= @hot_spot_summary.total_delay_minutes %> min total)
-                </p>
+              <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
+                <div>
+                  <h2 class="font-semibold text-lg">
+                    🔥 Problematic Intersections (24h)
+                  </h2>
+                  <p class="text-gray-500 text-sm mt-1">
+                    <%= @hot_spot_summary.intersection_count %> intersections caused
+                    <%= @hot_spot_summary.total_delays %> delays
+                    (<%= @hot_spot_summary.total_delay_minutes %> min total)
+                  </p>
+                </div>
+                <.link navigate={~p"/map"} class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors">
+                  🗺️ View Map
+                </.link>
               </div>
               <div class="overflow-x-auto">
                 <%= if @hot_spots == [] do %>
