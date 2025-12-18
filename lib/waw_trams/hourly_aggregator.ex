@@ -28,14 +28,30 @@ defmodule WawTrams.HourlyAggregator do
 
   @impl true
   def init(_opts) do
-    # Schedule first aggregation
-    schedule_next_aggregation()
-
     Logger.info(
       "HourlyAggregator started, will run at minute #{@aggregation_minute} of each hour"
     )
 
-    {:ok, %{last_aggregated: nil}}
+    # Catch up any missed hours on startup (async to not block app start)
+    Process.send_after(self(), :catch_up, 5_000)
+
+    # Schedule normal hourly runs
+    schedule_next_aggregation()
+
+    {:ok, %{last_aggregated: nil, catching_up: false}}
+  end
+
+  @impl true
+  def handle_info(:catch_up, state) do
+    case catch_up_missed_hours() do
+      {:ok, 0} ->
+        Logger.debug("[HourlyAggregator] No missed hours to catch up")
+
+      {:ok, count} ->
+        Logger.info("[HourlyAggregator] Caught up #{count} missed hours on startup")
+    end
+
+    {:noreply, %{state | catching_up: false}}
   end
 
   @impl true
@@ -332,5 +348,109 @@ defmodule WawTrams.HourlyAggregator do
 
   defp format_hour(dt) do
     Calendar.strftime(dt, "%Y-%m-%d %H:00")
+  end
+
+  # --- Catch-up Logic ---
+
+  # Catches up any missed hours since the last aggregation.
+  # Looks back up to 24 hours for startup catch-up.
+  defp catch_up_missed_hours do
+    # Find hours with raw events that haven't been aggregated yet
+    now = DateTime.utc_now()
+    retention_days = Application.get_env(:waw_trams, :raw_retention_days, 7)
+
+    # Look back up to retention period, but max 24 hours for startup catch-up
+    lookback_hours = min(retention_days * 24, 24)
+    earliest = DateTime.add(now, -lookback_hours, :hour)
+
+    # Get hours with raw events
+    hours_with_events = get_hours_with_raw_events(earliest, now)
+
+    # Get hours already aggregated (from daily_line_stats updated_at)
+    aggregated_hours = get_aggregated_hours(earliest, now)
+
+    # Find missing hours
+    missing_hours =
+      hours_with_events
+      |> Enum.reject(fn hour -> MapSet.member?(aggregated_hours, hour) end)
+      # Don't aggregate current hour (incomplete)
+      |> Enum.reject(fn hour -> hour.hour == now.hour and Date.compare(hour, now) == :eq end)
+      |> Enum.sort(DateTime)
+
+    if missing_hours == [] do
+      {:ok, 0}
+    else
+      Logger.info(
+        "[HourlyAggregator] Found #{length(missing_hours)} missed hours to catch up: #{inspect(Enum.map(missing_hours, &format_hour/1))}"
+      )
+
+      # Aggregate each missing hour
+      results =
+        Enum.map(missing_hours, fn hour ->
+          case aggregate_hour(hour) do
+            {:ok, stats} ->
+              Logger.debug(
+                "[HourlyAggregator] Caught up hour #{format_hour(hour)}: #{stats.event_count} events"
+              )
+
+              :ok
+
+            {:error, reason} ->
+              Logger.warning(
+                "[HourlyAggregator] Failed to catch up #{format_hour(hour)}: #{inspect(reason)}"
+              )
+
+              :error
+          end
+        end)
+
+      success_count = Enum.count(results, &(&1 == :ok))
+      {:ok, success_count}
+    end
+  end
+
+  defp get_hours_with_raw_events(earliest, latest) do
+    query =
+      from(d in DelayEvent,
+        where: d.started_at >= ^earliest and d.started_at < ^latest,
+        select:
+          fragment(
+            "date_trunc('hour', ?) AT TIME ZONE 'UTC'",
+            d.started_at
+          ),
+        distinct: true
+      )
+
+    Repo.all(query)
+    |> Enum.map(fn naive ->
+      {:ok, dt} = DateTime.from_naive(naive, "Etc/UTC")
+      dt
+    end)
+  end
+
+  defp get_aggregated_hours(earliest, latest) do
+    # Check daily_line_stats for hours that were aggregated
+    # We use the by_hour JSONB keys to determine which hours are covered
+    query =
+      from(d in DailyLineStat,
+        where: d.date >= ^DateTime.to_date(earliest) and d.date <= ^DateTime.to_date(latest),
+        select: {d.date, d.by_hour}
+      )
+
+    Repo.all(query)
+    |> Enum.flat_map(fn {date, by_hour} ->
+      if by_hour do
+        by_hour
+        |> Map.keys()
+        |> Enum.map(fn hour_str ->
+          hour = String.to_integer(hour_str)
+          {:ok, dt} = DateTime.new(date, Time.new!(hour, 0, 0), "Etc/UTC")
+          dt
+        end)
+      else
+        []
+      end
+    end)
+    |> MapSet.new()
   end
 end
