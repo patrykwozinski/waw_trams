@@ -65,6 +65,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Internationalization - supported locales
+config :waw_trams, WawTramsWeb.Gettext,
+  default_locale: "en",
+  locales: ~w(en pl)
+
 # Use Tz for time zone database (Warsaw time display)
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 

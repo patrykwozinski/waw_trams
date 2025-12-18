@@ -8,7 +8,7 @@ defmodule WawTramsWeb.DashboardLive do
   @refresh_interval 5_000
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if connected?(socket) do
       # Subscribe to delay updates
       Phoenix.PubSub.subscribe(WawTrams.PubSub, "delays")
@@ -16,7 +16,20 @@ defmodule WawTramsWeb.DashboardLive do
       schedule_refresh()
     end
 
-    {:ok, assign_data(socket)}
+    locale = session["locale"] || "en"
+    Gettext.put_locale(WawTramsWeb.Gettext, locale)
+
+    {:ok, socket |> assign(:locale, locale) |> assign_data()}
+  end
+
+  @impl true
+  def handle_params(%{"locale" => locale}, _uri, socket) when locale in ["en", "pl"] do
+    Gettext.put_locale(WawTramsWeb.Gettext, locale)
+    {:noreply, assign(socket, :locale, locale)}
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -86,55 +99,79 @@ defmodule WawTramsWeb.DashboardLive do
         <div class="mb-8 flex flex-wrap items-start justify-between gap-6">
           <div>
             <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
-              🚋 Warsaw Tram Delays
+              🚋 {gettext("Warsaw Tram Delays")}
             </h1>
             <p class="text-gray-400 mt-1">
-              Real-time delay monitoring • Updated {format_time(@last_updated)}
+              {gettext("Real-time delay monitoring")} • {gettext("Updated")} {format_time(
+                @last_updated
+              )}
             </p>
           </div>
 
           <div class="flex flex-col items-end gap-3">
-            <%!-- Navigation --%>
-            <div class="flex gap-2">
+            <%!-- Language Switcher + Navigation --%>
+            <div class="flex gap-2 items-center">
+              <div class="flex gap-1 bg-gray-800 rounded-lg p-1">
+                <.link
+                  patch={~p"/dashboard?locale=en"}
+                  class={[
+                    "px-2 py-1 rounded text-xs font-medium transition-colors",
+                    @locale == "en" && "bg-amber-500 text-gray-900",
+                    @locale != "en" && "text-gray-400 hover:text-gray-200"
+                  ]}
+                >
+                  EN
+                </.link>
+                <.link
+                  patch={~p"/dashboard?locale=pl"}
+                  class={[
+                    "px-2 py-1 rounded text-xs font-medium transition-colors",
+                    @locale == "pl" && "bg-amber-500 text-gray-900",
+                    @locale != "pl" && "text-gray-400 hover:text-gray-200"
+                  ]}
+                >
+                  PL
+                </.link>
+              </div>
               <.link
                 navigate={~p"/map"}
                 class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
               >
-                🗺️ Map
+                🗺️ {gettext("Map")}
               </.link>
               <.link
                 navigate={~p"/heatmap"}
                 class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
               >
-                📊 Heatmap
+                📊 {gettext("Heatmap")}
               </.link>
               <.link
                 navigate={~p"/line"}
                 class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
               >
-                🚋 By Line
+                🚋 {gettext("By Line")}
               </.link>
             </div>
 
             <%!-- Legend --%>
             <div class="bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-800 text-sm">
-              <div class="text-gray-400 font-medium mb-2">Classification Legend</div>
+              <div class="text-gray-400 font-medium mb-2">{gettext("Classification Legend")}</div>
               <div class="flex flex-wrap gap-x-6 gap-y-1">
                 <div class="flex items-center gap-2">
                   <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
-                    delay
+                    {gettext("delay")}
                   </span>
-                  <span class="text-gray-500">30s – 3min stop</span>
+                  <span class="text-gray-500">{gettext("30s – 3min stop")}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
-                    blockage
+                    {gettext("blockage")}
                   </span>
-                  <span class="text-gray-500">> 3min stop</span>
+                  <span class="text-gray-500">{gettext("> 3min stop")}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-orange-400">⚠️</span>
-                  <span class="text-gray-500">near traffic signal</span>
+                  <span class="text-gray-500">{gettext("near traffic signal")}</span>
                 </div>
               </div>
             </div>
@@ -145,21 +182,21 @@ defmodule WawTramsWeb.DashboardLive do
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-red-400">{@active_count}</div>
-            <div class="text-gray-400 text-sm mt-1">🔴 Active Now</div>
+            <div class="text-gray-400 text-sm mt-1">🔴 {gettext("Active Now")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-orange-400">{@stats_summary.delays}</div>
-            <div class="text-gray-400 text-sm mt-1">Delays (24h)</div>
+            <div class="text-gray-400 text-sm mt-1">{gettext("Delays (24h)")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-red-400">{@stats_summary.blockages}</div>
-            <div class="text-gray-400 text-sm mt-1">Blockages (24h)</div>
+            <div class="text-gray-400 text-sm mt-1">{gettext("Blockages (24h)")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-amber-400">
               {format_time_lost(@hot_spot_summary.total_delay_minutes)}
             </div>
-            <div class="text-gray-400 text-sm mt-1">⏱️ Time Lost (24h)</div>
+            <div class="text-gray-400 text-sm mt-1">⏱️ {gettext("Time Lost (24h)")}</div>
           </div>
         </div>
 
@@ -169,28 +206,28 @@ defmodule WawTramsWeb.DashboardLive do
           <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
               <div>
-                <h2 class="font-semibold text-lg">🔥 Problematic Intersections</h2>
-                <p class="text-gray-500 text-sm mt-1">Top 10 by delay count (24h)</p>
+                <h2 class="font-semibold text-lg">🔥 {gettext("Intersection Hot Spots")}</h2>
+                <p class="text-gray-500 text-sm mt-1">{gettext("Top 10 by delay count (24h)")}</p>
               </div>
               <.link
                 navigate={~p"/map"}
                 class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
               >
-                🗺️ Map
+                🗺️ {gettext("Map")}
               </.link>
             </div>
             <div class="overflow-x-auto max-h-80 overflow-y-auto">
               <%= if @hot_spots == [] do %>
-                <div class="p-8 text-center text-gray-500">No data yet</div>
+                <div class="p-8 text-center text-gray-500">{gettext("No data")}</div>
               <% else %>
                 <table class="w-full text-sm">
                   <thead class="bg-gray-800/50 sticky top-0">
                     <tr class="text-left text-gray-400">
                       <th class="px-4 py-2 font-medium">#</th>
-                      <th class="px-4 py-2 font-medium">Location</th>
-                      <th class="px-4 py-2 font-medium">Delays</th>
-                      <th class="px-4 py-2 font-medium">Time</th>
-                      <th class="px-4 py-2 font-medium">Lines</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Location")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Delays")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Time")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Lines")}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-800">
@@ -206,8 +243,10 @@ defmodule WawTramsWeb.DashboardLive do
                         </td>
                         <td class="px-4 py-2">
                           <div class="text-sm">
-                            <span class="text-gray-400">Near</span>
-                            <span class="text-white ml-1">{spot.nearest_stop || "Unknown"}</span>
+                            <span class="text-gray-400">{gettext("Near")}</span>
+                            <span class="text-white ml-1">
+                              {spot.nearest_stop || gettext("Unknown")}
+                            </span>
                           </div>
                           <a
                             href={"https://www.google.com/maps?q=#{spot.lat},#{spot.lon}"}
@@ -247,28 +286,30 @@ defmodule WawTramsWeb.DashboardLive do
           <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
               <div>
-                <h2 class="font-semibold text-lg">🚋 Most Impacted Lines</h2>
-                <p class="text-gray-500 text-sm mt-1">Ranked by total delay time (24h)</p>
+                <h2 class="font-semibold text-lg">🚋 {gettext("Most Impacted Lines")}</h2>
+                <p class="text-gray-500 text-sm mt-1">
+                  {gettext("Ranked by total delay time (24h)")}
+                </p>
               </div>
               <.link
                 navigate={~p"/line"}
                 class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
               >
-                ⏰ Hours
+                ⏰ {gettext("Hours")}
               </.link>
             </div>
             <div class="overflow-x-auto max-h-80 overflow-y-auto">
               <%= if @impacted_lines == [] do %>
-                <div class="p-8 text-center text-gray-500">No data yet</div>
+                <div class="p-8 text-center text-gray-500">{gettext("No data")}</div>
               <% else %>
                 <table class="w-full text-sm">
                   <thead class="bg-gray-800/50 sticky top-0">
                     <tr class="text-left text-gray-400">
                       <th class="px-4 py-2 font-medium">#</th>
-                      <th class="px-4 py-2 font-medium">Line</th>
-                      <th class="px-4 py-2 font-medium">Delays</th>
-                      <th class="px-4 py-2 font-medium">Blockages</th>
-                      <th class="px-4 py-2 font-medium">Total</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Line")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Delays")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Blockages")}</th>
+                      <th class="px-4 py-2 font-medium">{gettext("Total")}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-800">
@@ -312,14 +353,14 @@ defmodule WawTramsWeb.DashboardLive do
           <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden">
             <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
               <h2 class="font-medium">
-                🔴 Active Delays <span class="text-red-400 ml-1">({@active_count})</span>
+                🔴 {gettext("Active Delays")} <span class="text-red-400 ml-1">({@active_count})</span>
               </h2>
-              <span class="text-xs text-gray-500 animate-pulse">● LIVE</span>
+              <span class="text-xs text-gray-500 animate-pulse">● {gettext("LIVE")}</span>
             </div>
             <div class="divide-y divide-gray-800 max-h-64 overflow-y-auto">
               <%= if @active_delays == [] do %>
                 <div class="p-6 text-center text-gray-500 text-sm">
-                  ✨ No active delays
+                  ✨ {gettext("No active delays")}
                 </div>
               <% else %>
                 <%= for delay <- Enum.take(@active_delays, 10) do %>
@@ -353,12 +394,12 @@ defmodule WawTramsWeb.DashboardLive do
           <%!-- Recent Resolved --%>
           <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden">
             <div class="px-5 py-3 border-b border-gray-800">
-              <h2 class="font-medium">✅ Recently Resolved</h2>
+              <h2 class="font-medium">✅ {gettext("Recently Resolved")}</h2>
             </div>
             <div class="divide-y divide-gray-800 max-h-64 overflow-y-auto">
               <%= if @recent_resolved == [] do %>
                 <div class="p-6 text-center text-gray-500 text-sm">
-                  No resolved delays yet
+                  {gettext("No recent resolved delays")}
                 </div>
               <% else %>
                 <%= for delay <- Enum.take(@recent_resolved, 10) do %>
@@ -389,7 +430,7 @@ defmodule WawTramsWeb.DashboardLive do
 
         <%!-- Footer --%>
         <div class="mt-8 text-center text-gray-600 text-sm">
-          Data source: GTFS-RT via mkuran.pl • Polling every 10s
+          {gettext("Data source")}: GTFS-RT via mkuran.pl • {gettext("Polling every 10s")}
         </div>
       </div>
     </div>

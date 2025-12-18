@@ -1,0 +1,358 @@
+## Polish translations for waw_trams
+msgid ""
+msgstr ""
+"Language: pl\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: Dashboard
+msgid "Warsaw Tram Delays"
+msgstr "Opóźnienia Tramwajów Warszawskich"
+
+msgid "Real-time delay monitoring"
+msgstr "Śledzenie opóźnień na żywo"
+
+msgid "Updated"
+msgstr "Zaktualizowano"
+
+msgid "Map"
+msgstr "Mapa"
+
+msgid "Heatmap"
+msgstr "Heatmap"
+
+msgid "By Line"
+msgstr "Wg linii"
+
+msgid "Classification Legend"
+msgstr "Legenda klasyfikacji"
+
+msgid "delay"
+msgstr "opóźnienie"
+
+msgid "blockage"
+msgstr "blokada"
+
+msgid "30s – 3min stop"
+msgstr "postój 30s – 3min"
+
+msgid "> 3min stop"
+msgstr "postój > 3min"
+
+msgid "near traffic signal"
+msgstr "przy sygnalizacji"
+
+msgid "Active Now"
+msgstr "Aktywnych"
+
+msgid "Delays (24h)"
+msgstr "Opóźnienia (24h)"
+
+msgid "Blockages (24h)"
+msgstr "Blokady (24h)"
+
+msgid "Time Lost (24h)"
+msgstr "Czas strat (24h)"
+
+msgid "Most Impacted Lines"
+msgstr "Linie z największymi stratami"
+
+msgid "Line"
+msgstr "Linia"
+
+msgid "Delays"
+msgstr "Opóźnienia"
+
+msgid "Avg"
+msgstr "Śr."
+
+msgid "Total"
+msgstr "Razem"
+
+msgid "Intersection Hot Spots"
+msgstr "Problematyczne skrzyżowania"
+
+msgid "Location"
+msgstr "Lokalizacja"
+
+msgid "Count"
+msgstr "Liczba"
+
+msgid "Avg Duration"
+msgstr "Śr. czas"
+
+msgid "Active Delays"
+msgstr "Aktywne opóźnienia"
+
+msgid "No active delays"
+msgstr "Brak aktywnych opóźnień"
+
+msgid "Vehicle"
+msgstr "Pojazd"
+
+msgid "Duration"
+msgstr "Czas trwania"
+
+msgid "Recently Resolved"
+msgstr "Ruch wznowiony"
+
+msgid "No recent resolved delays"
+msgstr "Brak ostatnich wznowień"
+
+msgid "Resolved"
+msgstr "Wznowione"
+
+#: Line Analysis
+msgid "Line Analysis"
+msgstr "Analiza linii"
+
+msgid "Select a line"
+msgstr "Wybierz linię"
+
+msgid "Total Delays"
+msgstr "Liczba opóźnień"
+
+msgid "Total Time Lost"
+msgstr "Łączny czas strat"
+
+msgid "Avg Delay"
+msgstr "Śr. opóźnienie"
+
+msgid "Delays by Hour"
+msgstr "Opóźnienia wg godzin"
+
+msgid "Hour"
+msgstr "Godzina"
+
+msgid "Worst Intersections for Line"
+msgstr "Najgorsze skrzyżowania dla linii"
+
+#: Heatmap
+msgid "Delay Heatmap"
+msgstr "Heatmap opóźnień"
+
+msgid "Hour × Day of Week"
+msgstr "Godzina × Dzień tygodnia"
+
+msgid "Hour of Day"
+msgstr "Godzina"
+
+msgid "Day of Week"
+msgstr "Dzień tygodnia"
+
+msgid "Monday"
+msgstr "Poniedziałek"
+
+msgid "Tuesday"
+msgstr "Wtorek"
+
+msgid "Wednesday"
+msgstr "Środa"
+
+msgid "Thursday"
+msgstr "Czwartek"
+
+msgid "Friday"
+msgstr "Piątek"
+
+msgid "Saturday"
+msgstr "Sobota"
+
+msgid "Sunday"
+msgstr "Niedziela"
+
+#: Map
+msgid "Delay Map"
+msgstr "Mapa opóźnień"
+
+msgid "Hot spot locations"
+msgstr "Lokalizacje problemów"
+
+#: Common
+msgid "Dashboard"
+msgstr "Pulpit"
+
+msgid "Near"
+msgstr "Przy"
+
+msgid "View on Google Maps"
+msgstr "Zobacz w Google Maps"
+
+msgid "No data"
+msgstr "Brak danych"
+
+msgid "at stop"
+msgstr "na przystanku"
+
+msgid "Language"
+msgstr "Język"
+
+msgid "English"
+msgstr "Angielski"
+
+msgid "Polish"
+msgstr "Polski"
+
+msgid "Top 10 by delay count (24h)"
+msgstr "Top 10 wg liczby opóźnień (24h)"
+
+msgid "Ranked by total delay time (24h)"
+msgstr "Ranking wg całkowitego czasu opóźnień (24h)"
+
+msgid "Time"
+msgstr "Czas"
+
+msgid "Lines"
+msgstr "Linie"
+
+msgid "Blockages"
+msgstr "Blokady"
+
+msgid "Unknown"
+msgstr "Nieznane"
+
+msgid "Data source"
+msgstr "Źródło danych"
+
+msgid "Polling every 10s"
+msgstr "Odświeżanie co 10s"
+
+msgid "just now"
+msgstr "przed chwilą"
+
+msgid "ago"
+msgstr "temu"
+
+msgid "more"
+msgstr "więcej"
+
+#: Map page
+msgid "Hot Spot Map"
+msgstr "Mapa problemowych miejsc"
+
+msgid "Intersection delays (24h)"
+msgstr "Opóźnienia na skrzyżowaniach (24h)"
+
+msgid "Back to Dashboard"
+msgstr "Powrót do pulpitu"
+
+msgid "Marker size = delay count"
+msgstr "Rozmiar znacznika = liczba opóźnień"
+
+msgid "Top 3"
+msgstr "Top 3"
+
+#: Heatmap page
+msgid "When do delays happen most?"
+msgstr "Kiedy jest najgorzej?"
+
+msgid "Last 24 hours"
+msgstr "Ostatnie 24 godziny"
+
+msgid "Last 7 days"
+msgstr "Ostatnie 7 dni"
+
+msgid "Last 30 days"
+msgstr "Ostatnie 30 dni"
+
+msgid "Peak Hour Max"
+msgstr "Maksimum godzinowe"
+
+msgid "Worst Time Slot"
+msgstr "Najgorsza godzina"
+
+msgid "Fewer delays"
+msgstr "Mniej opóźnień"
+
+msgid "More delays"
+msgstr "Więcej opóźnień"
+
+msgid "Morning Rush"
+msgstr "Szczyt poranny"
+
+msgid "Evening Rush"
+msgstr "Szczyt popołudniowy"
+
+msgid "View Map"
+msgstr "Zobacz mapę"
+
+#: Day names
+msgid "Mon"
+msgstr "Pon"
+
+msgid "Tue"
+msgstr "Wt"
+
+msgid "Wed"
+msgstr "Śr"
+
+msgid "Thu"
+msgstr "Czw"
+
+msgid "Fri"
+msgstr "Pt"
+
+msgid "Sat"
+msgstr "Sob"
+
+msgid "Sun"
+msgstr "Ndz"
+
+#: Line Analysis page
+msgid "Find the worst times to travel on a specific tram line"
+msgstr "Sprawdź, kiedy najlepiej unikać danej linii"
+
+msgid "Select line:"
+msgstr "Wybierz linię:"
+
+msgid "Choose a line..."
+msgstr "Wybierz linię..."
+
+msgid "Summary"
+msgstr "Podsumowanie"
+
+msgid "Sorted by time"
+msgstr "Sortowanie wg czasu"
+
+msgid "No delay data recorded for Line"
+msgstr "Brak danych o opóźnieniach dla linii"
+
+msgid "yet"
+msgstr "jeszcze"
+
+msgid "Check back after running for a few days."
+msgstr "Wróć za kilka dni."
+
+msgid "Total Time"
+msgstr "Całkowity czas"
+
+msgid "At Intersection"
+msgstr "Na skrzyżowaniu"
+
+msgid "WORST"
+msgstr "NAJGORZEJ"
+
+msgid "Delay Distribution"
+msgstr "Rozkład opóźnień"
+
+msgid "Where this line gets delayed the most (last 7 days)"
+msgstr "Gdzie ta linia stoi najdłużej (ostatnie 7 dni)"
+
+msgid "Events"
+msgstr "Zdarzenia"
+
+msgid "Select a tram line to see delay analysis"
+msgstr "Wybierz linię, aby zobaczyć analizę"
+
+#: Additional strings
+msgid "Hours"
+msgstr "Godziny"
+
+msgid "LIVE"
+msgstr "NA ŻYWO"
+
+msgid "%{count} delays between 6:00-10:00. Peak at %{peak}."
+msgstr "%{count} opóźnień między 6:00-10:00. Szczyt o %{peak}."
+
+msgid "%{count} delays between 15:00-20:00. Peak at %{peak}."
+msgstr "%{count} opóźnień między 15:00-20:00. Szczyt o %{peak}."
+

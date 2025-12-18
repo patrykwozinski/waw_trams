@@ -59,22 +59,22 @@ defmodule WawTramsWeb.LineLive do
         <%!-- Header --%>
         <div class="mb-8">
           <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
-            🚋 Line Analysis
+            🚋 {gettext("Line Analysis")}
           </h1>
           <p class="text-gray-400 mt-1">
-            Find the worst times to travel on a specific tram line
+            {gettext("Find the worst times to travel on a specific tram line")}
           </p>
         </div>
 
         <%!-- Line Selector --%>
         <div class="mb-8">
           <form phx-change="select_line" class="flex items-center gap-4">
-            <label class="text-gray-400">Select line:</label>
+            <label class="text-gray-400">{gettext("Select line:")}</label>
             <select
               name="line"
               class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-amber-300 font-mono text-lg focus:ring-amber-500 focus:border-amber-500"
             >
-              <option value="">Choose a line...</option>
+              <option value="">{gettext("Choose a line...")}</option>
               <%= for l <- @available_lines do %>
                 <option value={l} selected={@line == l}>{l}</option>
               <% end %>
@@ -90,8 +90,8 @@ defmodule WawTramsWeb.LineLive do
                 {@line}
               </span>
               <div>
-                <h2 class="text-xl font-semibold">Line {@line} Summary</h2>
-                <p class="text-gray-500 text-sm">Last 7 days</p>
+                <h2 class="text-xl font-semibold">{gettext("Line")} {@line} {gettext("Summary")}</h2>
+                <p class="text-gray-500 text-sm">{gettext("Last 7 days")}</p>
               </div>
             </div>
 
@@ -99,21 +99,21 @@ defmodule WawTramsWeb.LineLive do
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gray-800/50 rounded-lg p-4">
                   <div class="text-2xl font-bold text-orange-400">{@summary.total_delays}</div>
-                  <div class="text-gray-500 text-sm">Total Delays</div>
+                  <div class="text-gray-500 text-sm">{gettext("Total Delays")}</div>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4">
                   <div class="text-2xl font-bold text-red-400">{@summary.blockage_count || 0}</div>
-                  <div class="text-gray-500 text-sm">Blockages</div>
+                  <div class="text-gray-500 text-sm">{gettext("Blockages")}</div>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4">
                   <div class="text-2xl font-bold text-amber-400">
                     {format_duration(@summary.total_seconds)}
                   </div>
-                  <div class="text-gray-500 text-sm">Total Time Lost</div>
+                  <div class="text-gray-500 text-sm">{gettext("Total Time Lost")}</div>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4">
                   <div class="text-2xl font-bold text-gray-300">{@summary.avg_seconds}s</div>
-                  <div class="text-gray-500 text-sm">Avg Delay</div>
+                  <div class="text-gray-500 text-sm">{gettext("Avg Delay")}</div>
                 </div>
               </div>
             <% end %>
@@ -122,26 +122,26 @@ defmodule WawTramsWeb.LineLive do
           <%!-- Delays by Hour Table --%>
           <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
             <div class="px-5 py-4 border-b border-gray-800">
-              <h2 class="font-semibold text-lg">⏰ Delays by Hour</h2>
-              <p class="text-gray-500 text-sm mt-1">Sorted by total delay time (worst first)</p>
+              <h2 class="font-semibold text-lg">⏰ {gettext("Delays by Hour")}</h2>
+              <p class="text-gray-500 text-sm mt-1">{gettext("Sorted by time")}</p>
             </div>
 
             <%= if @hours_data == [] do %>
               <div class="p-8 text-center text-gray-500">
-                No delay data recorded for Line {@line} yet. <br />
-                <span class="text-sm">Check back after running for a few days.</span>
+                {gettext("No delay data recorded for Line")} {@line} {gettext("yet")}. <br />
+                <span class="text-sm">{gettext("Check back after running for a few days.")}</span>
               </div>
             <% else %>
               <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="bg-gray-800/50">
                     <tr class="text-left text-gray-400">
-                      <th class="px-5 py-3 font-medium">Hour</th>
-                      <th class="px-5 py-3 font-medium">Delays</th>
-                      <th class="px-5 py-3 font-medium">Blockages</th>
-                      <th class="px-5 py-3 font-medium">Total Time</th>
-                      <th class="px-5 py-3 font-medium">Avg</th>
-                      <th class="px-5 py-3 font-medium">At Intersection</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Hour")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Delays")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Blockages")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Total Time")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Avg")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("At Intersection")}</th>
                       <th class="px-5 py-3 font-medium"></th>
                     </tr>
                   </thead>
@@ -178,7 +178,7 @@ defmodule WawTramsWeb.LineLive do
                         <td class="px-5 py-3">
                           <%= if hour_data.hour == worst_hour do %>
                             <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-medium">
-                              WORST
+                              {gettext("WORST")}
                             </span>
                           <% end %>
                         </td>
@@ -193,7 +193,7 @@ defmodule WawTramsWeb.LineLive do
           <%!-- Visual Bar Chart --%>
           <%= if @hours_data != [] do %>
             <div class="mt-8 bg-gray-900 rounded-xl border border-gray-800 p-6">
-              <h3 class="font-semibold mb-4">📊 Delay Distribution</h3>
+              <h3 class="font-semibold mb-4">📊 {gettext("Delay Distribution")}</h3>
               <div class="space-y-2">
                 <% max_seconds = Enum.max_by(@hours_data, & &1.total_seconds).total_seconds %>
                 <% sorted_by_hour = Enum.sort_by(@hours_data, & &1.hour) %>
@@ -227,9 +227,11 @@ defmodule WawTramsWeb.LineLive do
           <%= if @hot_spots != [] do %>
             <div class="mt-8 bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
               <div class="px-5 py-4 border-b border-gray-800">
-                <h2 class="font-semibold text-lg">🔥 Worst Intersections for Line {@line}</h2>
+                <h2 class="font-semibold text-lg">
+                  🔥 {gettext("Worst Intersections for Line")} {@line}
+                </h2>
                 <p class="text-gray-500 text-sm mt-1">
-                  Where this line gets delayed the most (last 7 days)
+                  {gettext("Where this line gets delayed the most (last 7 days)")}
                 </p>
               </div>
               <div class="overflow-x-auto">
@@ -237,11 +239,11 @@ defmodule WawTramsWeb.LineLive do
                   <thead class="bg-gray-800/50">
                     <tr class="text-left text-gray-400">
                       <th class="px-5 py-3 font-medium">#</th>
-                      <th class="px-5 py-3 font-medium">Location</th>
-                      <th class="px-5 py-3 font-medium">Events</th>
-                      <th class="px-5 py-3 font-medium">Delays</th>
-                      <th class="px-5 py-3 font-medium">Blockages</th>
-                      <th class="px-5 py-3 font-medium">Total Time</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Location")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Events")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Delays")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Blockages")}</th>
+                      <th class="px-5 py-3 font-medium">{gettext("Total Time")}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-800">
@@ -257,8 +259,10 @@ defmodule WawTramsWeb.LineLive do
                         </td>
                         <td class="px-5 py-3">
                           <div class="text-sm">
-                            <span class="text-gray-400">Near</span>
-                            <span class="text-white ml-1">{spot.nearest_stop || "Unknown"}</span>
+                            <span class="text-gray-400">{gettext("Near")}</span>
+                            <span class="text-white ml-1">
+                              {spot.nearest_stop || gettext("Unknown")}
+                            </span>
                           </div>
                           <a
                             href={"https://www.google.com/maps?q=#{spot.lat},#{spot.lon}"}
@@ -285,14 +289,14 @@ defmodule WawTramsWeb.LineLive do
           <%!-- No line selected --%>
           <div class="bg-gray-900 rounded-xl border border-gray-800 p-12 text-center">
             <div class="text-6xl mb-4">🚋</div>
-            <p class="text-gray-400">Select a tram line to see delay analysis</p>
+            <p class="text-gray-400">{gettext("Select a tram line to see delay analysis")}</p>
           </div>
         <% end %>
 
         <%!-- Back link --%>
         <div class="mt-8 text-center">
           <.link navigate={~p"/dashboard"} class="text-gray-500 hover:text-white text-sm">
-            ← Back to Dashboard
+            ← {gettext("Back to Dashboard")}
           </.link>
         </div>
       </div>

@@ -4,15 +4,17 @@ defmodule WawTramsWeb.HeatmapLive do
   alias WawTrams.QueryRouter
   alias WawTrams.WarsawTime
 
-  @day_names %{
-    1 => "Mon",
-    2 => "Tue",
-    3 => "Wed",
-    4 => "Thu",
-    5 => "Fri",
-    6 => "Sat",
-    7 => "Sun"
-  }
+  def day_names do
+    %{
+      1 => gettext("Mon"),
+      2 => gettext("Tue"),
+      3 => gettext("Wed"),
+      4 => gettext("Thu"),
+      5 => gettext("Fri"),
+      6 => gettext("Sat"),
+      7 => gettext("Sun")
+    }
+  end
 
   def mount(_params, _session, socket) do
     # Default to last 7 days - will use HourlyPattern (aggregated)
@@ -22,7 +24,7 @@ defmodule WawTramsWeb.HeatmapLive do
      socket
      |> assign(:heatmap, heatmap)
      |> assign(:period, "7d")
-     |> assign(:day_names, @day_names)}
+     |> assign(:day_names, day_names())}
   end
 
   def handle_event("change_period", %{"period" => period}, socket) do
@@ -48,9 +50,9 @@ defmodule WawTramsWeb.HeatmapLive do
         <div class="flex items-center justify-between mb-8">
           <div>
             <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-              📊 Delay Heatmap
+              📊 {gettext("Delay Heatmap")}
             </h1>
-            <p class="text-slate-400 mt-1">When do delays happen most?</p>
+            <p class="text-slate-400 mt-1">{gettext("When do delays happen most?")}</p>
           </div>
 
           <div class="flex items-center gap-4">
@@ -60,14 +62,14 @@ defmodule WawTramsWeb.HeatmapLive do
                 name="period"
                 class="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500"
               >
-                <option value="24h" selected={@period == "24h"}>Last 24 hours</option>
-                <option value="7d" selected={@period == "7d"}>Last 7 days</option>
-                <option value="30d" selected={@period == "30d"}>Last 30 days</option>
+                <option value="24h" selected={@period == "24h"}>{gettext("Last 24 hours")}</option>
+                <option value="7d" selected={@period == "7d"}>{gettext("Last 7 days")}</option>
+                <option value="30d" selected={@period == "30d"}>{gettext("Last 30 days")}</option>
               </select>
             </form>
 
             <.link navigate={~p"/dashboard"} class="text-slate-400 hover:text-white transition-colors">
-              ← Back to Dashboard
+              ← {gettext("Back to Dashboard")}
             </.link>
           </div>
         </div>
@@ -76,23 +78,23 @@ defmodule WawTramsWeb.HeatmapLive do
         <div class="grid grid-cols-3 gap-6 mb-8">
           <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
             <div class="text-3xl font-bold text-amber-400">{@heatmap.total_delays}</div>
-            <div class="text-slate-400 text-sm">Total Delays</div>
+            <div class="text-slate-400 text-sm">{gettext("Total Delays")}</div>
           </div>
           <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
             <div class="text-3xl font-bold text-orange-400">{@heatmap.max_count}</div>
-            <div class="text-slate-400 text-sm">Peak Hour Max</div>
+            <div class="text-slate-400 text-sm">{gettext("Peak Hour Max")}</div>
           </div>
           <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
             <div class="text-3xl font-bold text-red-400">
               {find_worst_slot(@heatmap.grid, @day_names)}
             </div>
-            <div class="text-slate-400 text-sm">Worst Time Slot</div>
+            <div class="text-slate-400 text-sm">{gettext("Worst Time Slot")}</div>
           </div>
         </div>
 
         <%!-- Heatmap Grid --%>
         <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700 overflow-x-auto">
-          <h2 class="text-xl font-semibold mb-4 text-white">Hour × Day of Week</h2>
+          <h2 class="text-xl font-semibold mb-4 text-white">{gettext("Hour × Day of Week")}</h2>
 
           <div class="inline-block">
             <%!-- Column headers (days) --%>
@@ -136,7 +138,7 @@ defmodule WawTramsWeb.HeatmapLive do
 
           <%!-- Legend --%>
           <div class="mt-6 flex items-center gap-4 text-sm text-slate-400">
-            <span>Fewer delays</span>
+            <span>{gettext("Fewer delays")}</span>
             <div class="flex gap-1">
               <div class="w-8 h-4 rounded" style="background: rgb(30, 41, 59);"></div>
               <div class="w-8 h-4 rounded" style="background: rgb(120, 90, 30);"></div>
@@ -144,20 +146,20 @@ defmodule WawTramsWeb.HeatmapLive do
               <div class="w-8 h-4 rounded" style="background: rgb(220, 80, 20);"></div>
               <div class="w-8 h-4 rounded" style="background: rgb(200, 30, 30);"></div>
             </div>
-            <span>More delays</span>
+            <span>{gettext("More delays")}</span>
           </div>
         </div>
 
         <%!-- Insights --%>
         <div class="mt-8 grid grid-cols-2 gap-6">
           <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-            <h3 class="text-lg font-semibold mb-4 text-white">🌅 Morning Rush</h3>
+            <h3 class="text-lg font-semibold mb-4 text-white">🌅 {gettext("Morning Rush")}</h3>
             <p class="text-slate-400 text-sm">
               {morning_insight(@heatmap.grid)}
             </p>
           </div>
           <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-            <h3 class="text-lg font-semibold mb-4 text-white">🌆 Evening Rush</h3>
+            <h3 class="text-lg font-semibold mb-4 text-white">🌆 {gettext("Evening Rush")}</h3>
             <p class="text-slate-400 text-sm">
               {evening_insight(@heatmap.grid)}
             </p>
@@ -170,13 +172,13 @@ defmodule WawTramsWeb.HeatmapLive do
             navigate={~p"/map"}
             class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
           >
-            🗺️ View Map
+            🗺️ {gettext("View Map")}
           </.link>
           <.link
             navigate={~p"/line"}
             class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
           >
-            🚋 Line Analysis
+            🚋 {gettext("Line Analysis")}
           </.link>
         </div>
       </div>
@@ -224,7 +226,7 @@ defmodule WawTramsWeb.HeatmapLive do
     if worst.count > 0 do
       "#{day_names[worst.day]} #{format_hour(worst.hour)}"
     else
-      "No data"
+      gettext("No data")
     end
   end
 
@@ -241,7 +243,10 @@ defmodule WawTramsWeb.HeatmapLive do
       |> Enum.filter(fn row -> row.hour >= 6 and row.hour <= 9 end)
       |> Enum.max_by(fn row -> Enum.sum(Enum.map(row.cells, & &1.count)) end, fn -> %{hour: 0} end)
 
-    "#{morning_delays} delays between 6:00-10:00. Peak at #{format_hour(peak_hour.hour)}."
+    gettext("%{count} delays between 6:00-10:00. Peak at %{peak}.",
+      count: morning_delays,
+      peak: format_hour(peak_hour.hour)
+    )
   end
 
   defp evening_insight(grid) do
@@ -257,6 +262,9 @@ defmodule WawTramsWeb.HeatmapLive do
       |> Enum.filter(fn row -> row.hour >= 15 and row.hour <= 19 end)
       |> Enum.max_by(fn row -> Enum.sum(Enum.map(row.cells, & &1.count)) end, fn -> %{hour: 0} end)
 
-    "#{evening_delays} delays between 15:00-20:00. Peak at #{format_hour(peak_hour.hour)}."
+    gettext("%{count} delays between 15:00-20:00. Peak at %{peak}.",
+      count: evening_delays,
+      peak: format_hour(peak_hour.hour)
+    )
   end
 end

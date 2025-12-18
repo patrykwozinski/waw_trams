@@ -172,7 +172,7 @@ defmodule WawTrams.DelayEvent do
       SELECT
         osm_id,
         geom,
-        ST_ClusterDBSCAN(geom::geometry, eps := 0.0003, minpoints := 1) OVER () as cluster_id
+        ST_ClusterDBSCAN(geom::geometry, eps := 0.0005, minpoints := 1) OVER () as cluster_id
       FROM intersections
     ),
     cluster_centroids AS (
@@ -259,7 +259,7 @@ defmodule WawTrams.DelayEvent do
       SELECT
         osm_id,
         geom,
-        ST_ClusterDBSCAN(geom::geometry, eps := 0.0003, minpoints := 1) OVER () as cluster_id
+        ST_ClusterDBSCAN(geom::geometry, eps := 0.0005, minpoints := 1) OVER () as cluster_id
       FROM intersections
     ),
     cluster_centroids AS (
@@ -324,7 +324,7 @@ defmodule WawTrams.DelayEvent do
     WITH clustered_intersections AS (
       SELECT
         geom,
-        ST_ClusterDBSCAN(geom::geometry, eps := 0.0003, minpoints := 1) OVER () as cluster_id
+        ST_ClusterDBSCAN(geom::geometry, eps := 0.0005, minpoints := 1) OVER () as cluster_id
       FROM intersections
     ),
     cluster_centroids AS (
@@ -477,14 +477,14 @@ defmodule WawTrams.DelayEvent do
   @doc """
   Returns top problematic intersections for a specific line.
   Shows which intersections cause the most delays for this line specifically.
-  Clusters nearby delay points (within ~30m) to group them as one location.
+  Clusters nearby delay points (within ~55m) to group them as one location.
   Includes both 'delay' and 'blockage' events near intersections.
   """
   def line_hot_spots(line, opts \\ []) do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
     limit = Keyword.get(opts, :limit, 5)
 
-    # Cluster delay points within ~30m (0.0003 degrees) before aggregating
+    # Cluster delay points within ~55m (0.0005 degrees) before aggregating
     # Include both delays and blockages near intersections
     query = """
     WITH line_delays AS (
@@ -502,7 +502,7 @@ defmodule WawTrams.DelayEvent do
         geom,
         duration_seconds,
         classification,
-        ST_ClusterDBSCAN(geom::geometry, eps := 0.0003, minpoints := 1) OVER () as cluster_id
+        ST_ClusterDBSCAN(geom::geometry, eps := 0.0005, minpoints := 1) OVER () as cluster_id
       FROM line_delays
     ),
     cluster_stats AS (
@@ -533,7 +533,7 @@ defmodule WawTrams.DelayEvent do
         LIMIT 1
       ) as nearest_stop
     FROM cluster_stats cs
-    ORDER BY cs.event_count DESC, cs.total_seconds DESC
+    ORDER BY cs.total_seconds DESC, cs.event_count DESC
     LIMIT $3
     """
 

@@ -1,0 +1,227 @@
+## This file is a PO Template file.
+## `msgid`s here are often extracted from source code.
+
+msgid ""
+msgstr ""
+
+#: Dashboard
+msgid "Warsaw Tram Delays"
+msgstr ""
+
+msgid "Real-time delay monitoring"
+msgstr ""
+
+msgid "Updated"
+msgstr ""
+
+msgid "Map"
+msgstr ""
+
+msgid "Heatmap"
+msgstr ""
+
+msgid "By Line"
+msgstr ""
+
+msgid "Classification Legend"
+msgstr ""
+
+msgid "delay"
+msgstr ""
+
+msgid "blockage"
+msgstr ""
+
+msgid "30s – 3min stop"
+msgstr ""
+
+msgid "> 3min stop"
+msgstr ""
+
+msgid "near traffic signal"
+msgstr ""
+
+msgid "Active Now"
+msgstr ""
+
+msgid "Delays (24h)"
+msgstr ""
+
+msgid "Blockages (24h)"
+msgstr ""
+
+msgid "Time Lost (24h)"
+msgstr ""
+
+msgid "Most Impacted Lines"
+msgstr ""
+
+msgid "Line"
+msgstr ""
+
+msgid "Delays"
+msgstr ""
+
+msgid "Avg"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Intersection Hot Spots"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Count"
+msgstr ""
+
+msgid "Avg Duration"
+msgstr ""
+
+msgid "Active Delays"
+msgstr ""
+
+msgid "No active delays"
+msgstr ""
+
+msgid "Vehicle"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Recently Resolved"
+msgstr ""
+
+msgid "No recent resolved delays"
+msgstr ""
+
+msgid "Resolved"
+msgstr ""
+
+#: Line Analysis
+msgid "Line Analysis"
+msgstr ""
+
+msgid "Select a line"
+msgstr ""
+
+msgid "Total Delays"
+msgstr ""
+
+msgid "Total Time Lost"
+msgstr ""
+
+msgid "Avg Delay"
+msgstr ""
+
+msgid "Delays by Hour"
+msgstr ""
+
+msgid "Hour"
+msgstr ""
+
+msgid "Worst Intersections for Line"
+msgstr ""
+
+#: Heatmap
+msgid "Delay Heatmap"
+msgstr ""
+
+msgid "Hour × Day of Week"
+msgstr ""
+
+msgid "Hour of Day"
+msgstr ""
+
+msgid "Day of Week"
+msgstr ""
+
+msgid "Monday"
+msgstr ""
+
+msgid "Tuesday"
+msgstr ""
+
+msgid "Wednesday"
+msgstr ""
+
+msgid "Thursday"
+msgstr ""
+
+msgid "Friday"
+msgstr ""
+
+msgid "Saturday"
+msgstr ""
+
+msgid "Sunday"
+msgstr ""
+
+#: Map
+msgid "Delay Map"
+msgstr ""
+
+msgid "Hot spot locations"
+msgstr ""
+
+#: Common
+msgid "Dashboard"
+msgstr ""
+
+msgid "Near"
+msgstr ""
+
+msgid "View on Google Maps"
+msgstr ""
+
+msgid "No data"
+msgstr ""
+
+msgid "at stop"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Top 10 by delay count (24h)"
+msgstr ""
+
+msgid "Ranked by total delay time (24h)"
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Lines"
+msgstr ""
+
+msgid "Blockages"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Data source"
+msgstr ""
+
+msgid "Polling every 10s"
+msgstr ""
+
+msgid "just now"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "more"
+msgstr ""
+

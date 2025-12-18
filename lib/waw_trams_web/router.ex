@@ -8,6 +8,7 @@ defmodule WawTramsWeb.Router do
     plug :put_root_layout, html: {WawTramsWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug WawTramsWeb.Plugs.Locale
   end
 
   pipeline :api do
@@ -18,11 +19,14 @@ defmodule WawTramsWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-    live "/dashboard", DashboardLive
-    live "/map", MapLive
-    live "/heatmap", HeatmapLive
-    live "/line", LineLive
-    live "/line/:line", LineLive
+
+    live_session :default, on_mount: WawTramsWeb.LocaleHook do
+      live "/dashboard", DashboardLive
+      live "/map", MapLive
+      live "/heatmap", HeatmapLive
+      live "/line", LineLive
+      live "/line/:line", LineLive
+    end
   end
 
   # Other scopes may use custom stacks.

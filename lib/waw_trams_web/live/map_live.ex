@@ -29,11 +29,11 @@ defmodule WawTramsWeb.MapLive do
       <%!-- Header --%>
       <div class="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
         <div>
-          <h1 class="text-xl font-bold text-amber-400">🗺️ Hot Spot Map</h1>
-          <p class="text-gray-500 text-sm">Intersection delays (24h)</p>
+          <h1 class="text-xl font-bold text-amber-400">🗺️ {gettext("Hot Spot Map")}</h1>
+          <p class="text-gray-500 text-sm">{gettext("Intersection delays (24h)")}</p>
         </div>
         <.link navigate={~p"/dashboard"} class="text-gray-400 hover:text-white text-sm">
-          ← Back to Dashboard
+          ← {gettext("Back to Dashboard")}
         </.link>
       </div>
 
@@ -48,11 +48,11 @@ defmodule WawTramsWeb.MapLive do
 
       <%!-- Legend --%>
       <div class="px-6 py-3 bg-gray-900 border-t border-gray-800 flex items-center gap-6 text-sm">
-        <span class="text-gray-500">Marker size = delay count</span>
+        <span class="text-gray-500">{gettext("Marker size = delay count")}</span>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-red-500"></span>
-            <span class="text-gray-400">Top 3</span>
+            <span class="text-gray-400">{gettext("Top 3")}</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-orange-500"></span>

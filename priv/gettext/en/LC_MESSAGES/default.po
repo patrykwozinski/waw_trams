@@ -1,0 +1,357 @@
+## English translations for waw_trams (default)
+msgid ""
+msgstr ""
+"Language: en\n"
+
+#: Dashboard
+msgid "Warsaw Tram Delays"
+msgstr "Warsaw Tram Delays"
+
+msgid "Real-time delay monitoring"
+msgstr "Real-time delay monitoring"
+
+msgid "Updated"
+msgstr "Updated"
+
+msgid "Map"
+msgstr "Map"
+
+msgid "Heatmap"
+msgstr "Heatmap"
+
+msgid "By Line"
+msgstr "By Line"
+
+msgid "Classification Legend"
+msgstr "Classification Legend"
+
+msgid "delay"
+msgstr "delay"
+
+msgid "blockage"
+msgstr "blockage"
+
+msgid "30s – 3min stop"
+msgstr "30s – 3min stop"
+
+msgid "> 3min stop"
+msgstr "> 3min stop"
+
+msgid "near traffic signal"
+msgstr "near traffic signal"
+
+msgid "Active Now"
+msgstr "Active Now"
+
+msgid "Delays (24h)"
+msgstr "Delays (24h)"
+
+msgid "Blockages (24h)"
+msgstr "Blockages (24h)"
+
+msgid "Time Lost (24h)"
+msgstr "Time Lost (24h)"
+
+msgid "Most Impacted Lines"
+msgstr "Most Impacted Lines"
+
+msgid "Line"
+msgstr "Line"
+
+msgid "Delays"
+msgstr "Delays"
+
+msgid "Avg"
+msgstr "Avg"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Intersection Hot Spots"
+msgstr "Intersection Hot Spots"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "Count"
+msgstr "Count"
+
+msgid "Avg Duration"
+msgstr "Avg Duration"
+
+msgid "Active Delays"
+msgstr "Active Delays"
+
+msgid "No active delays"
+msgstr "No active delays"
+
+msgid "Vehicle"
+msgstr "Vehicle"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Recently Resolved"
+msgstr "Recently Resolved"
+
+msgid "No recent resolved delays"
+msgstr "No recent resolved delays"
+
+msgid "Resolved"
+msgstr "Resolved"
+
+#: Line Analysis
+msgid "Line Analysis"
+msgstr "Line Analysis"
+
+msgid "Select a line"
+msgstr "Select a line"
+
+msgid "Total Delays"
+msgstr "Total Delays"
+
+msgid "Total Time Lost"
+msgstr "Total Time Lost"
+
+msgid "Avg Delay"
+msgstr "Avg Delay"
+
+msgid "Delays by Hour"
+msgstr "Delays by Hour"
+
+msgid "Hour"
+msgstr "Hour"
+
+msgid "Worst Intersections for Line"
+msgstr "Worst Intersections for Line"
+
+#: Heatmap
+msgid "Delay Heatmap"
+msgstr "Delay Heatmap"
+
+msgid "Hour × Day of Week"
+msgstr "Hour × Day of Week"
+
+msgid "Hour of Day"
+msgstr "Hour of Day"
+
+msgid "Day of Week"
+msgstr "Day of Week"
+
+msgid "Monday"
+msgstr "Monday"
+
+msgid "Tuesday"
+msgstr "Tuesday"
+
+msgid "Wednesday"
+msgstr "Wednesday"
+
+msgid "Thursday"
+msgstr "Thursday"
+
+msgid "Friday"
+msgstr "Friday"
+
+msgid "Saturday"
+msgstr "Saturday"
+
+msgid "Sunday"
+msgstr "Sunday"
+
+#: Map
+msgid "Delay Map"
+msgstr "Delay Map"
+
+msgid "Hot spot locations"
+msgstr "Hot spot locations"
+
+#: Common
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Near"
+msgstr "Near"
+
+msgid "View on Google Maps"
+msgstr "View on Google Maps"
+
+msgid "No data"
+msgstr "No data"
+
+msgid "at stop"
+msgstr "at stop"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "English"
+msgstr "English"
+
+msgid "Polish"
+msgstr "Polish"
+
+msgid "Top 10 by delay count (24h)"
+msgstr "Top 10 by delay count (24h)"
+
+msgid "Ranked by total delay time (24h)"
+msgstr "Ranked by total delay time (24h)"
+
+msgid "Time"
+msgstr "Time"
+
+msgid "Lines"
+msgstr "Lines"
+
+msgid "Blockages"
+msgstr "Blockages"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+msgid "Data source"
+msgstr "Data source"
+
+msgid "Polling every 10s"
+msgstr "Polling every 10s"
+
+msgid "just now"
+msgstr "just now"
+
+msgid "ago"
+msgstr "ago"
+
+msgid "more"
+msgstr "more"
+
+#: Map page
+msgid "Hot Spot Map"
+msgstr "Hot Spot Map"
+
+msgid "Intersection delays (24h)"
+msgstr "Intersection delays (24h)"
+
+msgid "Back to Dashboard"
+msgstr "Back to Dashboard"
+
+msgid "Marker size = delay count"
+msgstr "Marker size = delay count"
+
+msgid "Top 3"
+msgstr "Top 3"
+
+#: Heatmap page
+msgid "When do delays happen most?"
+msgstr "When do delays happen most?"
+
+msgid "Last 24 hours"
+msgstr "Last 24 hours"
+
+msgid "Last 7 days"
+msgstr "Last 7 days"
+
+msgid "Last 30 days"
+msgstr "Last 30 days"
+
+msgid "Peak Hour Max"
+msgstr "Peak Hour Max"
+
+msgid "Worst Time Slot"
+msgstr "Worst Time Slot"
+
+msgid "Fewer delays"
+msgstr "Fewer delays"
+
+msgid "More delays"
+msgstr "More delays"
+
+msgid "Morning Rush"
+msgstr "Morning Rush"
+
+msgid "Evening Rush"
+msgstr "Evening Rush"
+
+msgid "View Map"
+msgstr "View Map"
+
+#: Day names
+msgid "Mon"
+msgstr "Mon"
+
+msgid "Tue"
+msgstr "Tue"
+
+msgid "Wed"
+msgstr "Wed"
+
+msgid "Thu"
+msgstr "Thu"
+
+msgid "Fri"
+msgstr "Fri"
+
+msgid "Sat"
+msgstr "Sat"
+
+msgid "Sun"
+msgstr "Sun"
+
+#: Line Analysis page
+msgid "Find the worst times to travel on a specific tram line"
+msgstr "Find the worst times to travel on a specific tram line"
+
+msgid "Select line:"
+msgstr "Select line:"
+
+msgid "Choose a line..."
+msgstr "Choose a line..."
+
+msgid "Summary"
+msgstr "Summary"
+
+msgid "Sorted by time"
+msgstr "Sorted by time"
+
+msgid "No delay data recorded for Line"
+msgstr "No delay data recorded for Line"
+
+msgid "yet"
+msgstr "yet"
+
+msgid "Check back after running for a few days."
+msgstr "Check back after running for a few days."
+
+msgid "Total Time"
+msgstr "Total Time"
+
+msgid "At Intersection"
+msgstr "At Intersection"
+
+msgid "WORST"
+msgstr "WORST"
+
+msgid "Delay Distribution"
+msgstr "Delay Distribution"
+
+msgid "Where this line gets delayed the most (last 7 days)"
+msgstr "Where this line gets delayed the most (last 7 days)"
+
+msgid "Events"
+msgstr "Events"
+
+msgid "Select a tram line to see delay analysis"
+msgstr "Select a tram line to see delay analysis"
+
+#: Additional strings
+msgid "Hours"
+msgstr "Hours"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "%{count} delays between 6:00-10:00. Peak at %{peak}."
+msgstr "%{count} delays between 6:00-10:00. Peak at %{peak}."
+
+msgid "%{count} delays between 15:00-20:00. Peak at %{peak}."
+msgstr "%{count} delays between 15:00-20:00. Peak at %{peak}."
+
