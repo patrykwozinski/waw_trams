@@ -57,7 +57,30 @@ mix waw_trams.import_stops
 
 ---
 
-## 2. Intersections (OpenStreetMap)
+## 2. Line Terminals (GTFS)
+
+Line-specific terminal stops extracted from GTFS trip data. Used to skip delay detection at terminals (where trams normally wait between trips).
+
+> **Why line-specific?** A stop like Pl. Narutowicza is a terminal for line 25 but a regular stop for line 15. Using GTFS trip data gives precise terminal mappings.
+
+### Import
+
+```bash
+# Downloads GTFS and extracts first/last stops per trip
+mix waw_trams.import_line_terminals
+
+# Preview only (no database changes)
+mix waw_trams.import_line_terminals --dry-run
+
+# Use existing GTFS directory
+mix waw_trams.import_line_terminals --dir /tmp/waw_trams_gtfs
+```
+
+This yields ~172 unique (line, stop_id) pairs from the GTFS data.
+
+---
+
+## 3. Intersections (OpenStreetMap)
 
 Tram-road intersection points from OpenStreetMap via Overpass API.
 

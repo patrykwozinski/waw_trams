@@ -180,4 +180,64 @@ defmodule WawTrams.DelayEventTest do
       assert blockage_stat.count == 1
     end
   end
+
+  describe "resolve_orphaned/0" do
+    test "resolves all unresolved delay events" do
+      # Create several unresolved delays
+      started_at = DateTime.add(DateTime.utc_now(), -300, :second)
+
+      {:ok, _} =
+        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/1/1", started_at: started_at}))
+
+      {:ok, _} =
+        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/2/2", started_at: started_at}))
+
+      {:ok, _} =
+        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", started_at: started_at}))
+
+      # Verify they're unresolved
+      assert length(DelayEvent.active()) == 3
+
+      # Resolve orphaned
+      {:ok, count} = DelayEvent.resolve_orphaned()
+
+      assert count == 3
+      assert DelayEvent.active() == []
+    end
+
+    test "sets correct duration for orphaned events" do
+      started_at = DateTime.add(DateTime.utc_now(), -120, :second)
+
+      {:ok, _} =
+        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/1/1", started_at: started_at}))
+
+      {:ok, _count} = DelayEvent.resolve_orphaned()
+
+      # Check the resolved event
+      [event] = DelayEvent.recent(1)
+      assert event.duration_seconds >= 119
+      assert event.duration_seconds <= 125
+    end
+
+    test "does not affect already resolved events" do
+      # Create and resolve a delay
+      {:ok, event} = DelayEvent.create(@valid_attrs)
+      {:ok, resolved} = DelayEvent.resolve(event)
+      original_resolved_at = resolved.resolved_at
+
+      # Call resolve_orphaned
+      {:ok, count} = DelayEvent.resolve_orphaned()
+
+      assert count == 0
+
+      # Verify the original resolved_at is unchanged
+      [event] = DelayEvent.recent(1)
+      assert DateTime.compare(event.resolved_at, original_resolved_at) == :eq
+    end
+
+    test "returns 0 when no orphaned events" do
+      {:ok, count} = DelayEvent.resolve_orphaned()
+      assert count == 0
+    end
+  end
 end

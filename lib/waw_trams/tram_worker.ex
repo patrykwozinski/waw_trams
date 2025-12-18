@@ -16,7 +16,7 @@ defmodule WawTrams.TramWorker do
   use GenServer
   require Logger
 
-  alias WawTrams.{Stop, Intersection, DelayEvent}
+  alias WawTrams.{Stop, Intersection, DelayEvent, LineTerminal}
 
   # Configuration
   @speed_threshold_kmh 3.0
@@ -251,16 +251,18 @@ defmodule WawTrams.TramWorker do
         current_pos = List.first(state.positions)
 
         if duration > 30 and current_pos do
-          at_stop = Stop.near_stop?(current_pos.lat, current_pos.lon, 50)
-
-          # Skip delay detection at terminal stops (pętla, zajezdnia)
-          # Trams normally wait several minutes at terminals between trips
-          at_terminal = at_stop and Stop.near_terminal?(current_pos.lat, current_pos.lon, 50)
+          # Skip delay detection at line-specific terminals
+          # A stop is only a terminal for certain lines (e.g., Narutowicza for line 25 only)
+          at_terminal =
+            state.line &&
+              LineTerminal.terminal_for_line?(state.line, current_pos.lat, current_pos.lon)
 
           if at_terminal do
             # Don't log delays at terminals - this is normal behavior
             state
           else
+            at_stop = Stop.near_stop?(current_pos.lat, current_pos.lon, 50)
+
             near_intersection =
               Intersection.near_intersection?(current_pos.lat, current_pos.lon, 50)
 

@@ -51,10 +51,6 @@ mix phx.server
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation for scalable analytics
 - [API Reference](guides/api.md) — Query functions and Mix tasks
 
-## Known Issues / TODO
-
-- [ ] **Line-specific terminals**: Some stops (e.g., Pl. Narutowicza) are terminals for certain lines (14) but not others (15). Current `is_terminal` flag is stop-level, not line-specific. Need to implement per-line terminal detection.
-
 ## License
 
 TBD

@@ -45,12 +45,21 @@ Tram stopped (speed < 3 km/h):
 
 ## Terminal Detection
 
-73 stops are flagged as terminals based on name patterns:
-- `%Pętla%` — tram loops
-- `%Zajezdnia%` — depots
-- `%P+R%` — park and ride
+Terminals are detected **per-line** using GTFS route data (172 unique line-stop pairs):
 
-Delays at terminals are ignored to prevent false positives from scheduled layovers.
+```
+Line 25 at Pl. Narutowicza → terminal (skip delays)
+Line 15 at Pl. Narutowicza → NOT terminal (detect delays)
+```
+
+**Why line-specific?** Some stops are terminals for certain lines but regular stops for others. The `line_terminals` table maps `(line, stop_id)` pairs extracted from GTFS `stop_times.txt` (first/last stops of each trip).
+
+```bash
+# Refresh terminal data from GTFS
+mix waw_trams.import_line_terminals
+```
+
+Delays at line-specific terminals are ignored to prevent false positives from scheduled layovers.
 
 ## Example Logs
 
