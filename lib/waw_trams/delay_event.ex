@@ -142,6 +142,7 @@ defmodule WawTrams.DelayEvent do
     classification = Keyword.get(opts, :classification, "delay")
 
     # Cluster intersection nodes within 30m, then aggregate delays per cluster
+    # Also find the nearest stop name for human-readable location
     query = """
     WITH clustered_intersections AS (
       SELECT
@@ -157,33 +158,53 @@ defmodule WawTrams.DelayEvent do
         array_agg(osm_id) as osm_ids
       FROM clustered_intersections
       GROUP BY cluster_id
+    ),
+    hot_spot_data AS (
+      SELECT
+        c.cluster_id,
+        c.osm_ids,
+        c.centroid,
+        ST_Y(c.centroid) as lat,
+        ST_X(c.centroid) as lon,
+        COUNT(d.id) as delay_count,
+        COALESCE(SUM(d.duration_seconds), 0) as total_delay_seconds,
+        COALESCE(AVG(d.duration_seconds), 0) as avg_delay_seconds,
+        array_agg(DISTINCT d.line) as affected_lines
+      FROM delay_events d
+      JOIN cluster_centroids c ON ST_DWithin(
+        c.centroid::geography,
+        ST_SetSRID(ST_MakePoint(d.lon, d.lat), 4326)::geography,
+        50
+      )
+      WHERE d.started_at >= $1
+        AND d.classification = $2
+        AND d.near_intersection = true
+      GROUP BY c.cluster_id, c.osm_ids, c.centroid
     )
     SELECT
-      c.cluster_id,
-      c.osm_ids,
-      ST_Y(c.centroid) as lat,
-      ST_X(c.centroid) as lon,
-      COUNT(d.id) as delay_count,
-      COALESCE(SUM(d.duration_seconds), 0) as total_delay_seconds,
-      COALESCE(AVG(d.duration_seconds), 0) as avg_delay_seconds,
-      array_agg(DISTINCT d.line) as affected_lines
-    FROM delay_events d
-    JOIN cluster_centroids c ON ST_DWithin(
-      c.centroid::geography,
-      ST_SetSRID(ST_MakePoint(d.lon, d.lat), 4326)::geography,
-      50
-    )
-    WHERE d.started_at >= $1
-      AND d.classification = $2
-      AND d.near_intersection = true
-    GROUP BY c.cluster_id, c.osm_ids, c.centroid
-    ORDER BY delay_count DESC, total_delay_seconds DESC
+      h.cluster_id,
+      h.osm_ids,
+      h.lat,
+      h.lon,
+      h.delay_count,
+      h.total_delay_seconds,
+      h.avg_delay_seconds,
+      h.affected_lines,
+      (
+        SELECT s.name
+        FROM stops s
+        WHERE NOT s.is_terminal
+        ORDER BY s.geom::geography <-> h.centroid::geography
+        LIMIT 1
+      ) as nearest_stop
+    FROM hot_spot_data h
+    ORDER BY h.delay_count DESC, h.total_delay_seconds DESC
     LIMIT $3
     """
 
     case Repo.query(query, [since, classification, limit]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [cluster_id, osm_ids, lat, lon, count, total, avg, lines] ->
+        Enum.map(rows, fn [cluster_id, osm_ids, lat, lon, count, total, avg, lines, stop_name] ->
           %{
             cluster_id: cluster_id,
             osm_ids: osm_ids,
@@ -192,7 +213,8 @@ defmodule WawTrams.DelayEvent do
             delay_count: count,
             total_delay_seconds: total,
             avg_delay_seconds: to_float(avg),
-            affected_lines: Enum.reject(lines, &is_nil/1) |> Enum.sort()
+            affected_lines: Enum.reject(lines, &is_nil/1) |> Enum.sort(),
+            nearest_stop: stop_name
           }
         end)
 

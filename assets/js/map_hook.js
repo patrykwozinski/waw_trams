@@ -88,14 +88,19 @@ const MapHook = {
       })
 
       // Popup with details
+      const stopName = spot.nearest_stop || "Unknown location"
+      const gmapsUrl = `https://www.google.com/maps?q=${spot.lat},${spot.lon}`
       const popupContent = `
-        <div style="min-width: 150px;">
-          <div style="font-weight: bold; margin-bottom: 4px;">
-            #${index + 1} Hot Spot
+        <div style="min-width: 180px;">
+          <div style="font-size: 12px; color: #999; margin-bottom: 2px;">
+            Near
           </div>
-          <div style="color: #666; font-size: 12px; margin-bottom: 8px;">
-            (${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            ${stopName}
           </div>
+          <a href="${gmapsUrl}" target="_blank" style="color: #999; font-size: 11px; margin-bottom: 8px; display: block; text-decoration: none;">
+            📍 ${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}
+          </a>
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span>Delays:</span>
             <strong style="color: #ef4444;">${spot.delay_count}</strong>
@@ -106,7 +111,7 @@ const MapHook = {
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span>Avg:</span>
-            <strong>${spot.avg_delay_seconds}s</strong>
+            <strong>${Math.round(spot.avg_delay_seconds)}s</strong>
           </div>
           <div style="font-size: 11px; color: #666;">
             Lines: ${spot.affected_lines.join(", ")}

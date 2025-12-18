@@ -200,8 +200,18 @@ defmodule WawTramsWeb.DashboardLive do
                             {idx}
                           </span>
                         </td>
-                        <td class="px-4 py-2 font-mono text-xs text-gray-400">
-                          ({Float.round(spot.lat, 3)}, {Float.round(spot.lon, 3)})
+                        <td class="px-4 py-2">
+                          <div class="text-sm">
+                            <span class="text-gray-400">Near</span>
+                            <span class="text-white ml-1">{spot.nearest_stop || "Unknown"}</span>
+                          </div>
+                          <a
+                            href={"https://www.google.com/maps?q=#{spot.lat},#{spot.lon}"}
+                            target="_blank"
+                            class="text-xs text-gray-500 hover:text-amber-400 transition-colors"
+                          >
+                            📍 {Float.round(spot.lat, 4)}, {Float.round(spot.lon, 4)}
+                          </a>
                         </td>
                         <td class="px-4 py-2 text-red-400 font-semibold">{spot.delay_count}</td>
                         <td class="px-4 py-2 text-amber-400">
