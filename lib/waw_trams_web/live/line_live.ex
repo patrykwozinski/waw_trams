@@ -16,7 +16,8 @@ defmodule WawTramsWeb.LineLive do
      |> assign(:line, nil)
      |> assign(:available_lines, available_lines)
      |> assign(:hours_data, [])
-     |> assign(:summary, nil)}
+     |> assign(:summary, nil)
+     |> assign(:hot_spots, [])}
   end
 
   @impl true
@@ -37,12 +38,14 @@ defmodule WawTramsWeb.LineLive do
     hours_data = DelayEvent.delays_by_hour(line)
     summary = DelayEvent.line_summary(line)
     available_lines = DelayEvent.lines_with_delays()
+    hot_spots = DelayEvent.line_hot_spots(line, limit: 5)
 
     socket
     |> assign(:line, line)
     |> assign(:available_lines, available_lines)
     |> assign(:hours_data, hours_data)
     |> assign(:summary, summary)
+    |> assign(:hot_spots, hot_spots)
   end
 
   @impl true
@@ -113,8 +116,8 @@ defmodule WawTramsWeb.LineLive do
             <% end %>
           </div>
 
-          <%!-- Worst Hours Table --%>
-          <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <%!-- Delays by Hour Table --%>
+          <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
             <div class="px-5 py-4 border-b border-gray-800">
               <h2 class="font-semibold text-lg">⏰ Delays by Hour</h2>
               <p class="text-gray-500 text-sm mt-1">Sorted by total delay time (worst first)</p>
@@ -220,6 +223,65 @@ defmodule WawTramsWeb.LineLive do
               </div>
             </div>
           <% end %>
+
+          <%!-- Problematic Intersections for this Line --%>
+          <%= if @hot_spots != [] do %>
+            <div class="mt-8 bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div class="px-5 py-4 border-b border-gray-800">
+                <h2 class="font-semibold text-lg">🔥 Worst Intersections for Line {@line}</h2>
+                <p class="text-gray-500 text-sm mt-1">
+                  Where this line gets delayed the most (last 7 days)
+                </p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-800/50">
+                    <tr class="text-left text-gray-400">
+                      <th class="px-5 py-3 font-medium">#</th>
+                      <th class="px-5 py-3 font-medium">Location</th>
+                      <th class="px-5 py-3 font-medium">Events</th>
+                      <th class="px-5 py-3 font-medium">Delays</th>
+                      <th class="px-5 py-3 font-medium">Blockages</th>
+                      <th class="px-5 py-3 font-medium">Total Time</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-800">
+                    <%= for {spot, idx} <- Enum.with_index(@hot_spots, 1) do %>
+                      <tr class="hover:bg-gray-800/50">
+                        <td class="px-5 py-3">
+                          <span class={[
+                            "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
+                            spot_rank_color(idx)
+                          ]}>
+                            {idx}
+                          </span>
+                        </td>
+                        <td class="px-5 py-3">
+                          <div class="text-sm">
+                            <span class="text-gray-400">Near</span>
+                            <span class="text-white ml-1">{spot.nearest_stop || "Unknown"}</span>
+                          </div>
+                          <a
+                            href={"https://www.google.com/maps?q=#{spot.lat},#{spot.lon}"}
+                            target="_blank"
+                            class="text-xs text-gray-500 hover:text-amber-400 transition-colors"
+                          >
+                            📍 {Float.round(spot.lat, 4)}, {Float.round(spot.lon, 4)}
+                          </a>
+                        </td>
+                        <td class="px-5 py-3 text-white font-semibold">{spot.event_count}</td>
+                        <td class="px-5 py-3 text-orange-400">{spot.delay_count}</td>
+                        <td class="px-5 py-3 text-red-400">{spot.blockage_count}</td>
+                        <td class="px-5 py-3 text-amber-400">
+                          {format_duration(spot.total_seconds)}
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% end %>
         <% else %>
           <%!-- No line selected --%>
           <div class="bg-gray-900 rounded-xl border border-gray-800 p-12 text-center">
@@ -267,4 +329,9 @@ defmodule WawTramsWeb.LineLive do
   end
 
   defp bar_color(_, _), do: "bg-gray-600"
+
+  defp spot_rank_color(1), do: "bg-red-500 text-white"
+  defp spot_rank_color(2), do: "bg-orange-500 text-white"
+  defp spot_rank_color(3), do: "bg-amber-500 text-black"
+  defp spot_rank_color(_), do: "bg-gray-700 text-gray-300"
 end

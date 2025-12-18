@@ -451,6 +451,98 @@ defmodule WawTrams.DelayEvent do
   end
 
   @doc """
+  Returns top problematic intersections for a specific line.
+  Shows which intersections cause the most delays for this line specifically.
+  Clusters nearby delay points (within ~30m) to group them as one location.
+  Includes both 'delay' and 'blockage' events near intersections.
+  """
+  def line_hot_spots(line, opts \\ []) do
+    since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
+    limit = Keyword.get(opts, :limit, 5)
+
+    # Cluster delay points within ~30m (0.0003 degrees) before aggregating
+    # Include both delays and blockages near intersections
+    query = """
+    WITH line_delays AS (
+      SELECT
+        ST_SetSRID(ST_MakePoint(d.lon, d.lat), 4326) as geom,
+        d.duration_seconds,
+        d.classification
+      FROM delay_events d
+      WHERE d.line = $1
+        AND d.started_at >= $2
+        AND d.near_intersection = true
+    ),
+    clustered AS (
+      SELECT
+        geom,
+        duration_seconds,
+        classification,
+        ST_ClusterDBSCAN(geom::geometry, eps := 0.0003, minpoints := 1) OVER () as cluster_id
+      FROM line_delays
+    ),
+    cluster_stats AS (
+      SELECT
+        cluster_id,
+        ST_Centroid(ST_Collect(geom)) as centroid,
+        COUNT(*) as event_count,
+        SUM(CASE WHEN classification = 'delay' THEN 1 ELSE 0 END) as delay_count,
+        SUM(CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END) as blockage_count,
+        COALESCE(SUM(duration_seconds), 0) as total_seconds,
+        COALESCE(AVG(duration_seconds), 0) as avg_seconds
+      FROM clustered
+      GROUP BY cluster_id
+    )
+    SELECT
+      ST_Y(cs.centroid) as lat,
+      ST_X(cs.centroid) as lon,
+      cs.event_count,
+      cs.delay_count,
+      cs.blockage_count,
+      cs.total_seconds,
+      cs.avg_seconds,
+      (
+        SELECT s.name
+        FROM stops s
+        WHERE NOT s.is_terminal
+        ORDER BY s.geom::geography <-> cs.centroid::geography
+        LIMIT 1
+      ) as nearest_stop
+    FROM cluster_stats cs
+    ORDER BY cs.event_count DESC, cs.total_seconds DESC
+    LIMIT $3
+    """
+
+    case Repo.query(query, [line, since, limit]) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [
+                            lat,
+                            lon,
+                            event_count,
+                            delay_count,
+                            blockage_count,
+                            total,
+                            avg,
+                            stop_name
+                          ] ->
+          %{
+            lat: lat,
+            lon: lon,
+            event_count: event_count,
+            delay_count: delay_count,
+            blockage_count: blockage_count,
+            total_seconds: total || 0,
+            avg_seconds: to_float(avg),
+            nearest_stop: stop_name
+          }
+        end)
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  @doc """
   Returns all lines that have recorded delays.
   """
   def lines_with_delays(opts \\ []) do

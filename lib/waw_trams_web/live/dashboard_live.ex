@@ -279,9 +279,12 @@ defmodule WawTramsWeb.DashboardLive do
                           </span>
                         </td>
                         <td class="px-4 py-2">
-                          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold">
-                            {line_data.line}
-                          </span>
+                          <.link
+                            navigate={~p"/line/#{line_data.line}"}
+                            class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold hover:bg-amber-500/30 transition-colors"
+                          >
+                            {line_data.line} →
+                          </.link>
                         </td>
                         <td class="px-4 py-2 text-orange-400 font-semibold">
                           {line_data.delay_count}
