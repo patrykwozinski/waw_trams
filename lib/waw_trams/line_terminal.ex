@@ -31,6 +31,8 @@ defmodule WawTrams.LineTerminal do
 
   Returns `true` if this is a terminal for the line, `false` otherwise.
   """
+  @terminal_radius_meters 75
+
   def terminal_for_line?(line, lat, lon) when is_binary(line) do
     query = """
     SELECT EXISTS (
@@ -41,7 +43,7 @@ defmodule WawTrams.LineTerminal do
         AND ST_DWithin(
           s.geom::geography,
           ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography,
-          50
+          #{@terminal_radius_meters}
         )
     )
     """

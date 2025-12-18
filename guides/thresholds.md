@@ -22,7 +22,7 @@ All configurable values used in delay detection. See [Detection Logic](detection
 |-----------|-------|------|-------|
 | **Stop proximity** | **50** | meters | "At a stop" if within this distance |
 | **Intersection proximity** | **50** | meters | "Near intersection" if within this distance |
-| **Terminal proximity** | **50** | meters | Line-specific terminal check |
+| **Terminal proximity** | **75** | meters | Line-specific terminal check (includes approach) |
 | **Clustering radius** | **55** | meters | Group nearby delay points as one intersection |
 
 **❓ Questions:**
