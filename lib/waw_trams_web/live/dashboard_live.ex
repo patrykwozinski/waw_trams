@@ -378,7 +378,14 @@ defmodule WawTramsWeb.DashboardLive do
                           <span class="text-orange-400 text-xs">⚠️</span>
                         <% end %>
                       </div>
-                      <span class="text-gray-500 text-xs">{duration_since(delay.started_at)}</span>
+                      <span
+                        id={"timer-#{delay.id}"}
+                        class="text-gray-500 text-xs font-mono"
+                        phx-hook=".LiveTimer"
+                        data-started={DateTime.to_iso8601(delay.started_at)}
+                      >
+                        {duration_since(delay.started_at)}
+                      </span>
                     </div>
                   </div>
                 <% end %>
@@ -434,6 +441,41 @@ defmodule WawTramsWeb.DashboardLive do
         </div>
       </div>
     </div>
+
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".LiveTimer">
+      export default {
+        mounted() {
+          this.startedAt = new Date(this.el.dataset.started);
+          this.updateTimer();
+          this.interval = setInterval(() => this.updateTimer(), 1000);
+        },
+        updated() {
+          this.startedAt = new Date(this.el.dataset.started);
+          this.updateTimer();
+        },
+        destroyed() {
+          clearInterval(this.interval);
+        },
+        updateTimer() {
+          const now = new Date();
+          const seconds = Math.floor((now - this.startedAt) / 1000);
+
+          let text;
+          if (seconds < 60) {
+            text = `${seconds}s`;
+          } else if (seconds < 3600) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            text = `${m}m ${s}s`;
+          } else {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            text = `${h}h ${m}m`;
+          }
+          this.el.innerText = text;
+        }
+      }
+    </script>
     """
   end
 
