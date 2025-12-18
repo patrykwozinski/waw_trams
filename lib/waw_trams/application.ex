@@ -12,8 +12,12 @@ defmodule WawTrams.Application do
       WawTrams.Repo,
       {DNSCluster, query: Application.get_env(:waw_trams, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: WawTrams.PubSub},
-      # Start a worker by calling: WawTrams.Worker.start_link(arg)
-      # {WawTrams.Worker, arg},
+
+      # Tram tracking system
+      {Registry, keys: :unique, name: WawTrams.TramRegistry},
+      WawTrams.TramSupervisor,
+      WawTrams.Poller,
+
       # Start to serve requests, typically the last entry
       WawTramsWeb.Endpoint
     ]

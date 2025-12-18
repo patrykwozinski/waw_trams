@@ -80,7 +80,9 @@ defmodule WawTrams.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:ex_doc, "~> 0.35", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.35", only: :dev, runtime: false},
+      {:protobuf, "~> 0.13"},
+      {:castore, "~> 1.0"}
     ]
   end
 
