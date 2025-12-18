@@ -80,29 +80,24 @@ defmodule WawTrams.DelayEvent do
   end
 
   @doc """
-  Resolves all orphaned delay events (unresolved delays from previous server runs).
+  Deletes all orphaned delay events (unresolved delays from previous server runs).
 
   Called on application startup to clean up hanging delays that would never
   be resolved because their TramWorker processes no longer exist.
-  """
-  def resolve_orphaned do
-    now = DateTime.utc_now()
 
+  We delete rather than resolve because:
+  - We don't know when the tram actually moved
+  - Server downtime would create artificially long durations
+  - This would skew analytics (avg delay, total time lost)
+  """
+  def cleanup_orphaned do
     {count, _} =
-      from(d in __MODULE__,
-        where: is_nil(d.resolved_at),
-        update: [
-          set: [
-            resolved_at: ^now,
-            duration_seconds: fragment("EXTRACT(EPOCH FROM ? - started_at)::integer", ^now)
-          ]
-        ]
-      )
-      |> Repo.update_all([])
+      from(d in __MODULE__, where: is_nil(d.resolved_at))
+      |> Repo.delete_all()
 
     if count > 0 do
       require Logger
-      Logger.info("[STARTUP] Resolved #{count} orphaned delay events from previous run")
+      Logger.info("[STARTUP] Deleted #{count} orphaned delay events from previous run")
     end
 
     {:ok, count}

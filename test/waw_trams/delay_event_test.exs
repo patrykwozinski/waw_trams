@@ -181,8 +181,8 @@ defmodule WawTrams.DelayEventTest do
     end
   end
 
-  describe "resolve_orphaned/0" do
-    test "resolves all unresolved delay events" do
+  describe "cleanup_orphaned/0" do
+    test "deletes all unresolved delay events" do
       # Create several unresolved delays
       started_at = DateTime.add(DateTime.utc_now(), -300, :second)
 
@@ -195,48 +195,35 @@ defmodule WawTrams.DelayEventTest do
       {:ok, _} =
         DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", started_at: started_at}))
 
-      # Verify they're unresolved
+      # Verify they exist and are unresolved
       assert length(DelayEvent.active()) == 3
 
-      # Resolve orphaned
-      {:ok, count} = DelayEvent.resolve_orphaned()
+      # Delete orphaned
+      {:ok, count} = DelayEvent.cleanup_orphaned()
 
       assert count == 3
       assert DelayEvent.active() == []
-    end
-
-    test "sets correct duration for orphaned events" do
-      started_at = DateTime.add(DateTime.utc_now(), -120, :second)
-
-      {:ok, _} =
-        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/1/1", started_at: started_at}))
-
-      {:ok, _count} = DelayEvent.resolve_orphaned()
-
-      # Check the resolved event
-      [event] = DelayEvent.recent(1)
-      assert event.duration_seconds >= 119
-      assert event.duration_seconds <= 125
+      # They should be completely gone, not just resolved
+      assert DelayEvent.recent(10) == []
     end
 
     test "does not affect already resolved events" do
       # Create and resolve a delay
       {:ok, event} = DelayEvent.create(@valid_attrs)
       {:ok, resolved} = DelayEvent.resolve(event)
-      original_resolved_at = resolved.resolved_at
 
-      # Call resolve_orphaned
-      {:ok, count} = DelayEvent.resolve_orphaned()
+      # Call cleanup_orphaned
+      {:ok, count} = DelayEvent.cleanup_orphaned()
 
       assert count == 0
 
-      # Verify the original resolved_at is unchanged
-      [event] = DelayEvent.recent(1)
-      assert DateTime.compare(event.resolved_at, original_resolved_at) == :eq
+      # Resolved event should still exist
+      [remaining] = DelayEvent.recent(1)
+      assert remaining.id == resolved.id
     end
 
     test "returns 0 when no orphaned events" do
-      {:ok, count} = DelayEvent.resolve_orphaned()
+      {:ok, count} = DelayEvent.cleanup_orphaned()
       assert count == 0
     end
   end

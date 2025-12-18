@@ -31,8 +31,8 @@ defmodule WawTrams.Application do
 
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
-        # Clean up orphaned delays from previous server runs
-        WawTrams.DelayEvent.resolve_orphaned()
+        # Delete orphaned delays from previous server runs
+        WawTrams.DelayEvent.cleanup_orphaned()
         {:ok, pid}
 
       error ->
