@@ -144,6 +144,28 @@ defmodule WawTrams.DelayEvent do
   end
 
   @doc """
+  Counts currently active (unresolved) delays.
+  Used by Telemetry for metrics.
+  """
+  def count_active do
+    __MODULE__
+    |> where([d], is_nil(d.resolved_at))
+    |> Repo.aggregate(:count, :id)
+  end
+
+  @doc """
+  Counts delays started today (UTC).
+  Used by Telemetry for metrics.
+  """
+  def count_today do
+    today_start = DateTime.utc_now() |> DateTime.to_date() |> DateTime.new!(~T[00:00:00])
+
+    __MODULE__
+    |> where([d], d.started_at >= ^today_start)
+    |> Repo.aggregate(:count, :id)
+  end
+
+  @doc """
   Returns delay statistics for a time period.
   """
   def stats(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)) do

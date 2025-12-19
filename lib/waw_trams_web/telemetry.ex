@@ -79,15 +79,45 @@ defmodule WawTramsWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Tram Tracking Metrics
+      last_value("waw_trams.workers.count"),
+      last_value("waw_trams.delays.active"),
+      last_value("waw_trams.delays.today"),
+      counter("waw_trams.poller.fetch.count"),
+      summary("waw_trams.poller.fetch.duration", unit: {:native, :millisecond})
     ]
   end
 
   defp periodic_measurements do
     [
-      # A module, function and arguments to be invoked periodically.
-      # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {WawTramsWeb, :count_users, []}
+      # Measure active tram workers and delays every 10s
+      {__MODULE__, :measure_tram_stats, []}
     ]
+  end
+
+  @doc false
+  def measure_tram_stats do
+    # Count active workers (handle case when registry not yet started)
+    worker_count =
+      try do
+        Registry.count(WawTrams.TramRegistry)
+      rescue
+        ArgumentError -> 0
+      end
+
+    :telemetry.execute([:waw_trams, :workers], %{count: worker_count}, %{})
+
+    # Count active delays
+    try do
+      active_count = WawTrams.DelayEvent.count_active()
+      :telemetry.execute([:waw_trams, :delays], %{active: active_count}, %{})
+
+      today_count = WawTrams.DelayEvent.count_today()
+      :telemetry.execute([:waw_trams, :delays], %{today: today_count}, %{})
+    rescue
+      _ -> :ok
+    end
   end
 end
