@@ -161,6 +161,13 @@ mix waw_trams.cleanup --older-than 14 --execute
 mix waw_trams.cleanup --reset-all --execute --i-know-what-i-am-doing
 ```
 
+**`--reset-all` deletes:**
+- `delay_events` (raw events)
+- `daily_line_stats`, `daily_intersection_stats` (daily aggregates)
+- `hourly_intersection_stats` (hourly aggregates for Audit)
+- `hourly_patterns` (cumulative heatmap data)
+- Also resets PostgreSQL statistics
+
 ### Aggregation
 
 ```bash
