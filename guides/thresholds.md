@@ -66,33 +66,33 @@ See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
 
 ### Multi-Cycle Logic (Priority Failures)
 
-`multi_cycle = true` requires BOTH:
-- Duration > 120s (exceeds one signal cycle)
+`multi_cycle = true` requires:
 - `near_intersection = true` (traffic signal exists)
+- Duration exceeds threshold (depends on location)
+
+| Location | Threshold | Rationale |
+|----------|-----------|-----------|
+| Intersection only | **120s** | One signal cycle |
+| Stop + Intersection | **180s** | Cycle + 60s boarding buffer |
 
 **Rationale:** Priority failures can ONLY happen where there are traffic signals.
-Long delays at stops without nearby intersections are boarding issues, not signal issues.
+When a stop is near an intersection, we add 60s buffer to account for normal boarding time.
 
-| Scenario | Duration | near_intersection | Multi-Cycle? |
-|----------|----------|-------------------|--------------|
-| Delay at intersection | 150s | ✅ Yes | ⚡ Yes |
-| Blockage at stop (no intersection) | 200s | ❌ No | ❌ No |
-| Blockage at stop WITH intersection | 200s | ✅ Yes | ⚡ Yes |
+| Scenario | at_stop | near_intersection | Duration | Threshold | Multi-Cycle? |
+|----------|---------|-------------------|----------|-----------|--------------|
+| Pure intersection | ❌ | ✅ | 150s | 120s | ⚡ Yes |
+| Stop far from intersection | ✅ | ❌ | 200s | — | ❌ No |
+| Stop near intersection | ✅ | ✅ | 150s | 180s | ❌ No |
+| Stop near intersection | ✅ | ✅ | 200s | 180s | ⚡ Yes |
 
 ### Stop + Intersection Overlap
 
-Many Warsaw stops are within 50m of intersections. When a tram stops at such a location:
-
-| at_stop | near_intersection | Classification | multi_cycle (if >120s) |
-|---------|-------------------|----------------|------------------------|
-| ✅ | ❌ | blockage (if >180s) | ❌ No |
-| ❌ | ✅ | delay | ⚡ Yes |
-| ✅ | ✅ | blockage (if >180s) | ⚡ Yes |
+Many Warsaw stops are within 50m of intersections. The boarding buffer prevents false positives:
 
 **Example:** Tram at "Centrum" platform (also near intersection):
 - 45s wait → `normal_dwell`, not persisted
-- 150s wait → `blockage`, `multi_cycle=true` (signal priority failed)
-- 200s wait → `blockage`, `multi_cycle=true` (severe priority failure)
+- 150s wait → `blockage`, `multi_cycle=false` (150s < 180s, probably just boarding)
+- 200s wait → `blockage`, `multi_cycle=true` (200s > 180s, priority failed)
 
 **❓ Question:** Are there intersections with different cycle lengths?
 

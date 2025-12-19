@@ -174,8 +174,9 @@ defmodule WawTrams.DelayEventTest do
       assert resolved.duration_seconds >= 149
     end
 
-    test "resolve sets multi_cycle=true for delays > 120s NOT at stop" do
-      # Delay started 150 seconds ago, not at stop (traffic/signal issue)
+    test "resolve sets multi_cycle=false for delays > 120s NOT near intersection" do
+      # Delay started 150 seconds ago, not near intersection
+      # Priority failures can only happen where there are traffic signals
       started_at = DateTime.add(DateTime.utc_now(), -150, :second)
 
       attrs =
@@ -189,7 +190,8 @@ defmodule WawTrams.DelayEventTest do
 
       {:ok, resolved} = DelayEvent.resolve(event)
 
-      assert resolved.multi_cycle == true
+      # No intersection = no signal = no priority failure
+      assert resolved.multi_cycle == false
     end
 
     test "resolve sets multi_cycle=false for delays > 120s at stop without intersection" do
@@ -212,8 +214,9 @@ defmodule WawTrams.DelayEventTest do
       assert resolved.multi_cycle == false
     end
 
-    test "resolve sets multi_cycle=true for delays > 120s at stop WITH intersection" do
-      # Stop that's also near intersection - could be signal issue
+    test "resolve sets multi_cycle=false for delays 120-180s at stop WITH intersection" do
+      # Stop near intersection with 150s delay
+      # Threshold is 180s (120s cycle + 60s boarding buffer)
       started_at = DateTime.add(DateTime.utc_now(), -150, :second)
 
       attrs =
@@ -227,6 +230,27 @@ defmodule WawTrams.DelayEventTest do
 
       {:ok, resolved} = DelayEvent.resolve(event)
 
+      # 150s < 180s threshold, so probably just boarding
+      assert resolved.multi_cycle == false
+    end
+
+    test "resolve sets multi_cycle=true for delays > 180s at stop WITH intersection" do
+      # Stop near intersection with 200s delay
+      # Threshold is 180s (120s cycle + 60s boarding buffer)
+      started_at = DateTime.add(DateTime.utc_now(), -200, :second)
+
+      attrs =
+        Map.merge(@valid_attrs, %{
+          started_at: started_at,
+          near_intersection: true,
+          at_stop: true
+        })
+
+      {:ok, event} = DelayEvent.create(attrs)
+
+      {:ok, resolved} = DelayEvent.resolve(event)
+
+      # 200s > 180s threshold, real priority failure
       assert resolved.multi_cycle == true
     end
 

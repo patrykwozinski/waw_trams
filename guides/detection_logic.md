@@ -29,15 +29,20 @@ Instead of guessing in real-time, we:
 
 ### Multi-Cycle Flag (Priority Failures)
 
-Warsaw intersections use 120-second signal cycles. If a tram waits **>120s near an intersection**, it means the tram missed multiple green phases — clear evidence of broken transit priority.
+Warsaw intersections use 120-second signal cycles. `multi_cycle = true` indicates a tram missed multiple green phases — clear evidence of broken transit priority.
 
-**Key:** `multi_cycle` is ONLY set when `near_intersection = true`. Long delays at stops without nearby intersections are boarding issues, not signal failures.
+**Key:** The threshold is **location-aware**:
+- **Intersection only:** 120s (one signal cycle)
+- **Stop + Intersection:** 180s (cycle + 60s boarding buffer)
 
-| Scenario | near_intersection | Duration | multi_cycle |
-|----------|-------------------|----------|-------------|
-| Stop near intersection | ✅ | 150s | ⚡ Yes |
-| Stop far from intersection | ❌ | 150s | ❌ No |
-| Intersection (no stop) | ✅ | 150s | ⚡ Yes |
+The boarding buffer prevents false positives when a tram is legitimately boarding passengers at a stop that happens to be near an intersection.
+
+| Scenario | at_stop | near_intersection | Duration | Threshold | multi_cycle |
+|----------|---------|-------------------|----------|-----------|-------------|
+| Intersection only | ❌ | ✅ | 150s | 120s | ⚡ Yes |
+| Stop near intersection | ✅ | ✅ | 150s | 180s | ❌ No |
+| Stop near intersection | ✅ | ✅ | 200s | 180s | ⚡ Yes |
+| Stop far from intersection | ✅ | ❌ | 200s | — | ❌ No |
 
 > **For detailed thresholds and validation questions**, see [Thresholds](thresholds.md).
 
