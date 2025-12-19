@@ -57,7 +57,9 @@ mix phx.server
 - [Data Sources](guides/data_sources.md) — How to import stops, intersections, terminals
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
-- [**Audit Dashboard**](guides/audit_dashboard.md) — Planned "Infrastructure Report Card" feature
+### Projects (Planned)
+- [**Audit Dashboard**](guides/projects/audit_dashboard.md) — "Infrastructure Report Card" feature
+- [**Clean Architecture**](guides/projects/clean_architecture.md) — Refactoring DelayEvent god class
 
 ## License
 

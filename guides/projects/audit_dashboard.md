@@ -2,7 +2,8 @@
 
 > **Status:** Planning  
 > **Route:** `/audit`  
-> **Replaces:** `/map` and `/heatmap` (after completion)
+> **Replaces:** `/map` and `/heatmap` (after completion)  
+> **Depends on:** [Clean Architecture Refactor](clean_architecture.md) (Phase 1-2)
 
 ## Vision
 
@@ -282,7 +283,7 @@ Header could show breakdown on hover/click:
 - [ ] Update `hot_spots` to include cost calculation
 - [ ] Tests for cost calculation
 
-**Deliverable:** All data available via `WawTrams.DelayEvent` API
+**Deliverable:** All data available via `WawTrams.Audit.*` modules
 
 ---
 
