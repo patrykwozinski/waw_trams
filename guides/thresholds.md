@@ -54,6 +54,16 @@ See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
 
 **Note:** Warsaw major intersections use 120s signal cycles. Delays >120s indicate tram missed multiple green phases (priority failure).
 
+**Warsaw Signal Reference:**
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| Standard Cycle | 120s | Major intersections (Rondo ONZ, Zawiszy, Dmowskiego) |
+| Night Cycle | 90-100s | 23:00–05:00 |
+| Typical Red | 80-100s | Wait if no priority |
+| Max Green (Priority) | 30-45s | Priority extension limit |
+| Min Green | 8-12s | Minimum crossing window |
+
 ### Multi-Cycle Logic
 
 `multi_cycle = true` requires BOTH:

@@ -351,11 +351,24 @@ User clicks "Back"
 | Feature | Description |
 |---------|-------------|
 | **Pass Rate Grades** | A/C/F based on % of trams delayed |
+| **Priority Mode Inference** | Detect if intersection uses Green Extension, Red Truncation, or No Priority based on avg delay patterns |
 | **Trend Arrows** | ↑↓ compared to previous period |
 | **Export PDF** | Generate report card as PDF |
 | **Share Link** | `/audit?intersection=123` deep link |
 | **Comparison Mode** | Compare two intersections side-by-side |
 | **Time Animation** | Play through 24 hours on map |
+
+### Priority Mode Inference (Future)
+
+By analyzing average delay durations, we can infer which priority mode is active:
+
+| Avg Delay | Likely Priority Mode |
+|-----------|---------------------|
+| 5-15s | Green Extension working |
+| 20-40s | Red Truncation working |
+| 80-100s | No priority (full red wait) |
+
+Could be shown in Report Card as: "Inferred Priority: **Red Truncation** (avg 32s)"
 
 ---
 
