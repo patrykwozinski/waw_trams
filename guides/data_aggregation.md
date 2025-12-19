@@ -86,7 +86,7 @@ schema "hourly_intersection_stats" do
   field :lat, :float                 # Rounded to 4 decimals
   field :lon, :float                 # Rounded to 4 decimals
   field :delay_count, :integer
-  field :multi_cycle_count, :integer # Delays > 120s
+  field :multi_cycle_count, :integer # Priority failures (threshold depends on location)
   field :total_seconds, :integer
   field :cost_pln, :float            # Pre-calculated using hour
   field :lines, {:array, :string}    # ["1", "9", "25"]

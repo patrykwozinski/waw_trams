@@ -2,74 +2,114 @@
 
 > **Audience:** Developers using the query functions and Mix tasks
 
+## Module Structure
+
+After Clean Architecture refactoring, queries are organized by domain:
+
+```
+lib/waw_trams/
+├── queries/
+│   ├── active_delays.ex   # Real-time delay tracking
+│   ├── hot_spots.ex       # Intersection analysis
+│   ├── heatmap.ex         # Hour × day patterns
+│   └── line_analysis.ex   # Per-line statistics
+├── analytics/
+│   └── stats.ex           # Summary statistics
+└── audit/
+    ├── summary.ex         # City-wide audit stats
+    ├── intersection.ex    # Single intersection detail
+    └── cost_calculator.ex # Economic cost formulas
+```
+
 ## Query Functions
 
-### Active Delays
+### Active Delays (Real-Time)
 
 ```elixir
 # Currently active (unresolved) delays
-WawTrams.DelayEvent.active()
+WawTrams.Queries.ActiveDelays.active()
 # => [%DelayEvent{...}, ...]
+
+# Recent resolved delays
+WawTrams.Queries.ActiveDelays.recent(100)
+
+# Recently resolved (last 20)
+WawTrams.Queries.ActiveDelays.recent_resolved()
+
+# Counts
+WawTrams.Queries.ActiveDelays.count_active()
+WawTrams.Queries.ActiveDelays.count_today()
 ```
 
 ### Statistics
 
 ```elixir
-# Stats from last 24 hours
-WawTrams.DelayEvent.stats()
-# => [%{classification: "delay", count: 15, avg_duration_seconds: 45.2}, ...]
+# Summary stats (last 24 hours default)
+WawTrams.Analytics.Stats.summary()
+# => %{delay_count: 45, blockage_count: 12, total_seconds: 3600, multi_cycle_count: 3, ...}
 
-# Stats from custom period
-WawTrams.DelayEvent.stats(DateTime.add(DateTime.utc_now(), -7, :day))
+# Stats by classification
+WawTrams.Analytics.Stats.for_period()
+# => [%{classification: "delay", count: 45, avg_duration_seconds: 52.3}, ...]
 
-# Count of multi-cycle delays (priority failures, >120s at intersection)
-WawTrams.DelayEvent.multi_cycle_count()
-# => 12
-```
-
-### Recent Events
-
-```elixir
-# Last 100 delay events
-WawTrams.DelayEvent.recent(100)
+# Priority failure count (intersection delays > threshold)
+WawTrams.Analytics.Stats.multi_cycle_count()
+# => 3
 ```
 
 ### Hot Spots (Intersection Analysis)
 
 ```elixir
 # Top problematic intersections (clustered within ~55m)
-WawTrams.DelayEvent.hot_spots(limit: 10)
-# => [%{cluster_id: 5, osm_ids: ["123", "124"], delay_count: 15, ...}, ...]
+WawTrams.Queries.HotSpots.hot_spots(limit: 10)
+# => [%{lat: 52.23, lon: 21.01, delay_count: 15, nearest_stop: "Centrum", ...}, ...]
 
 # Summary of intersection delays
-WawTrams.DelayEvent.hot_spot_summary()
+WawTrams.Queries.HotSpots.hot_spot_summary()
 # => %{intersection_count: 12, total_delays: 47, total_delay_minutes: 35}
+
+# Most impacted lines (by total delay time)
+WawTrams.Queries.HotSpots.impacted_lines(limit: 10)
 ```
 
 ### Line Analysis
 
 ```elixir
-# Most impacted lines (by total delay time)
-WawTrams.DelayEvent.impacted_lines(limit: 10)
-
 # Delays by hour for a specific line
-WawTrams.DelayEvent.delays_by_hour("17")
+WawTrams.Queries.LineAnalysis.delays_by_hour("17")
 
-# Line summary
-WawTrams.DelayEvent.line_summary("17")
+# Line summary (totals, averages)
+WawTrams.Queries.LineAnalysis.summary("17")
+
+# Worst intersections for a line
+WawTrams.Queries.LineAnalysis.hot_spots("17", limit: 10)
 
 # Lines with recorded delays
-WawTrams.DelayEvent.lines_with_delays()
+WawTrams.Queries.LineAnalysis.lines_with_delays()
 ```
 
 ### Heatmap Data
 
 ```elixir
 # Hour × Day of week aggregation
-WawTrams.DelayEvent.heatmap_data(since: DateTime.add(DateTime.utc_now(), -7, :day))
+WawTrams.Queries.Heatmap.data(since: DateTime.add(DateTime.utc_now(), -7, :day))
 
-# Structured grid for rendering
-WawTrams.DelayEvent.heatmap_grid()
+# Structured grid for rendering (168 cells: 24h × 7 days)
+WawTrams.Queries.Heatmap.grid()
+```
+
+### Audit Dashboard
+
+```elixir
+# City-wide stats with economic cost
+WawTrams.Audit.Summary.stats(since: DateTime.add(DateTime.utc_now(), -7, :day))
+# => %{total_delays: 140, cost: %{total: 3330.51}, multi_cycle_count: 3, ...}
+
+# Leaderboard (worst intersections by cost)
+WawTrams.Audit.Summary.leaderboard(limit: 20)
+
+# Single intersection heatmap
+WawTrams.Audit.Intersection.heatmap(lat, lon, since: since)
 ```
 
 ### Spatial Queries
@@ -85,10 +125,6 @@ WawTrams.Intersection.near_intersection?(52.2297, 21.0122)
 # Check if point is a terminal for a specific line
 WawTrams.LineTerminal.terminal_for_line?("25", 52.2297, 21.0122)
 # => true if line 25 terminates here, false otherwise
-
-# Get all terminals for a line
-WawTrams.LineTerminal.terminals_for_line("14")
-# => ["100001", "100002"]
 ```
 
 ## Mix Tasks
@@ -102,16 +138,14 @@ mix waw_trams.import_stops
 # Import intersections from CSV (uses priv/data/intersections.csv)
 mix waw_trams.import_intersections
 
-# Import line-specific terminals from GTFS (auto-downloads)
+# Import line-specific terminals from GTFS
 mix waw_trams.import_line_terminals
 mix waw_trams.import_line_terminals --dry-run  # preview only
 ```
 
-All GTFS tasks share the same cache at `/tmp/waw_trams_gtfs/`.
+### Cleanup
 
-### Cleanup (Retention-Based)
-
-**Safe by default** - always shows preview first, requires `--execute` to delete.
+**Safe by default** — always shows preview first, requires `--execute` to delete.
 
 ```bash
 # Preview what would be deleted (DRY RUN)
@@ -123,24 +157,9 @@ mix waw_trams.cleanup --execute
 # Delete events older than N days (default: 7)
 mix waw_trams.cleanup --older-than 14 --execute
 
-# Delete only resolved events
-mix waw_trams.cleanup --resolved-only --execute
-
-# Skip aggregation safety check (DANGEROUS)
-mix waw_trams.cleanup --skip-aggregation-check --execute
-```
-
-### Reset All Data (Nuclear Option)
-
-```bash
-# Preview what would be deleted
-mix waw_trams.cleanup --reset-all
-
-# Actually delete ALL data (requires confirmation)
+# Reset all data (DANGEROUS - requires confirmation)
 mix waw_trams.cleanup --reset-all --execute --i-know-what-i-am-doing
 ```
-
-⚠️ **Safety**: In production (`MIX_ENV=prod`), the `--i-know-what-i-am-doing` flag is **required** or the command will fail.
 
 ### Aggregation
 
@@ -164,4 +183,3 @@ mix waw_trams.aggregate_daily --dry-run
 # Generate docs (includes guides)
 mix docs
 ```
-
