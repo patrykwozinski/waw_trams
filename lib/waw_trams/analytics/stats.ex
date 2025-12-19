@@ -47,10 +47,13 @@ defmodule WawTrams.Analytics.Stats do
 
   Multi-cycle means delay > 120s (Warsaw signal cycle), indicating the
   tram missed multiple green phases due to broken priority.
+
+  Only counts delays at intersections - priority failures can only happen
+  where there are traffic signals.
   """
   def multi_cycle_count(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)) do
     from(d in DelayEvent,
-      where: d.started_at >= ^since and d.multi_cycle == true,
+      where: d.started_at >= ^since and d.multi_cycle == true and d.near_intersection == true,
       select: count(d.id)
     )
     |> Repo.one()

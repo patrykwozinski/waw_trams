@@ -64,18 +64,35 @@ See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
 | Max Green (Priority) | 30-45s | Priority extension limit |
 | Min Green | 8-12s | Minimum crossing window |
 
-### Multi-Cycle Logic
+### Multi-Cycle Logic (Priority Failures)
 
 `multi_cycle = true` requires BOTH:
 - Duration > 120s (exceeds one signal cycle)
-- Near intersection OR not at stop (excludes pure boarding delays)
+- `near_intersection = true` (traffic signal exists)
 
-| Scenario | Duration | Multi-Cycle? |
-|----------|----------|--------------|
-| Delay at intersection | 150s | ⚡ Yes |
-| Delay NOT at stop | 150s | ⚡ Yes |
-| Blockage at stop (no intersection) | 200s | ❌ No |
-| Blockage at stop WITH intersection | 200s | ⚡ Yes |
+**Rationale:** Priority failures can ONLY happen where there are traffic signals.
+Long delays at stops without nearby intersections are boarding issues, not signal issues.
+
+| Scenario | Duration | near_intersection | Multi-Cycle? |
+|----------|----------|-------------------|--------------|
+| Delay at intersection | 150s | ✅ Yes | ⚡ Yes |
+| Blockage at stop (no intersection) | 200s | ❌ No | ❌ No |
+| Blockage at stop WITH intersection | 200s | ✅ Yes | ⚡ Yes |
+
+### Stop + Intersection Overlap
+
+Many Warsaw stops are within 50m of intersections. When a tram stops at such a location:
+
+| at_stop | near_intersection | Classification | multi_cycle (if >120s) |
+|---------|-------------------|----------------|------------------------|
+| ✅ | ❌ | blockage (if >180s) | ❌ No |
+| ❌ | ✅ | delay | ⚡ Yes |
+| ✅ | ✅ | blockage (if >180s) | ⚡ Yes |
+
+**Example:** Tram at "Centrum" platform (also near intersection):
+- 45s wait → `normal_dwell`, not persisted
+- 150s wait → `blockage`, `multi_cycle=true` (signal priority failed)
+- 200s wait → `blockage`, `multi_cycle=true` (severe priority failure)
 
 **❓ Question:** Are there intersections with different cycle lengths?
 

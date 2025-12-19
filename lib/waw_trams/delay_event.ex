@@ -82,17 +82,19 @@ defmodule WawTrams.DelayEvent do
 
   Sets `multi_cycle: true` if:
   - Duration exceeds Warsaw signal cycle (120s), AND
-  - Event is near an intersection (not just at a stop)
+  - Event is near an intersection
 
-  This flags signal priority failures specifically, not long boarding times.
+  This flags signal priority failures specifically - delays where the tram
+  waited through multiple signal cycles because the priority system failed.
+  Only applies to intersection delays (where traffic signals exist).
   """
   def resolve(%__MODULE__{} = event) do
     now = DateTime.utc_now()
     duration = DateTime.diff(now, event.started_at, :second)
 
-    # Multi-cycle only applies to intersection delays, not stop blockages
-    multi_cycle =
-      duration > @signal_cycle_seconds and (event.near_intersection or not event.at_stop)
+    # Multi-cycle only applies to intersection delays (priority failures)
+    # Long delays at stops are normal boarding, not signal failures
+    multi_cycle = duration > @signal_cycle_seconds and event.near_intersection
 
     event
     |> changeset(%{resolved_at: now, duration_seconds: duration, multi_cycle: multi_cycle})
