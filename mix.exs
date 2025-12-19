@@ -45,6 +45,7 @@ defmodule WawTrams.MixProject do
         "guides/detection_logic.md",
         "guides/thresholds.md",
         "guides/signal_timing.md",
+        "guides/audit_dashboard.md",
         "guides/data_sources.md",
         "guides/data_aggregation.md",
         "guides/api.md"
