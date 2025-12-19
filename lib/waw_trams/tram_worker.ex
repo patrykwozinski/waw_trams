@@ -105,6 +105,36 @@ defmodule WawTrams.TramWorker do
     end
   end
 
+  @impl true
+  def terminate(_reason, state) do
+    # Resolve any active delay when worker terminates
+    # This prevents orphaned delays when trams end service or disappear from feed
+    if state.delay_event_id do
+      case DelayEvent.get(state.delay_event_id) do
+        nil ->
+          :ok
+
+        event ->
+          if is_nil(event.resolved_at) do
+            case DelayEvent.resolve(event) do
+              {:ok, resolved} ->
+                Logger.info(
+                  "[TERMINATED] Vehicle #{state.vehicle_id} worker stopped, " <>
+                    "resolved delay after #{resolved.duration_seconds}s"
+                )
+
+                Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, resolved})
+
+              {:error, _} ->
+                :ok
+            end
+          end
+      end
+    end
+
+    :ok
+  end
+
   # --- Private Functions ---
 
   defp via_tuple(vehicle_id) do

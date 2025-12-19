@@ -54,7 +54,7 @@ mix phx.server
 
 ### For Developers
 - [Architecture](guides/architecture.md) — OTP supervision tree, data flow
-- [Signal Timing](guides/signal_timing.md) — Warsaw-specific improvements (double-stop merge, multi-cycle)
+- [Signal Timing](guides/signal_timing.md) — Warsaw-specific improvements (multi-cycle detection)
 - [Data Sources](guides/data_sources.md) — How to import stops, intersections, terminals
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
