@@ -16,7 +16,8 @@ defmodule WawTrams.HourlyAggregator do
   use GenServer
   require Logger
 
-  alias WawTrams.{Repo, DelayEvent, DailyIntersectionStat, DailyLineStat, HourlyPattern}
+  alias WawTrams.{Repo, DelayEvent, DailyIntersectionStat, DailyLineStat, HourlyPattern, HourlyIntersectionStat}
+  alias WawTrams.Audit.CostCalculator
   import Ecto.Query
 
   # Run 5 minutes after each hour
@@ -149,8 +150,9 @@ defmodule WawTrams.HourlyAggregator do
     else
       precision = Application.get_env(:waw_trams, :aggregation_precision, 4)
 
-      # Aggregate intersections
+      # Aggregate intersections (daily + hourly with cost)
       intersection_count = aggregate_intersections(events, date, precision)
+      aggregate_hourly_intersections(events, date, hour, precision)
 
       # Aggregate lines
       line_count = aggregate_lines(events, date, hour)
@@ -179,7 +181,8 @@ defmodule WawTrams.HourlyAggregator do
         line: d.line,
         classification: d.classification,
         duration_seconds: d.duration_seconds,
-        near_intersection: d.near_intersection
+        near_intersection: d.near_intersection,
+        multi_cycle: d.multi_cycle
       }
     )
     |> Repo.all()
@@ -211,6 +214,33 @@ defmodule WawTrams.HourlyAggregator do
       DailyIntersectionStat.upsert!(attrs)
     end)
     |> length()
+  end
+
+  defp aggregate_hourly_intersections(events, date, hour, precision) do
+    events
+    |> Enum.filter(& &1.near_intersection)
+    |> Enum.group_by(fn e ->
+      {round_coord(e.lat, precision), round_coord(e.lon, precision)}
+    end)
+    |> Enum.each(fn {{lat, lon}, group_events} ->
+      # Calculate cost for this hour's delays
+      total_seconds = sum_duration(group_events)
+      cost = CostCalculator.calculate(total_seconds, hour)
+
+      attrs = %{
+        date: date,
+        hour: hour,
+        lat: lat,
+        lon: lon,
+        delay_count: length(group_events),
+        multi_cycle_count: Enum.count(group_events, & &1.multi_cycle),
+        total_seconds: total_seconds,
+        cost_pln: cost.total,
+        lines: get_unique_lines(group_events)
+      }
+
+      HourlyIntersectionStat.upsert!(attrs)
+    end)
   end
 
   defp get_existing_intersection_stat(date, lat, lon) do

@@ -28,6 +28,10 @@ Keep raw events for 7 days (debugging/recovery), aggregate hourly for fresh stat
 │  - Per location per day        │  ~50 rows/day                 │
 │  - Updated hourly (additive)   │  Supports: hot_spots, map     │
 ├─────────────────────────────────────────────────────────────────┤
+│  hourly_intersection_stats     │  Keep forever                 │
+│  - Per location per hour       │  ~500 rows/day                │
+│  - Pre-calculated cost         │  Supports: Audit Dashboard    │
+├─────────────────────────────────────────────────────────────────┤
 │  daily_line_stats              │  Keep forever                 │
 │  - Per line per day            │  ~30 rows/day                 │
 │  - Updated hourly (additive)   │  Supports: line analysis      │
@@ -70,6 +74,30 @@ end
 ```
 
 **Indexes:** `[:date]`, `[:lat, :lon]`, `[:date, :lat, :lon]` (unique)
+
+### `hourly_intersection_stats`
+
+Aggregates delays by location per hour, with **pre-calculated cost** for fast Audit Dashboard queries.
+
+```elixir
+schema "hourly_intersection_stats" do
+  field :date, :date
+  field :hour, :integer              # 0-23
+  field :lat, :float                 # Rounded to 4 decimals
+  field :lon, :float                 # Rounded to 4 decimals
+  field :delay_count, :integer
+  field :multi_cycle_count, :integer # Delays > 120s
+  field :total_seconds, :integer
+  field :cost_pln, :float            # Pre-calculated using hour
+  field :lines, {:array, :string}    # ["1", "9", "25"]
+  
+  timestamps()
+end
+```
+
+**Indexes:** `[:date, :hour, :lat, :lon]` (unique), `[:date, :cost_pln]`, `[:lat, :lon]`
+
+**Cost calculation:** Uses `CostCalculator.calculate/2` which applies hour-specific passenger estimates (peak/off-peak/night) to calculate economic cost.
 
 ### `daily_line_stats`
 
@@ -159,11 +187,12 @@ All analytics use **aggregated data + real-time additions** for consistent fresh
 |-------|-----------|-----------|
 | delay_events (7d) | ~100k max | ~20 MB |
 | daily_intersection_stats | ~18k | ~2 MB |
+| hourly_intersection_stats | ~180k | ~15 MB |
 | daily_line_stats | ~11k | ~1 MB |
 | hourly_patterns | 168 | ~10 KB |
-| **Total** | | **~25 MB/year** |
+| **Total** | | **~40 MB/year** |
 
-**Savings:** ~95% storage reduction vs keeping all raw events.
+**Savings:** ~90% storage reduction vs keeping all raw events.
 
 ---
 

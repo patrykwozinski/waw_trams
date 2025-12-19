@@ -22,10 +22,9 @@ defmodule WawTramsWeb.Router do
 
     live_session :default, on_mount: WawTramsWeb.LocaleHook do
       live "/dashboard", DashboardLive
-      live "/map", MapLive
-      live "/heatmap", HeatmapLive
       live "/line", LineLive
       live "/line/:line", LineLive
+      live "/audit", AuditLive
     end
   end
 

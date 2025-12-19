@@ -133,22 +133,16 @@ defmodule WawTramsWeb.DashboardLive do
                 </.link>
               </div>
               <.link
-                navigate={~p"/map"}
-                class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-              >
-                🗺️ {gettext("Map")}
-              </.link>
-              <.link
-                navigate={~p"/heatmap"}
-                class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-              >
-                📊 {gettext("Heatmap")}
-              </.link>
-              <.link
                 navigate={~p"/line"}
                 class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
               >
                 🚋 {gettext("By Line")}
+              </.link>
+              <.link
+                navigate={~p"/audit"}
+                class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm transition-colors"
+              >
+                🚨 {gettext("Audit")}
               </.link>
             </div>
 
@@ -170,7 +164,7 @@ defmodule WawTramsWeb.DashboardLive do
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-purple-400">⚡</span>
-                  <span class="text-gray-500">{gettext("multi-cycle (>120s)")}</span>
+                  <span class="text-gray-500">{gettext("priority failure (>120s)")}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-orange-400">⚠️</span>
@@ -197,7 +191,7 @@ defmodule WawTramsWeb.DashboardLive do
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-purple-400">{@stats_summary.multi_cycle}</div>
-            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Multi-Cycle (24h)")}</div>
+            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Priority Failures (24h)")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-amber-400">
@@ -217,10 +211,10 @@ defmodule WawTramsWeb.DashboardLive do
                 <p class="text-gray-500 text-sm mt-1">{gettext("Top 10 by delay count (24h)")}</p>
               </div>
               <.link
-                navigate={~p"/map"}
+                navigate={~p"/audit"}
                 class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
               >
-                🗺️ {gettext("Map")}
+                🚨 {gettext("Audit")}
               </.link>
             </div>
             <div class="overflow-x-auto max-h-80 overflow-y-auto">
@@ -430,7 +424,7 @@ defmodule WawTramsWeb.DashboardLive do
                         <%= if delay.multi_cycle do %>
                           <span
                             class="text-purple-400 text-xs"
-                            title={gettext("Multi-cycle: tram waited through multiple signal cycles")}
+                            title={gettext("Priority failure: tram waited through multiple signal cycles (>120s)")}
                           >
                             ⚡
                           </span>

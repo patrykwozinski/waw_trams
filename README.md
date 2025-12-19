@@ -30,8 +30,7 @@ mix phx.server
 | Route | Description |
 |-------|-------------|
 | `/dashboard` | Real-time delays with **live timers**, hot spots, impacted lines |
-| `/map` | Leaflet map with clustered delay markers |
-| `/heatmap` | Hour × Day pattern visualization |
+| `/audit` | 🚨 **Infrastructure Report Card** — map + leaderboard of worst intersections by economic cost |
 | `/line/:number` | Per-line analysis with hourly breakdown |
 
 **Language:** Switch between 🇬🇧 English and 🇵🇱 Polish via the header buttons.
@@ -57,8 +56,6 @@ mix phx.server
 - [Data Sources](guides/data_sources.md) — How to import stops, intersections, terminals
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
-### Projects (Planned)
-- [**Audit Dashboard**](guides/projects/audit_dashboard.md) — "Infrastructure Report Card" feature
 
 ## License
 
