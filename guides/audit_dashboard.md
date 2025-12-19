@@ -161,35 +161,89 @@ Shown when an intersection is selected.
 ### Formula
 
 ```
-Cost = Delay_Hours × Passengers × Value_of_Time
+Total Cost = Passenger Cost + Operational Cost
+
+Passenger Cost = Delay_Hours × Passengers × Value_of_Time
+Operational Cost = Delay_Hours × (Driver_Wage + Energy_Cost)
 ```
 
-### Parameters
+### Parameters (Configurable)
+
+#### Passenger Time Cost
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
-| **Value of Time (VoT)** | 22 PLN/hour | Polish commuter average |
-| **Peak Passengers** (7-9, 15-18) | 150 | Pesa Jazz capacity estimate |
+| **Value of Time (VoT)** | 22 PLN/hour | Polish commuter weighted average |
+| **Peak Passengers** (7-9, 15-18) | 150 | Pesa Jazz packed capacity |
 | **Off-Peak Passengers** (9-15, 18-22) | 50 | Moderate load |
 | **Night Passengers** (22-7) | 10 | Minimal |
+
+#### Operational Cost (Company Direct Cost)
+
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| **Driver Wage** | 80 PLN/hour | Full employer cost (incl. ZUS/taxes) |
+| **Energy (Idling)** | 5 PLN/hour | ~5 kW × ~1 PLN/kWh (HVAC, lights, computers) |
+| **Total Operational** | **85 PLN/hour** | Per tram, regardless of passengers |
+
+### Cost Breakdown Example
+
+A **10-minute delay** during **morning peak** (150 passengers):
+
+| Component | Calculation | Cost |
+|-----------|-------------|------|
+| Passenger time | 0.167h × 150 × 22 PLN | **550 PLN** |
+| Driver wage | 0.167h × 80 PLN | **13 PLN** |
+| Energy | 0.167h × 5 PLN | **1 PLN** |
+| **TOTAL** | | **564 PLN** |
+
+Same delay at **night** (10 passengers):
+
+| Component | Calculation | Cost |
+|-----------|-------------|------|
+| Passenger time | 0.167h × 10 × 22 PLN | **37 PLN** |
+| Driver wage | 0.167h × 80 PLN | **13 PLN** |
+| Energy | 0.167h × 5 PLN | **1 PLN** |
+| **TOTAL** | | **51 PLN** |
 
 ### Implementation
 
 ```elixir
+@config %{
+  vot_pln_per_hour: 22,
+  driver_wage_pln_per_hour: 80,
+  energy_pln_per_hour: 5,
+  passengers_peak: 150,
+  passengers_offpeak: 50,
+  passengers_night: 10
+}
+
 def calculate_cost(delay_seconds, hour) do
   hours = delay_seconds / 3600
   passengers = passenger_estimate(hour)
-  vot = 22  # PLN per hour
   
-  hours * passengers * vot
+  passenger_cost = hours * passengers * @config.vot_pln_per_hour
+  operational_cost = hours * (@config.driver_wage_pln_per_hour + @config.energy_pln_per_hour)
+  
+  passenger_cost + operational_cost
 end
 
-defp passenger_estimate(hour) when hour in 7..8, do: 150
-defp passenger_estimate(hour) when hour in 15..17, do: 150
-defp passenger_estimate(hour) when hour in 9..14, do: 50
-defp passenger_estimate(hour) when hour in 18..21, do: 50
-defp passenger_estimate(_hour), do: 10
-end
+defp passenger_estimate(hour) when hour in 7..8, do: @config.passengers_peak
+defp passenger_estimate(hour) when hour in 15..17, do: @config.passengers_peak
+defp passenger_estimate(hour) when hour in 9..14, do: @config.passengers_offpeak
+defp passenger_estimate(hour) when hour in 18..21, do: @config.passengers_offpeak
+defp passenger_estimate(_hour), do: @config.passengers_night
+```
+
+### Display in UI
+
+Header could show breakdown on hover/click:
+
+```
+💰 Total Cost: 1.2M PLN
+   ├── 👥 Passenger time: 1.1M PLN (92%)
+   ├── 🧑‍✈️ Driver wages: 85K PLN (7%)
+   └── ⚡ Energy: 12K PLN (1%)
 ```
 
 ---
