@@ -45,7 +45,15 @@ defmodule Mix.Tasks.WawTrams.Cleanup do
   use Mix.Task
 
   import Ecto.Query
-  alias WawTrams.{Repo, DelayEvent, DailyLineStat, DailyIntersectionStat, HourlyPattern}
+
+  alias WawTrams.{
+    Repo,
+    DelayEvent,
+    DailyLineStat,
+    DailyIntersectionStat,
+    HourlyPattern,
+    HourlyIntersectionStat
+  }
 
   @shortdoc "Safely cleans up old delay events (dry-run by default)"
 
@@ -89,9 +97,12 @@ defmodule Mix.Tasks.WawTrams.Cleanup do
     delay_count = Repo.one(from d in DelayEvent, select: count(d.id))
     line_stat_count = Repo.one(from s in DailyLineStat, select: count(s.id))
     intersection_stat_count = Repo.one(from s in DailyIntersectionStat, select: count(s.id))
+    hourly_intersection_count = Repo.one(from s in HourlyIntersectionStat, select: count(s.id))
     pattern_count = Repo.one(from p in HourlyPattern, select: count(p.id))
 
-    total = delay_count + line_stat_count + intersection_stat_count + pattern_count
+    total =
+      delay_count + line_stat_count + intersection_stat_count + hourly_intersection_count +
+        pattern_count
 
     Mix.shell().info("""
 
@@ -102,12 +113,13 @@ defmodule Mix.Tasks.WawTrams.Cleanup do
     Environment: #{env}#{if is_prod?, do: " ⚠️  PRODUCTION!", else: ""}
 
     This will DELETE ALL:
-      • delay_events:           #{delay_count} records
-      • daily_line_stats:       #{line_stat_count} records
-      • daily_intersection_stats: #{intersection_stat_count} records
-      • hourly_patterns:        #{pattern_count} records
-      ────────────────────────────
-      TOTAL:                    #{total} records
+      • delay_events:              #{delay_count} records
+      • daily_line_stats:          #{line_stat_count} records
+      • daily_intersection_stats:  #{intersection_stat_count} records
+      • hourly_intersection_stats: #{hourly_intersection_count} records
+      • hourly_patterns:           #{pattern_count} records
+      ─────────────────────────────
+      TOTAL:                       #{total} records
 
     """)
 
@@ -149,15 +161,21 @@ defmodule Mix.Tasks.WawTrams.Cleanup do
         {d1, _} = Repo.delete_all(DelayEvent)
         {d2, _} = Repo.delete_all(DailyLineStat)
         {d3, _} = Repo.delete_all(DailyIntersectionStat)
-        {d4, _} = Repo.delete_all(HourlyPattern)
+        {d4, _} = Repo.delete_all(HourlyIntersectionStat)
+        {d5, _} = Repo.delete_all(HourlyPattern)
+
+        # Also reset PostgreSQL statistics for clean monitoring
+        Repo.query!("SELECT pg_stat_reset()")
 
         Mix.shell().info("""
 
         ✅ Reset complete!
-          • delay_events:           #{d1} deleted
-          • daily_line_stats:       #{d2} deleted
-          • daily_intersection_stats: #{d3} deleted
-          • hourly_patterns:        #{d4} deleted
+          • delay_events:              #{d1} deleted
+          • daily_line_stats:          #{d2} deleted
+          • daily_intersection_stats:  #{d3} deleted
+          • hourly_intersection_stats: #{d4} deleted
+          • hourly_patterns:           #{d5} deleted
+          • PostgreSQL stats:          reset ✓
 
         Database is now empty. Start fresh with:
           mix phx.server

@@ -434,39 +434,32 @@ defmodule WawTramsWeb.AuditLive do
 
   # Mini heatmap component
   defp mini_heatmap(assigns) do
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    days = ["M", "T", "W", "T", "F", "S", "S"]
 
     assigns = assign(assigns, :days, days)
 
     ~H"""
-    <div class="bg-gray-800/30 rounded-lg p-2 overflow-x-auto">
-      <table class="w-full text-xs">
-        <thead>
-          <tr>
-            <th class="w-8"></th>
-            <%= for day <- @days do %>
-              <th class="text-gray-500 font-normal px-1">{String.slice(day, 0, 1)}</th>
-            <% end %>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for %{hour: hour, cells: cells} <- @heatmap.grid do %>
-            <tr>
-              <td class="text-gray-500 text-right pr-1">{hour}</td>
-              <%= for cell <- cells do %>
-                <td class="p-0.5">
-                  <div
-                    class="w-full aspect-square rounded-sm"
-                    style={"background: #{heatmap_color(cell.intensity)}"}
-                    title={"#{cell.count} delays"}
-                  >
-                  </div>
-                </td>
-              <% end %>
-            </tr>
+    <div class="bg-gray-800/30 rounded-lg p-3">
+      <div class="grid grid-cols-8 gap-1">
+        <%!-- Header row --%>
+        <div></div>
+        <%= for day <- @days do %>
+          <div class="text-gray-500 text-xs text-center font-medium">{day}</div>
+        <% end %>
+
+        <%!-- Data rows --%>
+        <%= for %{hour: hour, cells: cells} <- @heatmap.grid do %>
+          <div class="text-gray-500 text-xs text-right pr-1">{hour}</div>
+          <%= for cell <- cells do %>
+            <div
+              class="w-5 h-5 rounded-sm"
+              style={"background: #{heatmap_color(cell.intensity)}"}
+              title={"#{cell.count} delays"}
+            >
+            </div>
           <% end %>
-        </tbody>
-      </table>
+        <% end %>
+      </div>
     </div>
     """
   end
