@@ -3,7 +3,7 @@
 > **Status:** Planning  
 > **Route:** `/audit`  
 > **Replaces:** `/map` and `/heatmap` (after completion)  
-> **Depends on:** [Clean Architecture Refactor](clean_architecture.md) (Phase 1-2)
+> **Depends on:** ✅ Clean Architecture complete (queries modularized)
 
 ## Vision
 

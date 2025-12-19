@@ -111,10 +111,10 @@ defmodule WawTramsWeb.Telemetry do
 
     # Count active delays
     try do
-      active_count = WawTrams.DelayEvent.count_active()
+      active_count = WawTrams.Queries.ActiveDelays.count_active()
       :telemetry.execute([:waw_trams, :delays], %{active: active_count}, %{})
 
-      today_count = WawTrams.DelayEvent.count_today()
+      today_count = WawTrams.Queries.ActiveDelays.count_today()
       :telemetry.execute([:waw_trams, :delays], %{today: today_count}, %{})
     rescue
       _ -> :ok

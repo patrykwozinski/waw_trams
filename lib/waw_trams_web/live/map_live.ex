@@ -1,7 +1,7 @@
 defmodule WawTramsWeb.MapLive do
   use WawTramsWeb, :live_view
 
-  alias WawTrams.DelayEvent
+  alias WawTrams.Queries.HotSpots
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,7 +10,7 @@ defmodule WawTramsWeb.MapLive do
 
   @impl true
   def handle_event("request_hot_spots", _params, socket) do
-    hot_spots = DelayEvent.hot_spots(limit: 20)
+    hot_spots = HotSpots.hot_spots(limit: 20)
     {:noreply, push_event(socket, "hot_spots", %{spots: hot_spots})}
   end
 

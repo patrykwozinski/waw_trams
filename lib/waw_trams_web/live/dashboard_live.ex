@@ -1,7 +1,8 @@
 defmodule WawTramsWeb.DashboardLive do
   use WawTramsWeb, :live_view
 
-  alias WawTrams.DelayEvent
+  alias WawTrams.Queries.{ActiveDelays, HotSpots}
+  alias WawTrams.Analytics.Stats
   alias WawTrams.WarsawTime
 
   # 5 seconds
@@ -53,13 +54,13 @@ defmodule WawTramsWeb.DashboardLive do
   end
 
   defp assign_data(socket) do
-    active_delays = DelayEvent.active()
-    recent_resolved = get_recent_resolved(20)
-    stats = DelayEvent.stats()
-    hot_spots = DelayEvent.hot_spots(limit: 10)
-    hot_spot_summary = DelayEvent.hot_spot_summary()
-    impacted_lines = DelayEvent.impacted_lines(limit: 10)
-    multi_cycle_count = DelayEvent.multi_cycle_count()
+    active_delays = ActiveDelays.active()
+    recent_resolved = ActiveDelays.recent_resolved(20)
+    stats = Stats.for_period()
+    hot_spots = HotSpots.hot_spots(limit: 10)
+    hot_spot_summary = HotSpots.hot_spot_summary()
+    impacted_lines = HotSpots.impacted_lines(limit: 10)
+    multi_cycle_count = Stats.multi_cycle_count()
 
     # Summarize stats for cleaner display
     stats_summary = summarize_stats(stats, multi_cycle_count)
@@ -87,15 +88,6 @@ defmodule WawTramsWeb.DashboardLive do
     }
   end
 
-  defp get_recent_resolved(limit) do
-    import Ecto.Query
-
-    DelayEvent
-    |> where([d], not is_nil(d.resolved_at))
-    |> order_by([d], desc: d.resolved_at)
-    |> limit(^limit)
-    |> WawTrams.Repo.all()
-  end
 
   @impl true
   def render(assigns) do

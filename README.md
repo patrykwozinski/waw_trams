@@ -59,7 +59,6 @@ mix phx.server
 - [API Reference](guides/api.md) — Query functions and Mix tasks
 ### Projects (Planned)
 - [**Audit Dashboard**](guides/projects/audit_dashboard.md) — "Infrastructure Report Card" feature
-- [**Clean Architecture**](guides/projects/clean_architecture.md) — Refactoring DelayEvent god class
 
 ## License
 

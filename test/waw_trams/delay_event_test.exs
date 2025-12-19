@@ -2,6 +2,8 @@ defmodule WawTrams.DelayEventTest do
   use WawTrams.DataCase, async: true
 
   alias WawTrams.DelayEvent
+  alias WawTrams.Queries.ActiveDelays
+  alias WawTrams.Analytics.Stats
 
   @valid_attrs %{
     vehicle_id: "V/17/5",
@@ -109,78 +111,6 @@ defmodule WawTrams.DelayEventTest do
     end
   end
 
-  describe "active/0" do
-    test "returns unresolved delays" do
-      {:ok, _event1} = DelayEvent.create(@valid_attrs)
-      {:ok, event2} = DelayEvent.create(Map.put(@valid_attrs, :vehicle_id, "V/18/1"))
-      {:ok, _resolved} = DelayEvent.resolve(event2)
-
-      active = DelayEvent.active()
-
-      assert length(active) == 1
-      assert hd(active).vehicle_id == "V/17/5"
-    end
-
-    test "returns empty list when no active delays" do
-      assert DelayEvent.active() == []
-    end
-  end
-
-  describe "recent/1" do
-    test "returns delays ordered by started_at desc" do
-      now = DateTime.utc_now()
-
-      {:ok, _older} =
-        DelayEvent.create(
-          Map.merge(@valid_attrs, %{
-            vehicle_id: "V/1/1",
-            started_at: DateTime.add(now, -60, :second)
-          })
-        )
-
-      {:ok, _newer} =
-        DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/2/2", started_at: now}))
-
-      recent = DelayEvent.recent(10)
-
-      assert length(recent) == 2
-      # newer first
-      assert hd(recent).vehicle_id == "V/2/2"
-    end
-
-    test "respects limit" do
-      for i <- 1..5 do
-        DelayEvent.create(Map.put(@valid_attrs, :vehicle_id, "V/#{i}/#{i}"))
-      end
-
-      assert length(DelayEvent.recent(3)) == 3
-    end
-  end
-
-  describe "stats/1" do
-    test "returns stats grouped by classification" do
-      # Create some delays
-      {:ok, d1} = DelayEvent.create(@valid_attrs)
-      {:ok, _} = DelayEvent.resolve(d1)
-
-      {:ok, d2} = DelayEvent.create(Map.put(@valid_attrs, :vehicle_id, "V/2/2"))
-      {:ok, _} = DelayEvent.resolve(d2)
-
-      {:ok, _} =
-        DelayEvent.create(
-          Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", classification: "blockage"})
-        )
-
-      stats = DelayEvent.stats()
-
-      delay_stat = Enum.find(stats, &(&1.classification == "delay"))
-      blockage_stat = Enum.find(stats, &(&1.classification == "blockage"))
-
-      assert delay_stat.count == 2
-      assert blockage_stat.count == 1
-    end
-  end
-
   describe "cleanup_orphaned/0" do
     test "deletes all unresolved delay events" do
       # Create several unresolved delays
@@ -196,15 +126,15 @@ defmodule WawTrams.DelayEventTest do
         DelayEvent.create(Map.merge(@valid_attrs, %{vehicle_id: "V/3/3", started_at: started_at}))
 
       # Verify they exist and are unresolved
-      assert length(DelayEvent.active()) == 3
+      assert length(ActiveDelays.active()) == 3
 
       # Delete orphaned
       {:ok, count} = DelayEvent.cleanup_orphaned()
 
       assert count == 3
-      assert DelayEvent.active() == []
+      assert ActiveDelays.active() == []
       # They should be completely gone, not just resolved
-      assert DelayEvent.recent(10) == []
+      assert ActiveDelays.recent(10) == []
     end
 
     test "does not affect already resolved events" do
@@ -218,7 +148,7 @@ defmodule WawTrams.DelayEventTest do
       assert count == 0
 
       # Resolved event should still exist
-      [remaining] = DelayEvent.recent(1)
+      [remaining] = ActiveDelays.recent(1)
       assert remaining.id == resolved.id
     end
 
@@ -330,7 +260,7 @@ defmodule WawTrams.DelayEventTest do
     end
   end
 
-  describe "multi_cycle_count/1" do
+  describe "multi_cycle_count via Stats" do
     test "counts only multi_cycle=true events" do
       now = DateTime.utc_now()
 
@@ -357,11 +287,11 @@ defmodule WawTrams.DelayEventTest do
       {:ok, _} = DelayEvent.resolve(long)
 
       # Only the long one should be counted
-      assert DelayEvent.multi_cycle_count() == 1
+      assert Stats.multi_cycle_count() == 1
     end
 
     test "returns 0 when no multi_cycle events" do
-      assert DelayEvent.multi_cycle_count() == 0
+      assert Stats.multi_cycle_count() == 0
     end
   end
 end

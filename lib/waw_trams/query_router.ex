@@ -10,7 +10,8 @@ defmodule WawTrams.QueryRouter do
   Aggregated data is at most ~1 hour behind (aggregation runs at minute 5).
   """
 
-  alias WawTrams.{DelayEvent, DailyIntersectionStat, DailyLineStat, HourlyPattern}
+  alias WawTrams.{DailyIntersectionStat, DailyLineStat, HourlyPattern}
+  alias WawTrams.Queries.{ActiveDelays, HotSpots, LineAnalysis}
 
   # --- Aggregated + Real-time (consistent freshness) ---
 
@@ -22,7 +23,7 @@ defmodule WawTrams.QueryRouter do
 
     if aggregated == [] do
       # Fallback to raw if no aggregated data yet
-      DelayEvent.hot_spots(opts)
+      HotSpots.hot_spots(opts)
     else
       # Add recent events (since minute 5)
       recent = get_recent_hot_spots()
@@ -37,7 +38,7 @@ defmodule WawTrams.QueryRouter do
     aggregated = DailyLineStat.impacted_lines(to_date_opts(opts))
 
     if aggregated == [] do
-      DelayEvent.impacted_lines(opts)
+      HotSpots.impacted_lines(opts)
     else
       # Add recent events (since minute 5)
       recent = get_recent_impacted_lines()
@@ -54,7 +55,7 @@ defmodule WawTrams.QueryRouter do
 
     if aggregated == [] do
       # No aggregated data yet, use raw
-      DelayEvent.delays_by_hour(line, opts)
+      LineAnalysis.delays_by_hour(line, opts)
     else
       # Check if current hour is already aggregated
       current_hour = DateTime.utc_now().hour
@@ -115,7 +116,7 @@ defmodule WawTrams.QueryRouter do
     result = DailyLineStat.lines_with_stats(to_date_opts(opts))
 
     if result == [] do
-      DelayEvent.lines_with_delays(opts)
+      LineAnalysis.lines_with_delays(opts)
     else
       result
     end
@@ -126,29 +127,23 @@ defmodule WawTrams.QueryRouter do
   @doc """
   Active delays - always raw, real-time.
   """
-  defdelegate active(), to: DelayEvent
+  defdelegate active(), to: ActiveDelays
 
   @doc """
   Recent delays - always raw, recent events.
   """
-  defdelegate recent(limit \\ 100), to: DelayEvent
-
-  @doc """
-  Stats for last 24h - uses raw for current hour freshness.
-  For historical trends, use aggregated tables directly.
-  """
-  defdelegate stats(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)), to: DelayEvent
+  defdelegate recent(limit \\ 100), to: ActiveDelays
 
   @doc """
   Hot spot summary for dashboard (24h) - uses raw for freshness.
   """
   defdelegate hot_spot_summary(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)),
-    to: DelayEvent
+    to: HotSpots
 
   @doc """
   Line hot spots - uses raw for clustering precision.
   """
-  defdelegate line_hot_spots(line, opts \\ []), to: DelayEvent
+  defdelegate line_hot_spots(line, opts \\ []), to: LineAnalysis, as: :hot_spots
 
   # --- Internal helpers ---
 
@@ -167,7 +162,8 @@ defmodule WawTrams.QueryRouter do
   # This avoids double-counting when current hour is already aggregated
   defp get_recent_events_stats(line, current_hour) do
     import Ecto.Query
-    alias WawTrams.{Repo, DelayEvent}
+    alias WawTrams.Repo
+    alias WawTrams.DelayEvent
 
     # Aggregation runs at minute 5, so get events since then
     now = DateTime.utc_now()
@@ -225,7 +221,8 @@ defmodule WawTrams.QueryRouter do
   # Get current hour stats from raw events for a line
   defp get_current_hour_stats(line, current_hour) do
     import Ecto.Query
-    alias WawTrams.{Repo, DelayEvent}
+    alias WawTrams.Repo
+    alias WawTrams.DelayEvent
 
     hour_start = DateTime.utc_now() |> Map.put(:minute, 0) |> Map.put(:second, 0)
 
@@ -269,7 +266,8 @@ defmodule WawTrams.QueryRouter do
   # Get summary for recent events only (since minute 5 of current hour)
   defp get_recent_summary(line) do
     import Ecto.Query
-    alias WawTrams.{Repo, DelayEvent}
+    alias WawTrams.Repo
+    alias WawTrams.DelayEvent
 
     now = DateTime.utc_now()
     since = %{now | minute: 5, second: 0, microsecond: {0, 0}}
@@ -350,7 +348,8 @@ defmodule WawTrams.QueryRouter do
   # Get recent hot spot data (events since minute 5)
   defp get_recent_hot_spots do
     import Ecto.Query
-    alias WawTrams.{Repo, DelayEvent}
+    alias WawTrams.Repo
+    alias WawTrams.DelayEvent
 
     now = DateTime.utc_now()
 
@@ -417,7 +416,8 @@ defmodule WawTrams.QueryRouter do
   # Get recent impacted lines data (events since minute 5)
   defp get_recent_impacted_lines do
     import Ecto.Query
-    alias WawTrams.{Repo, DelayEvent}
+    alias WawTrams.Repo
+    alias WawTrams.DelayEvent
 
     now = DateTime.utc_now()
 
