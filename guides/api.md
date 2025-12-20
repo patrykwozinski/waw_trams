@@ -62,7 +62,14 @@ WawTrams.Analytics.Stats.multi_cycle_count()
 ```elixir
 # Top problematic intersections (clustered within ~55m)
 WawTrams.Queries.HotSpots.hot_spots(limit: 10)
-# => [%{lat: 52.23, lon: 21.01, delay_count: 15, location_name: "Marszałkowska / Świętokrzyska", ...}, ...]
+# => [%{
+#      lat: 52.23, 
+#      lon: 21.01, 
+#      delay_count: 15, 
+#      location_name: "Marszałkowska / Świętokrzyska",  # Street name from OSM
+#      is_intersection: true,                            # true = OSM name, false = stop fallback
+#      ...
+#    }, ...]
 
 # Summary of intersection delays
 WawTrams.Queries.HotSpots.hot_spot_summary()

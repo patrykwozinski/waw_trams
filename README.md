@@ -1,5 +1,7 @@
 # Warsaw Tram Priority Auditor
 
+[![CI](https://github.com/YOUR_USERNAME/waw_trams/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/waw_trams/actions/workflows/ci.yml)
+
 Real-time detection and analysis of delays in the Warsaw tram network (ZTM), identifying intersections where traffic signal priority fails.
 
 ## Problem
@@ -21,7 +23,7 @@ Warsaw's trams frequently wait at red lights because the traffic signal priority
 ## Quick Start
 
 ```bash
-# Start database
+# Start database (PostGIS required)
 docker compose up -d
 
 # Setup
@@ -29,13 +31,15 @@ mix deps.get
 mix ecto.setup
 
 # Import spatial data
-mix waw_trams.import_intersections   # ~1,250 tram-road crossings
+mix waw_trams.import_intersections   # ~1,250 tram-road crossings with street names
 mix waw_trams.import_stops           # ~4,900 Warsaw platforms
 mix waw_trams.import_line_terminals  # ~172 line-specific terminals
 
 # Run
 mix phx.server
 ```
+
+Visit http://localhost:4000/dashboard
 
 ## Dashboard & Analytics
 
@@ -55,6 +59,24 @@ mix phx.server
 | **Priority Failures** | Delays at intersections exceeding threshold (120s or 180s if at stop) |
 | **Economic Cost** | Time × passengers × value-of-time + driver wages + energy |
 
+### Cost Calculation
+
+The economic cost is calculated per delay event:
+
+```
+Total Cost = Passenger Cost + Operational Cost
+
+Passenger Cost = delay_hours × passengers × 22 PLN/hour (Value of Time)
+Operational Cost = delay_hours × (80 PLN/hour driver + 5 PLN/hour energy)
+```
+
+**Passenger estimates by time of day:**
+| Period | Hours | Passengers |
+|--------|-------|------------|
+| Peak | 7–9, 15–18 | 150 |
+| Off-Peak | 6, 9–15, 18–22 | 50 |
+| Night | 22–6 | 10 |
+
 ## Tech Stack
 
 | Component | Technology |
@@ -62,6 +84,20 @@ mix phx.server
 | Framework | Phoenix 1.8 (Elixir/OTP) |
 | Database | PostgreSQL 17 + PostGIS 3.5 |
 | Data Source | GTFS-RT via [mkuran.pl](https://mkuran.pl/gtfs/) |
+| CI/CD | GitHub Actions |
+
+## Development
+
+```bash
+# Run tests
+mix test
+
+# Run all checks (format, compile, test)
+mix precommit
+
+# Static analysis
+mix credo
+```
 
 ## Documentation
 

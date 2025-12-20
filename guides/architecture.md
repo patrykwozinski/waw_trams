@@ -77,7 +77,7 @@ Ecto schema for persisted delays. Only actionable delays are stored:
 
 ### `intersections`
 
-~1,250 tram-road crossings from OpenStreetMap with PostGIS geometry.
+~1,250 tram-road crossings from OpenStreetMap with PostGIS geometry and street names (e.g., "Puławska / Goworka"). Used for both spatial proximity checks and display names on the dashboard.
 
 ### Aggregation Tables
 

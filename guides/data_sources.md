@@ -139,10 +139,28 @@ out tags geom;
 
 ### Import Process
 
-1. Export intersection nodes as CSV (3-column format works too)
-2. Optionally enrich with street names using `scripts/enrich_intersections.exs`
-3. Run the mix task:
+The CSV file `priv/data/intersections.csv` contains intersection nodes enriched with street names:
 
-```sh
-mix waw_trams.import_intersections
+```csv
+"osm_id",lon,lat,"name"
+"node/32320979",21.0208934,52.2109083,"Puławska / Goworka"
+"node/12345678",21.0123456,52.2234567,"Targowa"
 ```
+
+**Steps to update intersection data:**
+
+1. Run Overpass query to get intersection nodes
+2. Run Overpass query to get road names for those nodes
+3. Export both as GeoJSON
+4. Run enrichment script:
+   ```bash
+   elixir scripts/enrich_intersections.exs
+   ```
+5. Import to database:
+   ```bash
+   mix waw_trams.import_intersections
+   ```
+
+The import is idempotent - it updates existing records and adds new ones.
+
+**Coverage:** ~92% of intersections have street names (e.g., "Puławska / Goworka"). The remaining ~8% show only the primary street name or fall back to nearest tram stop name in the UI.
