@@ -572,3 +572,91 @@ msgstr "Opóźnienia na skrzyżowaniach"
 #, elixir-autogen, elixir-format
 msgid "Time Lost at Intersections"
 msgstr "Czas stracony na skrzyżowaniach"
+
+#: Cost methodology modal
+msgid "Cost Calculation Methodology"
+msgstr "Metodologia kalkulacji kosztów"
+
+msgid "Formula"
+msgstr "Wzór"
+
+msgid "Total Cost"
+msgstr "Koszt całkowity"
+
+msgid "Passenger Cost"
+msgstr "Koszt pasażerów"
+
+msgid "Operational Cost"
+msgstr "Koszt operacyjny"
+
+msgid "delay_hours"
+msgstr "godz. opóźnienia"
+
+msgid "passengers"
+msgstr "pasażerowie"
+
+msgid "Assumptions"
+msgstr "Założenia"
+
+msgid "Value of Time (VoT)"
+msgstr "Wartość czasu (VoT)"
+
+msgid "hour"
+msgstr "godz."
+
+msgid "Polish commuter weighted average"
+msgstr "Średnia ważona dla polskich dojeżdżających"
+
+msgid "Driver wage"
+msgstr "Wynagrodzenie kierowcy"
+
+msgid "Full employer cost (incl. ZUS/taxes)"
+msgstr "Pełny koszt pracodawcy (z ZUS/podatkami)"
+
+msgid "Energy (idling)"
+msgstr "Energia (postój)"
+
+msgid "HVAC, lights, systems during idle"
+msgstr "Klimatyzacja, oświetlenie, systemy na postoju"
+
+msgid "Passenger Estimates"
+msgstr "Szacunki liczby pasażerów"
+
+msgid "Time Period"
+msgstr "Okres"
+
+msgid "Passengers"
+msgstr "Pasażerowie"
+
+msgid "Morning Peak"
+msgstr "Szczyt poranny"
+
+msgid "Afternoon Peak"
+msgstr "Szczyt popołudniowy"
+
+msgid "Off-Peak"
+msgstr "Poza szczytem"
+
+msgid "Evening"
+msgstr "Wieczór"
+
+msgid "Night"
+msgstr "Noc"
+
+msgid "Based on Pesa Jazz 134N tram capacity (~240 max, ~150 comfortable)"
+msgstr "Na podstawie pojemności tramwaju Pesa Jazz 134N (~240 max, ~150 komfortowo)"
+
+msgid "Example"
+msgstr "Przykład"
+
+msgid "10-minute delay at 8:00 AM (peak hour):"
+msgstr "10-minutowe opóźnienie o 8:00 (szczyt):"
+
+msgid "Passenger cost"
+msgstr "Koszt pasażerów"
+
+msgid "Operational cost"
+msgstr "Koszt operacyjny"
+
+msgid "How is cost calculated?"
+msgstr "Jak obliczany jest koszt?"

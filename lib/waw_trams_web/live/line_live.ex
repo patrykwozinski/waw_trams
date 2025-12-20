@@ -259,8 +259,10 @@ defmodule WawTramsWeb.LineLive do
                         </td>
                         <td class="px-5 py-3">
                           <div class="text-sm">
-                            <span class="text-gray-400">{gettext("Near")}</span>
-                            <span class="text-white ml-1">
+                            <%= if !spot.is_intersection do %>
+                              <span class="text-gray-400">{gettext("Near")}</span>
+                            <% end %>
+                            <span class={["text-white", !spot.is_intersection && "ml-1"]}>
                               {spot.location_name || gettext("Unknown")}
                             </span>
                           </div>

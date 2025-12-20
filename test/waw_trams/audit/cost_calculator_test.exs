@@ -116,9 +116,13 @@ defmodule WawTrams.Audit.CostCalculatorTest do
     end
 
     test "returns night for late/early hours" do
-      for hour <- [22, 23, 0, 1, 2, 3, 4, 5, 6] do
+      for hour <- [22, 23, 0, 1, 2, 3, 4, 5] do
         assert CostCalculator.passenger_estimate(hour) == 10
       end
+    end
+
+    test "returns off-peak for early morning (6 AM)" do
+      assert CostCalculator.passenger_estimate(6) == 50
     end
   end
 

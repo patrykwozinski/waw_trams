@@ -46,6 +46,28 @@ const AuditMapHook = {
       })
     })
 
+    // Handle reset_view event to zoom out to show all markers
+    this.handleEvent("reset_view", (payload) => {
+      console.log("reset_view event received", payload)
+      // Clear selection highlight
+      if (this.selectedMarker) {
+        this.selectedMarker.setStyle({ weight: 2, color: "#0f0f0f" })
+        this.selectedMarker = null
+      }
+      // Fit bounds to show all markers, or reset to Warsaw center
+      const layers = this.markersLayer.getLayers()
+      if (layers.length > 0) {
+        const bounds = this.markersLayer.getBounds()
+        if (bounds.isValid()) {
+          this.map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 13, duration: 0.8 })
+        } else {
+          this.map.flyTo(center, 12, { duration: 0.8 })
+        }
+      } else {
+        this.map.flyTo(center, 12, { duration: 0.8 })
+      }
+    })
+
     // Request initial data
     this.pushEvent("request_leaderboard", {})
   },
@@ -80,15 +102,38 @@ const AuditMapHook = {
         this.highlightMarker(marker, spot.lat, spot.lon)
       })
 
-      // Hover tooltip
-      const stopName = spot.nearest_stop || "Unknown"
+      // Tooltip content
+      const stopName = spot.location_name || "Unknown"
       const cost = this.formatCost(spot.cost?.total || 0)
-      marker.bindTooltip(`
-        <div style="text-align: center;">
-          <strong>${stopName}</strong><br/>
-          <span style="color: ${color};">${cost}</span>
+      const rank = index + 1
+      
+      // Prominent tooltip with rank badge
+      const tooltipContent = `
+        <div style="text-align: center; padding: 6px 8px; color: #fff;">
+          <div style="background: ${color}; color: #000; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
+            #${rank}
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: #e5e7eb; line-height: 1.3; max-width: 180px;">${stopName}</div>
+          <div style="color: ${color}; font-size: 14px; font-weight: bold; margin-top: 4px;">${cost}</div>
         </div>
-      `, { direction: "top", offset: [0, -radius] })
+      `
+      
+      // Top 3 markers get permanent labels
+      if (index < 3) {
+        marker.bindTooltip(tooltipContent, { 
+          permanent: true, 
+          direction: "top", 
+          offset: [0, -radius - 5],
+          className: "prominent-tooltip"
+        })
+      } else {
+        // Others show on hover with larger tooltip
+        marker.bindTooltip(tooltipContent, { 
+          direction: "top", 
+          offset: [0, -radius],
+          className: "prominent-tooltip"
+        })
+      }
 
       this.markersLayer.addLayer(marker)
     })
@@ -110,8 +155,8 @@ const AuditMapHook = {
     marker.setStyle({ weight: 4, color: "#fff" })
     this.selectedMarker = marker
 
-    // Pan to marker
-    this.map.panTo([lat, lon], { animate: true })
+    // Zoom to marker (zoom level 16 for street-level detail)
+    this.map.flyTo([lat, lon], 16, { animate: true, duration: 0.8 })
   },
 
   severityColor(severity) {

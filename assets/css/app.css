@@ -103,3 +103,34 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* Make all clickable elements show pointer cursor */
+[phx-click],
+[phx-click] button,
+button[phx-click],
+a[href],
+.leaflet-interactive {
+  cursor: pointer !important;
+}
+
+/* Leaflet map tooltip styling */
+.prominent-tooltip {
+  background: rgba(17, 24, 39, 0.95) !important;
+  border: 1px solid rgba(75, 85, 99, 0.8) !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  font-family: inherit !important;
+}
+
+.prominent-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+}
+
+.leaflet-tooltip-top.prominent-tooltip::before {
+  border-top-color: rgba(17, 24, 39, 0.95) !important;
+}
+
+.leaflet-tooltip-bottom.prominent-tooltip::before {
+  border-bottom-color: rgba(17, 24, 39, 0.95) !important;
+}

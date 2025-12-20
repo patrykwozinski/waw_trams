@@ -33,6 +33,7 @@ defmodule WawTramsWeb.AuditLive do
       |> assign(:leaderboard, [])
       |> assign(:leaderboard_coverage_pct, 0)
       |> assign(:selected_heatmap, %{grid: [], max_count: 0, total_delays: 0})
+      |> assign(:show_methodology, false)
 
     if connected?(socket) do
       :timer.send_interval(@refresh_interval, :refresh)
@@ -104,7 +105,11 @@ defmodule WawTramsWeb.AuditLive do
 
   @impl true
   def handle_event("deselect", _params, socket) do
-    {:noreply, socket |> assign(:selected, nil) |> assign(:mobile_tab, "list")}
+    {:noreply,
+     socket
+     |> assign(:selected, nil)
+     |> assign(:mobile_tab, "list")
+     |> push_event("reset_view", %{reset: true})}
   end
 
   @impl true
@@ -143,6 +148,11 @@ defmodule WawTramsWeb.AuditLive do
       |> load_data()
 
     {:noreply, push_event(socket, "leaderboard_data", %{data: socket.assigns.leaderboard})}
+  end
+
+  @impl true
+  def handle_event("toggle_methodology", _params, socket) do
+    {:noreply, assign(socket, :show_methodology, !socket.assigns.show_methodology)}
   end
 
   defp load_data(socket) do
@@ -250,7 +260,16 @@ defmodule WawTramsWeb.AuditLive do
             <div class="text-xl md:text-3xl font-bold text-red-400">
               {format_cost(@stats.cost.total)}
             </div>
-            <div class="text-gray-500 text-xs md:text-sm">{gettext("Cost at Intersections")}</div>
+            <div class="text-gray-500 text-xs md:text-sm flex items-center gap-2">
+              {gettext("Cost at Intersections")}
+              <button
+                phx-click="toggle_methodology"
+                class="text-amber-400 hover:text-amber-300 bg-gray-700 hover:bg-gray-600 rounded-full p-1 transition-colors"
+                title={gettext("How is cost calculated?")}
+              >
+                <.icon name="hero-question-mark-circle" class="w-5 h-5" />
+              </button>
+            </div>
           </div>
           <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
             <div class="text-xl md:text-3xl font-bold text-amber-400">
@@ -324,6 +343,156 @@ defmodule WawTramsWeb.AuditLive do
           <% end %>
         </div>
       </div>
+
+      <%!-- Methodology Modal --%>
+      <%= if @show_methodology do %>
+        <.methodology_modal />
+      <% end %>
+    </div>
+    """
+  end
+
+  # Cost Methodology Modal
+  defp methodology_modal(assigns) do
+    ~H"""
+    <div
+      class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70"
+      phx-click="toggle_methodology"
+    >
+      <div
+        class="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        phx-click-away="toggle_methodology"
+      >
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-white">📊 {gettext("Cost Calculation Methodology")}</h2>
+            <button phx-click="toggle_methodology" class="text-gray-400 hover:text-white">
+              <.icon name="hero-x-mark" class="w-6 h-6" />
+            </button>
+          </div>
+
+          <div class="space-y-6 text-gray-300">
+            <%!-- Formula --%>
+            <div>
+              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Formula")}</h3>
+              <div class="bg-gray-800/50 rounded-lg p-4 font-mono text-sm">
+                <p class="text-white">
+                  {gettext("Total Cost")} = {gettext("Passenger Cost")} + {gettext("Operational Cost")}
+                </p>
+                <p class="mt-2 text-gray-400">
+                  {gettext("Passenger Cost")} = {gettext("delay_hours")} × {gettext("passengers")} × 22 PLN/h
+                </p>
+                <p class="text-gray-400">
+                  {gettext("Operational Cost")} = {gettext("delay_hours")} × (80 + 5) PLN/h
+                </p>
+              </div>
+            </div>
+
+            <%!-- Assumptions --%>
+            <div>
+              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Assumptions")}</h3>
+              <div class="grid gap-3">
+                <div class="bg-gray-800/50 rounded-lg p-3">
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">{gettext("Value of Time (VoT)")}</span>
+                    <span class="font-semibold text-white">22 PLN/{gettext("hour")}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {gettext("Polish commuter weighted average")}
+                  </p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-3">
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">{gettext("Driver wage")}</span>
+                    <span class="font-semibold text-white">80 PLN/{gettext("hour")}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {gettext("Full employer cost (incl. ZUS/taxes)")}
+                  </p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-3">
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">{gettext("Energy (idling)")}</span>
+                    <span class="font-semibold text-white">5 PLN/{gettext("hour")}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {gettext("HVAC, lights, systems during idle")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <%!-- Passenger estimates --%>
+            <div>
+              <h3 class="text-lg font-semibold text-amber-400 mb-2">
+                {gettext("Passenger Estimates")}
+              </h3>
+              <div class="bg-gray-800/50 rounded-lg p-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-gray-400 text-left">
+                      <th class="pb-2">{gettext("Time Period")}</th>
+                      <th class="pb-2">{gettext("Hours")}</th>
+                      <th class="pb-2 text-right">{gettext("Passengers")}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-gray-300">
+                    <tr>
+                      <td class="py-1">🌅 {gettext("Morning Peak")}</td>
+                      <td>7:00–8:59</td>
+                      <td class="text-right font-semibold text-red-400">150</td>
+                    </tr>
+                    <tr>
+                      <td class="py-1">🌆 {gettext("Afternoon Peak")}</td>
+                      <td>15:00–17:59</td>
+                      <td class="text-right font-semibold text-red-400">150</td>
+                    </tr>
+                    <tr>
+                      <td class="py-1">☀️ {gettext("Off-Peak")}</td>
+                      <td>6:00–6:59, 9:00–14:59</td>
+                      <td class="text-right font-semibold text-amber-400">50</td>
+                    </tr>
+                    <tr>
+                      <td class="py-1">🌙 {gettext("Evening")}</td>
+                      <td>18:00–21:59</td>
+                      <td class="text-right font-semibold text-amber-400">50</td>
+                    </tr>
+                    <tr>
+                      <td class="py-1">🌃 {gettext("Night")}</td>
+                      <td>22:00–5:59</td>
+                      <td class="text-right font-semibold text-gray-400">10</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                {gettext("Based on Pesa Jazz 134N tram capacity (~240 max, ~150 comfortable)")}
+              </p>
+            </div>
+
+            <%!-- Example --%>
+            <div>
+              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Example")}</h3>
+              <div class="bg-gray-800/50 rounded-lg p-4 text-sm">
+                <p class="text-gray-400">{gettext("10-minute delay at 8:00 AM (peak hour):")}</p>
+                <div class="mt-2 space-y-1">
+                  <p>
+                    {gettext("Passenger cost")}: 0.167h × 150 × 22 PLN =
+                    <span class="text-red-400 font-semibold">550 PLN</span>
+                  </p>
+                  <p>
+                    {gettext("Operational cost")}: 0.167h × 85 PLN =
+                    <span class="text-amber-400 font-semibold">14 PLN</span>
+                  </p>
+                  <p class="border-t border-gray-700 pt-2 mt-2">
+                    {gettext("Total")}: <span class="text-white font-bold">564 PLN</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     """
   end
@@ -391,7 +560,7 @@ defmodule WawTramsWeb.AuditLive do
     <div class="p-4">
       <button
         phx-click="deselect"
-        class="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1"
+        class="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1 cursor-pointer"
       >
         ← {gettext("Back to Leaderboard")}
       </button>

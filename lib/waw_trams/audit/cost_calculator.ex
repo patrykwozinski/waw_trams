@@ -120,6 +120,9 @@ defmodule WawTrams.Audit.CostCalculator do
   """
   def passenger_estimate(hour, cfg \\ config())
 
+  # Early morning off-peak: 6:00-6:59
+  def passenger_estimate(hour, cfg) when hour == 6, do: cfg.passengers_offpeak
+
   # Morning peak: 7:00-8:59
   def passenger_estimate(hour, cfg) when hour in 7..8, do: cfg.passengers_peak
 
@@ -132,7 +135,7 @@ defmodule WawTrams.Audit.CostCalculator do
   # Evening off-peak: 18:00-21:59
   def passenger_estimate(hour, cfg) when hour in 18..21, do: cfg.passengers_offpeak
 
-  # Night: 22:00-6:59
+  # Night: 22:00-5:59
   def passenger_estimate(_hour, cfg), do: cfg.passengers_night
 
   @doc """

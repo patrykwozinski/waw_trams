@@ -82,6 +82,7 @@ defmodule WawTrams.Queries.HotSpots do
           SELECT i.name
           FROM intersections i
           WHERE i.name IS NOT NULL AND i.name != ''
+            AND ST_DWithin(i.geom::geography, h.centroid::geography, 100)
           ORDER BY i.geom::geography <-> h.centroid::geography
           LIMIT 1
         ),
@@ -92,7 +93,12 @@ defmodule WawTrams.Queries.HotSpots do
           ORDER BY s.geom::geography <-> h.centroid::geography
           LIMIT 1
         )
-      ) as location_name
+      ) as location_name,
+      EXISTS (
+        SELECT 1 FROM intersections i
+        WHERE i.name IS NOT NULL AND i.name != ''
+          AND ST_DWithin(i.geom::geography, h.centroid::geography, 100)
+      ) as is_intersection
     FROM hot_spot_data h
     ORDER BY h.delay_count DESC, h.total_delay_seconds DESC
     LIMIT $3
@@ -100,7 +106,18 @@ defmodule WawTrams.Queries.HotSpots do
 
     case Repo.query(query, [since, classification, limit]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [cluster_id, osm_ids, lat, lon, count, total, avg, lines, stop_name] ->
+        Enum.map(rows, fn [
+                            cluster_id,
+                            osm_ids,
+                            lat,
+                            lon,
+                            count,
+                            total,
+                            avg,
+                            lines,
+                            stop_name,
+                            is_intersection
+                          ] ->
           %{
             cluster_id: cluster_id,
             osm_ids: osm_ids,
@@ -110,7 +127,8 @@ defmodule WawTrams.Queries.HotSpots do
             total_delay_seconds: total,
             avg_delay_seconds: to_float(avg),
             affected_lines: Enum.reject(lines, &is_nil/1) |> Enum.sort(),
-            location_name: stop_name
+            location_name: stop_name,
+            is_intersection: is_intersection
           }
         end)
 

@@ -171,6 +171,7 @@ defmodule WawTrams.Queries.LineAnalysis do
           SELECT i.name
           FROM intersections i
           WHERE i.name IS NOT NULL AND i.name != ''
+            AND ST_DWithin(i.geom::geography, cs.centroid::geography, 100)
           ORDER BY i.geom::geography <-> cs.centroid::geography
           LIMIT 1
         ),
@@ -181,7 +182,12 @@ defmodule WawTrams.Queries.LineAnalysis do
           ORDER BY s.geom::geography <-> cs.centroid::geography
           LIMIT 1
         )
-      ) as location_name
+      ) as location_name,
+      EXISTS (
+        SELECT 1 FROM intersections i
+        WHERE i.name IS NOT NULL AND i.name != ''
+          AND ST_DWithin(i.geom::geography, cs.centroid::geography, 100)
+      ) as is_intersection
     FROM cluster_stats cs
     ORDER BY cs.total_seconds DESC, cs.event_count DESC
     LIMIT $3
@@ -197,7 +203,8 @@ defmodule WawTrams.Queries.LineAnalysis do
                             blockage_count,
                             total,
                             avg,
-                            stop_name
+                            stop_name,
+                            is_intersection
                           ] ->
           %{
             lat: lat,
@@ -207,7 +214,8 @@ defmodule WawTrams.Queries.LineAnalysis do
             blockage_count: blockage_count,
             total_seconds: total || 0,
             avg_seconds: to_float(avg),
-            location_name: stop_name
+            location_name: stop_name,
+            is_intersection: is_intersection
           }
         end)
 

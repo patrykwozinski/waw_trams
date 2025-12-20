@@ -196,11 +196,12 @@ defmodule WawTrams.Audit.Summary do
       cs.total_seconds,
       cs.cost_pln,
       COALESCE(
-        -- First try: intersection street name from OSM
+        -- First try: intersection street name from OSM (within 100m)
         (
           SELECT i.name
           FROM intersections i
           WHERE i.name IS NOT NULL AND i.name != ''
+            AND ST_DWithin(i.geom::geography, ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography, 100)
           ORDER BY i.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
           LIMIT 1
         ),
