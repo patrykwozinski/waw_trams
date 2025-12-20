@@ -52,12 +52,14 @@ defmodule WawTrams.HourlyAggregator do
 
   @impl true
   def handle_info(:catch_up, state) do
+    Logger.info("[HourlyAggregator] Checking for missed hours...")
+
     case catch_up_missed_hours() do
       {:ok, 0} ->
-        Logger.debug("[HourlyAggregator] No missed hours to catch up")
+        Logger.info("[HourlyAggregator] ✓ All hours up to date")
 
       {:ok, count} ->
-        Logger.info("[HourlyAggregator] Caught up #{count} missed hours on startup")
+        Logger.info("[HourlyAggregator] ✓ Caught up #{count} missed hours")
         # Invalidate cache after catch-up
         WawTrams.Cache.invalidate_all()
     end
@@ -434,8 +436,10 @@ defmodule WawTrams.HourlyAggregator do
     if missing_hours == [] do
       {:ok, 0}
     else
+      hours_list = Enum.map(missing_hours, &format_hour/1) |> Enum.join(", ")
+
       Logger.info(
-        "[HourlyAggregator] Found #{length(missing_hours)} missed hours to catch up: #{inspect(Enum.map(missing_hours, &format_hour/1))}"
+        "[HourlyAggregator] Aggregating #{length(missing_hours)} missed hours: #{hours_list}"
       )
 
       # Aggregate each missing hour
@@ -443,15 +447,15 @@ defmodule WawTrams.HourlyAggregator do
         Enum.map(missing_hours, fn hour ->
           case aggregate_hour(hour) do
             {:ok, stats} ->
-              Logger.debug(
-                "[HourlyAggregator] Caught up hour #{format_hour(hour)}: #{stats.event_count} events"
+              Logger.info(
+                "[HourlyAggregator]   → #{format_hour(hour)}: #{stats.event_count} events aggregated"
               )
 
               :ok
 
             {:error, reason} ->
               Logger.warning(
-                "[HourlyAggregator] Failed to catch up #{format_hour(hour)}: #{inspect(reason)}"
+                "[HourlyAggregator]   ✗ #{format_hour(hour)}: #{inspect(reason)}"
               )
 
               :error
@@ -478,32 +482,26 @@ defmodule WawTrams.HourlyAggregator do
     Repo.all(query)
     |> Enum.map(fn naive ->
       {:ok, dt} = DateTime.from_naive(naive, "Etc/UTC")
-      dt
+      # Truncate to second to ensure consistent comparison
+      DateTime.truncate(dt, :second)
     end)
   end
 
   defp get_aggregated_hours(earliest, latest) do
-    # Check daily_line_stats for hours that were aggregated
-    # We use the by_hour JSONB keys to determine which hours are covered
+    # Check hourly_intersection_stats for hours that were aggregated
+    # This is more reliable than DailyLineStat.by_hour which only tracks specific lines
     query =
-      from(d in DailyLineStat,
-        where: d.date >= ^DateTime.to_date(earliest) and d.date <= ^DateTime.to_date(latest),
-        select: {d.date, d.by_hour}
+      from(h in HourlyIntersectionStat,
+        where: h.date >= ^DateTime.to_date(earliest) and h.date <= ^DateTime.to_date(latest),
+        select: {h.date, h.hour},
+        distinct: true
       )
 
     Repo.all(query)
-    |> Enum.flat_map(fn {date, by_hour} ->
-      if by_hour do
-        by_hour
-        |> Map.keys()
-        |> Enum.map(fn hour_str ->
-          hour = String.to_integer(hour_str)
-          {:ok, dt} = DateTime.new(date, Time.new!(hour, 0, 0), "Etc/UTC")
-          dt
-        end)
-      else
-        []
-      end
+    |> Enum.map(fn {date, hour} ->
+      {:ok, dt} = DateTime.new(date, Time.new!(hour, 0, 0), "Etc/UTC")
+      # Truncate to second to ensure consistent comparison
+      DateTime.truncate(dt, :second)
     end)
     |> MapSet.new()
   end
