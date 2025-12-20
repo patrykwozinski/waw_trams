@@ -126,6 +126,10 @@ WawTrams.Stop.near_stop?(52.2297, 21.0122, 100)  # custom radius
 # Check if point is near an intersection
 WawTrams.Intersection.near_intersection?(52.2297, 21.0122)
 
+# Get nearest intersection name (for display)
+WawTrams.Intersection.nearest_name(52.2297, 21.0122)
+# => "Rondo ONZ" or nil
+
 # Check if point is a terminal for a specific line
 WawTrams.LineTerminal.terminal_for_line?("25", 52.2297, 21.0122)
 # => true if line 25 terminates here, false otherwise

@@ -128,35 +128,63 @@ Each tram worker caches spatial query results to avoid repeated database hits.
 
 ---
 
-## 5. Real-Time Updates (PubSub)
+## 5. Real-Time Updates (PubSub + Client-Side)
 
 Live updates bypass cache and database entirely.
 
 ### Flow
 
 ```
-Delay Event Created
+Delay Created (threshold exceeded)
        │
        ▼
 Phoenix.PubSub.broadcast("delays", {:delay_created, event})
        │
        ▼
-All LiveViews receive message
+LiveView receives → push_event("delay_started", {...})
        │
        ▼
-Update assigns IN MEMORY (no DB query!)
+JS: Add live bubble to map + start ticking cost
        │
        ▼
-Push map animation via push_event
+JS: Global counter includes active delay costs (ticks every 250ms)
+```
+
+```
+Delay Resolved (tram moves)
+       │
+       ▼
+Phoenix.PubSub.broadcast("delays", {:delay_resolved, event})
+       │
+       ▼
+LiveView receives → push_event("delay_resolved", {...})
+       │
+       ▼
+JS: "Cash-out" animation (amber, float up, fade)
+       │
+       ▼
+JS: Remove from active delays, update base cost
 ```
 
 ### What's Updated Live
 
 | Data | Method | Latency |
 |------|--------|---------|
-| Delay count | In-memory increment | **Instant** |
-| Cost estimate | In-memory calculation | **Instant** |
-| Map pulse | JS push_event | **~50ms** |
+| Map bubbles | JS push_event | **Instant** |
+| Bubble cost | JS interval (250ms) | **250ms** |
+| Global counter | JS interval (250ms) | **250ms** |
+| Leaderboard | Debounced DB query | **3s** |
+
+### Client-Side Cost Calculation
+
+The JS hooks calculate cost identically to the server:
+
+```javascript
+// Same formula as CostCalculator.calculate/2
+costPerSecond = (50 * 22 + 85) / 3600  // ~0.39 PLN/s
+```
+
+This allows the UI to tick without any server round-trips.
 
 ---
 

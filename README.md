@@ -17,11 +17,30 @@ Warsaw's trams frequently wait at red lights because the traffic signal priority
 |----------|----------|-------------|
 | **At terminal** | Any | ❌ Ignored |
 | **At stop** | ≤ 3 min | ❌ Ignored (normal boarding) |
-| **At stop** | > 3 min | ✅ `blockage` |
+| **At stop** | > 3 min | ✅ `blockage` (counts time after 3 min) |
 | **Not at stop** | ≤ 30s | ❌ Ignored (brief) |
-| **Not at stop** | > 30s | ✅ `delay` |
+| **Not at stop** | > 30s | ✅ `delay` (counts time after 30s) |
 
-All delays near intersections are tracked and their economic cost is calculated.
+**Important:** We only count *abnormal* delay time. If a tram stops for 90s at an intersection, only 60s is logged (90s - 30s threshold).
+
+## Live Features
+
+### Real-Time Map
+
+- **Live bubbles** show active delays with ticking cost
+- **Intersection names** displayed (e.g., "Rondo ONZ")
+- **Cash-out effect** when delay resolves (floats up in amber)
+
+### Global Counter
+
+The headline counter **ticks live** including all active delays:
+
+```
+4,230 zł Wasted
+Today • 47 delays • 2h 15m lost
+```
+
+The number updates every 250ms as trams wait at red lights.
 
 ## Quick Start
 
@@ -33,7 +52,7 @@ docker compose up -d
 mix deps.get
 mix ecto.setup
 
-# Run (auto-imports data on first start via Seeder)
+# Run
 mix phx.server
 ```
 
@@ -41,35 +60,29 @@ Visit http://localhost:4000
 
 > **First run:** The Seeder automatically imports ~1,250 intersections, ~4,900 stops, and ~172 line terminals from GTFS.
 
-## Pages & Navigation
+## Pages
 
 | Route | Description |
 |-------|-------------|
-| `/` | 🚨 **Infrastructure Report Card** — worst intersections ranked by economic cost (homepage) |
-| `/dashboard` | Real-time live feed: active delays, recently resolved, impacted lines |
+| `/` | 🚨 **Audit Dashboard** — live map with ticking delays, global cost counter |
+| `/dashboard` | Real-time feed: active delays, recently resolved, impacted lines |
 | `/line/:number` | Per-line analysis with hourly breakdown |
 
 **Language:** Switch between 🇬🇧 English and 🇵🇱 Polish via header buttons.
 
-## Key Metrics
+## Cost Calculation
 
-| Metric | What It Means |
-|--------|---------------|
-| **Delays** | All logged delay events (>30s not at stop, or >180s at stop) |
-| **Economic Cost** | Time × passengers × value-of-time + driver wages + energy |
-
-### Cost Calculation
-
-The economic cost is calculated per delay event:
+Economic cost per delay (uses *abnormal* time only):
 
 ```
 Total Cost = Passenger Cost + Operational Cost
 
-Passenger Cost = delay_hours × passengers × 22 PLN/hour (Value of Time)
-Operational Cost = delay_hours × (80 PLN/hour driver + 5 PLN/hour energy)
+Passenger Cost = abnormal_hours × passengers × 22 PLN/hour
+Operational Cost = abnormal_hours × (80 PLN/hour driver + 5 PLN/hour energy)
 ```
 
 **Passenger estimates by time of day:**
+
 | Period | Hours | Passengers |
 |--------|-------|------------|
 | Peak | 7–9, 15–18 | 150 |
@@ -83,6 +96,7 @@ Operational Cost = delay_hours × (80 PLN/hour driver + 5 PLN/hour energy)
 | Framework | Phoenix 1.8 (Elixir/OTP) |
 | Database | PostgreSQL 17 + PostGIS 3.5 |
 | Caching | Built-in ETS (no external dependencies) |
+| Maps | Leaflet.js |
 | Data Source | GTFS-RT via [mkuran.pl](https://mkuran.pl/gtfs/) |
 | CI/CD | GitHub Actions |
 

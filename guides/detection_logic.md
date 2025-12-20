@@ -28,6 +28,28 @@ Instead of guessing in real-time, we:
 
 > **For detailed thresholds**, see [Thresholds](thresholds.md).
 
+## Duration Counting (Abnormal Time Only)
+
+**We only count the ABNORMAL portion of a delay** — time beyond the threshold:
+
+| Classification | Threshold | What we count |
+|----------------|-----------|---------------|
+| Delay | 30s | Time AFTER the first 30s |
+| Blockage | 180s | Time AFTER the first 3 min |
+
+**Example:**
+- Tram stops at intersection for 90 seconds total
+- First 30s = normal (ignored)
+- Remaining 60s = counted as delay
+- **Duration logged: 60s** (not 90s)
+
+This ensures costs and statistics reflect only the *waste*, not normal operations.
+
+**Why this matters:**
+- Cost calculations use only abnormal time
+- Statistics show actual excess delay
+- Live tooltips tick from threshold, not from first stop
+
 ## Terminal Detection
 
 Terminals are detected **per-line** using GTFS route data:
@@ -45,13 +67,27 @@ Events classified as `delay` (stopped >30s, not at a stop) that are also `near_i
 
 1. Tram stopped outside a platform
 2. Near a known tram-road crossing
-3. For more than 30 seconds
+3. For more than 30 seconds (abnormal)
 
 Aggregating these by location reveals which intersections cause the most cumulative delay — **the target for transit priority advocacy**.
+
+## Live Display
+
+When viewing the map:
+
+- **Active delays** show as pulsing bubbles with:
+  - Intersection name (e.g., "Rondo ONZ")
+  - Tram line (e.g., "L17")
+  - Ticking cost (updates every 250ms)
+  
+- **Resolved delays** show a "cash-out" effect:
+  - Bubble turns amber
+  - Floats up and fades out
+  - Final cost added to global counter
 
 ## Example Log Output
 
 ```
-[DELAY] Vehicle V/17/5 (Line 17) stopped at (52.2297, 21.0122) - delay, at_stop: false, near_intersection: true
+[DELAY] Vehicle V/17/5 (Line 17) stopped at Rondo ONZ - delay, at_stop: false, near_intersection: true
 [RESOLVED] Vehicle V/17/5 (Line 17) moved after 45s - was: delay
 ```

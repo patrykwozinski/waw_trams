@@ -127,11 +127,13 @@ Query Cache (ETS)  ◀───────────────────�
 Database (aggregated tables)
 ```
 
-### Query Caching Strategy
+### Query Caching & Real-Time Strategy
 
-- **Real-time updates** via PubSub are **NOT cached** — they update the UI instantly without touching the database
+- **Real-time updates** via PubSub are **NOT cached** — they update the UI instantly
+- **Live cost ticking** — active delays calculate cost client-side (every 250ms)
+- **Global counter** — includes both resolved (base) + active (live) costs
 - **Periodic refreshes** use cached data (TTL 30-60s) to reduce database load
-- **Audit leaderboard** is refreshed with a 3-second debounce when new delays occur
+- **Audit leaderboard** is refreshed with a 3-second debounce when delays resolve
 
 See [Performance](performance.md) for detailed cache configuration and scaling analysis.
 
