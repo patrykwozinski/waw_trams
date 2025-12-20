@@ -81,11 +81,13 @@ defmodule WawTramsWeb.AuditLive do
   @impl true
   def handle_info({:delay_created, event}, socket) do
     if event.near_intersection do
-      # Track this delay as "active" with start time
+      # Track this delay as "active" with start time and location
       active_delay = %{
+        vehicle_id: event.vehicle_id,
         lat: event.lat,
         lon: event.lon,
         line: event.line,
+        location_name: Map.get(event, :location_name),
         started_at: DateTime.utc_now() |> DateTime.to_unix(:millisecond)
       }
 
@@ -321,13 +323,20 @@ defmodule WawTramsWeb.AuditLive do
 
   # Load currently active delays from DB for live bubbles
   defp load_active_delays do
+    alias WawTrams.Intersection
+
     ActiveDelays.active()
     |> Enum.filter(& &1.near_intersection)
     |> Enum.reduce(%{}, fn delay, acc ->
+      # Look up intersection name for tooltip display
+      location_name = Intersection.nearest_name(delay.lat, delay.lon)
+
       Map.put(acc, delay.vehicle_id, %{
+        vehicle_id: delay.vehicle_id,
         lat: delay.lat,
         lon: delay.lon,
         line: delay.line,
+        location_name: location_name,
         started_at: DateTime.to_unix(delay.started_at, :millisecond)
       })
     end)
@@ -393,7 +402,7 @@ defmodule WawTramsWeb.AuditLive do
             </button>
           </div>
 
-          <%!-- Big Headline - updates on delay resolve --%>
+          <%!-- Big Headline - LIVE ticking, includes active delays --%>
           <div
             class="text-center"
             id="global-ticker"
@@ -402,6 +411,7 @@ defmodule WawTramsWeb.AuditLive do
             data-base-delays={@stats.total_delays}
             data-base-seconds={Map.get(@stats, :total_seconds, 0)}
             data-currency={currency_symbol()}
+            data-active-delays={Jason.encode!(Map.values(@active_delays))}
           >
             <h1 class="text-3xl md:text-5xl font-bold mb-1">
               <span id="ticker-cost" class="text-red-400 tabular-nums">

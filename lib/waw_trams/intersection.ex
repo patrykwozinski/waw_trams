@@ -42,6 +42,29 @@ defmodule WawTrams.Intersection do
   end
 
   @doc """
+  Returns the name of the nearest intersection within `radius_meters`.
+  Returns nil if no intersection is found or if intersection has no name.
+  """
+  def nearest_name(lat, lon, radius_meters \\ 100) do
+    query = """
+    SELECT name FROM intersections
+    WHERE name IS NOT NULL AND name != ''
+      AND ST_DWithin(
+        geom::geography,
+        ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+        $3
+      )
+    ORDER BY geom::geography <-> ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
+    LIMIT 1
+    """
+
+    case Repo.query(query, [lon, lat, radius_meters]) do
+      {:ok, %{rows: [[name]]}} -> name
+      _ -> nil
+    end
+  end
+
+  @doc """
   Returns the count of intersections in the database.
   """
   def count do

@@ -343,13 +343,17 @@ defmodule WawTrams.TramWorker do
   end
 
   defp persist_new_delay(state, pos, classification, at_stop, near_intersection) do
+    # Use current time, not stopped_since - we only count ABNORMAL delay time
+    # (time beyond the threshold that triggered the delay classification)
+    # - "delay" triggers at 30s, so we count from 30s onward
+    # - "blockage" triggers at 180s, so we count from 180s onward
     attrs = %{
       vehicle_id: state.vehicle_id,
       line: state.line,
       trip_id: state.trip_id,
       lat: pos.lat,
       lon: pos.lon,
-      started_at: state.stopped_since,
+      started_at: DateTime.utc_now(),
       classification: Atom.to_string(classification),
       at_stop: at_stop,
       near_intersection: near_intersection
@@ -357,14 +361,23 @@ defmodule WawTrams.TramWorker do
 
     case DelayEvent.create(attrs) do
       {:ok, event} ->
+        # Look up intersection name for display in live tooltips
+        location_name =
+          if near_intersection do
+            Intersection.nearest_name(pos.lat, pos.lon) || "Intersection"
+          else
+            nil
+          end
+
         Logger.info(
           "[DELAY] Vehicle #{state.vehicle_id} (Line #{state.line}) " <>
-            "stopped at (#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)}) - " <>
+            "stopped at #{location_name || "(#{Float.round(pos.lat, 4)}, #{Float.round(pos.lon, 4)})"} - " <>
             "#{classification}, at_stop: #{at_stop}, near_intersection: #{near_intersection}"
         )
 
-        # Broadcast for live dashboard
-        Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_created, event})
+        # Broadcast for live dashboard - include location_name for tooltips
+        event_with_location = Map.put(event, :location_name, location_name)
+        Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_created, event_with_location})
         %{state | delay_event_id: event.id, delay_classification: classification}
 
       {:error, reason} ->

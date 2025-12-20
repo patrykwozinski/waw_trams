@@ -166,23 +166,26 @@ const AuditMapHook = {
       const activeDelays = JSON.parse(this.el.dataset.activeDelays) || []
       activeDelays.forEach(delay => this.addLiveDelay(delay))
     } catch (e) {
-      console.error("Failed to parse initial active delays", e)
+      // Silently ignore parse errors
     }
   },
 
   // Add a live delay bubble with ticking tooltip
   addLiveDelay(delay) {
     const key = `${delay.lat}_${delay.lon}_${delay.started_at}`
+    const locationName = delay.location_name || "Intersection"
     
-    // Create pulsing live marker - compact: "L12 · 0s" on top, cost below
+    // Create pulsing live marker: Intersection name + Line + Cost (no duration)
     const liveIcon = L.divIcon({
       className: "live-delay-marker",
       html: `<div class="live-delay-bubble" data-line="${delay.line}">
-        <div class="live-top"><span class="live-line">L${delay.line}</span> · <span class="live-duration">0s</span></div>
-        <span class="live-cost">0 PLN</span>
+        <div class="live-location">${locationName}</div>
+        <div class="live-details">
+          <span class="live-line">L${delay.line}</span> · <span class="live-cost">0</span>
+        </div>
       </div>`,
-      iconSize: [100, 50],
-      iconAnchor: [50, 25],
+      iconSize: [140, 50],
+      iconAnchor: [70, 25],
     })
 
     const marker = L.marker([delay.lat, delay.lon], { 
@@ -193,7 +196,6 @@ const AuditMapHook = {
 
     // Cache DOM references to avoid querySelector in hot loop
     const el = marker.getElement()
-    const durationEl = el?.querySelector('.live-duration')
     const costEl = el?.querySelector('.live-cost')
 
     this.liveDelays.set(key, {
@@ -202,8 +204,8 @@ const AuditMapHook = {
       line: delay.line,
       lat: delay.lat,
       lon: delay.lon,
-      // Cached DOM refs for performance
-      durationEl,
+      locationName,
+      // Cached DOM ref for performance (cost only, no duration shown)
       costEl
     })
   },
@@ -214,20 +216,16 @@ const AuditMapHook = {
     // For now, just let it get cleaned up - the explosion replaces it
   },
 
-  // Update all live delay tooltips every 250ms (human perception is ~200ms, no need for 100ms)
+  // Update all live delay costs every 250ms
   startLiveTooltipUpdater() {
     this.liveUpdateInterval = setInterval(() => {
       const now = Date.now()
       
       this.liveDelays.forEach((delay) => {
         const elapsedMs = now - delay.startedAt
-        const elapsedSeconds = Math.floor(elapsedMs / 1000)
         const cost = (elapsedMs / 1000) * this.costPerSecond
         
-        // Use cached DOM references (much faster than querySelector)
-        if (delay.durationEl) {
-          delay.durationEl.textContent = this.formatDuration(elapsedSeconds)
-        }
+        // Use cached DOM reference (much faster than querySelector)
         if (delay.costEl) {
           delay.costEl.textContent = this.formatCostLive(cost)
         }
@@ -235,19 +233,29 @@ const AuditMapHook = {
     }, 250)
   },
 
-  // Smooth fade-out when delay resolves
+  // "Cash register" effect when delay resolves
+  // The bubble turns green, shows final cost, floats up and fades
   createExplosion(lat, lon, line, duration, cost) {
-    // Find and fade out the live delay marker at this location
+    // Find the live delay marker at this location
     this.liveDelays.forEach((delay, key) => {
       if (Math.abs(delay.lat - lat) < 0.0001 && Math.abs(delay.lon - lon) < 0.0001) {
         const el = delay.marker.getElement()
         if (el) {
-          // Add fade-out class for smooth disappearance
-          el.classList.add('fade-out')
+          const bubble = el.querySelector('.live-delay-bubble')
+          if (bubble) {
+            // Update to show final cost
+            const costEl = bubble.querySelector('.live-cost')
+            if (costEl) costEl.textContent = '+' + this.formatCostLive(cost)
+            
+            // Add "confirmed" class - turns amber and floats up
+            el.classList.add('resolve-confirmed')
+          }
+          
+          // Remove after animation completes (2.5s)
           setTimeout(() => {
             delay.marker.remove()
             this.liveDelays.delete(key)
-          }, 400)
+          }, 2500)
         } else {
           delay.marker.remove()
           this.liveDelays.delete(key)

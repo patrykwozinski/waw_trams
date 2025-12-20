@@ -198,26 +198,36 @@ a[href],
   contain: layout paint;
 }
 
-.live-top {
+/* Location name as header */
+.live-location {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+/* Details row: Line · Duration · Cost */
+.live-details {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #9ca3af;
+  margin-top: 2px;
 }
 
 .live-line {
-  font-weight: 700;
+  font-weight: 600;
   color: #fbbf24;
-}
-
-.live-duration {
-  font-variant-numeric: tabular-nums;
 }
 
 .live-cost {
   font-weight: 700;
-  font-size: 14px;
   color: #ef4444;
   font-variant-numeric: tabular-nums;
 }
@@ -237,19 +247,47 @@ a[href],
   }
 }
 
-/* Smooth fade-out for resolved delays */
-.live-delay-marker.fade-out .live-delay-bubble {
-  animation: bubble-fade-out 400ms ease-out forwards;
+/* "Cash Out" effect - delay resolved, cost LOST (not earned!) */
+.live-delay-marker.resolve-confirmed .live-delay-bubble {
+  animation: cash-out 2.5s ease-out forwards;
+  border-color: #f59e0b !important; /* amber-500 */
+  background: rgba(120, 53, 15, 0.95) !important; /* amber-900 */
 }
 
-@keyframes bubble-fade-out {
+.live-delay-marker.resolve-confirmed .live-cost {
+  color: #fcd34d !important; /* amber-300 */
+}
+
+.live-delay-marker.resolve-confirmed .live-line,
+.live-delay-marker.resolve-confirmed .live-location {
+  color: #fef3c7 !important; /* amber-100 */
+}
+
+@keyframes cash-out {
   0% {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+  10% {
+    transform: translateY(0) scale(1.15);
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0.8);
+  }
+  25% {
+    transform: translateY(-5px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-35px) scale(1);
+    opacity: 0.6;
   }
   100% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: translateY(-50px) scale(0.9);
   }
 }
 

@@ -1,5 +1,5 @@
-// Global Ticker Hook - Updates header numbers when delays resolve
-// Numbers update on explosion (delay_resolved), not continuously
+// Global Ticker Hook - LIVE ticking counter including active delays
+// The Big Number includes the cost of all currently stuck trams, ticking up in real-time
 
 const GlobalTickerHook = {
   mounted() {
@@ -8,14 +8,73 @@ const GlobalTickerHook = {
     this.baseSeconds = parseInt(this.el.dataset.baseSeconds) || 0
     this.currency = this.el.dataset.currency || "PLN"
     
-    // Display initial values
-    this.updateDisplay()
+    // Track active delays for live ticking
+    this.activeDelays = new Map()  // vehicle_id -> { startedAt }
+    
+    // Cost per second per tram (same as AuditMapHook)
+    // (50 passengers × 22 PLN/h + 85 PLN/h operational) / 3600
+    this.costPerSecond = (50 * 22 + 85) / 3600
+    
+    // Load initial active delays
+    this.loadInitialActiveDelays()
+    
+    // Start live ticker
+    this.startTicker()
 
-    // Listen for delays resolving - this is when we update the header
-    this.handleEvent("delay_resolved", (data) => {
-      // Add resolved delay cost to running total with animation
-      this.animateCostIncrease(data.cost)
+    // Listen for new delays starting
+    this.handleEvent("delay_started", (data) => {
+      this.activeDelays.set(data.vehicle_id || `${data.lat}_${data.lon}`, {
+        startedAt: data.started_at
+      })
     })
+
+    // Listen for delays resolving - flash effect + remove from active
+    this.handleEvent("delay_resolved", (data) => {
+      this.activeDelays.delete(data.vehicle_id)
+      this.animateCostFlash()
+    })
+  },
+  
+  loadInitialActiveDelays() {
+    try {
+      const delays = JSON.parse(this.el.dataset.activeDelays || "[]")
+      delays.forEach(d => {
+        this.activeDelays.set(d.vehicle_id || `${d.lat}_${d.lon}`, {
+          startedAt: d.started_at
+        })
+      })
+    } catch (e) {
+      // Ignore parse errors
+    }
+  },
+
+  startTicker() {
+    // Tick every 250ms - same cadence as map tooltips
+    this.tickerInterval = setInterval(() => this.tick(), 250)
+  },
+  
+  tick() {
+    const now = Date.now()
+    
+    // Calculate cost of all active delays RIGHT NOW
+    let activeCost = 0
+    let activeSeconds = 0
+    
+    this.activeDelays.forEach((delay) => {
+      const elapsedMs = now - delay.startedAt
+      const elapsedSec = elapsedMs / 1000
+      activeSeconds += elapsedSec
+      activeCost += elapsedSec * this.costPerSecond
+    })
+    
+    // Total = resolved delays (base) + active delays (live)
+    const totalCost = this.baseCost + activeCost
+    const totalSeconds = this.baseSeconds + activeSeconds
+    const totalDelays = this.baseDelays + this.activeDelays.size
+    
+    this.updateCostDisplay(totalCost)
+    this.updateTimeDisplay(totalSeconds)
+    this.updateDelaysDisplay(totalDelays)
   },
 
   updated() {
@@ -25,22 +84,15 @@ const GlobalTickerHook = {
     this.baseSeconds = parseInt(this.el.dataset.baseSeconds) || 0
     this.currency = this.el.dataset.currency || "PLN"
     
-    // Re-display with new values
-    this.updateDisplay()
+    // Reload active delays in case they changed
+    this.loadInitialActiveDelays()
   },
 
-  updateDisplay() {
-    this.updateCostDisplay(this.baseCost)
-    this.updateTimeDisplay(this.baseSeconds)
-    this.updateDelaysDisplay(this.baseDelays)
-  },
-
-  // Animate cost increase when delay resolves
-  animateCostIncrease(addedCost) {
+  // Flash effect when a delay resolves (cost "locks in")
+  animateCostFlash() {
     const costEl = document.getElementById("ticker-cost")
     if (!costEl) return
     
-    // Flash effect
     costEl.classList.add("cost-flash")
     setTimeout(() => costEl.classList.remove("cost-flash"), 600)
   },
@@ -49,7 +101,7 @@ const GlobalTickerHook = {
     const costEl = document.getElementById("ticker-cost")
     if (!costEl) return
 
-    // Format with space as thousands separator: "3 620 PLN" or "3 620 zł"
+    // Format with space as thousands separator: "3 620 zł"
     const rounded = Math.round(cost)
     const formatted = rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
     costEl.textContent = `${formatted} ${this.currency}`
@@ -81,6 +133,12 @@ const GlobalTickerHook = {
     
     // Format with space as thousands separator
     delaysEl.textContent = count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+  },
+  
+  destroyed() {
+    if (this.tickerInterval) {
+      clearInterval(this.tickerInterval)
+    }
   }
 }
 
