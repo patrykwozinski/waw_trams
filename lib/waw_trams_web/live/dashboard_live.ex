@@ -109,27 +109,25 @@ defmodule WawTramsWeb.DashboardLive do
 
           <%!-- Legend --%>
           <div class="bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-800 text-sm">
-            <div class="text-gray-400 font-medium mb-2">{gettext("Classification Legend")}</div>
+            <div class="text-gray-400 font-medium mb-2">{gettext("Legend")}</div>
             <div class="flex flex-wrap gap-x-6 gap-y-1">
               <div class="flex items-center gap-2">
                 <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
                   {gettext("delay")}
                 </span>
-                <span class="text-gray-500">{gettext("30s – 3min stop")}</span>
+                <span class="text-gray-500">{gettext(">30s away from platform")}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
+                  {gettext("long")}
+                </span>
+                <span class="text-gray-500">{gettext(">2 min at intersection")}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
                   {gettext("blockage")}
                 </span>
-                <span class="text-gray-500">{gettext("> 3min stop")}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-purple-400">⚡</span>
-                <span class="text-gray-500">{gettext("priority failure (>120s)")}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-orange-400">⚠️</span>
-                <span class="text-gray-500">{gettext("near traffic signal")}</span>
+                <span class="text-gray-500">{gettext(">3 min at platform")}</span>
               </div>
             </div>
           </div>
@@ -151,7 +149,7 @@ defmodule WawTramsWeb.DashboardLive do
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-purple-400">{@stats_summary.multi_cycle}</div>
-            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Priority Failures (24h)")}</div>
+            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Long Delays (24h)")}</div>
           </div>
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-amber-400">
@@ -386,11 +384,7 @@ defmodule WawTramsWeb.DashboardLive do
                         <%= if delay.multi_cycle do %>
                           <span
                             class="text-purple-400 text-xs"
-                            title={
-                              gettext(
-                                "Priority failure: tram waited through multiple signal cycles (>120s)"
-                              )
-                            }
+                            title={gettext("Long delay: stopped >2 minutes")}
                           >
                             ⚡
                           </span>

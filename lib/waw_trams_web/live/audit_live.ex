@@ -109,7 +109,7 @@ defmodule WawTramsWeb.AuditLive do
      socket
      |> assign(:selected, nil)
      |> assign(:mobile_tab, "list")
-     |> push_event("reset_view", %{reset: true})}
+     |> push_event("reset_view", %{})}
   end
 
   @impl true
@@ -260,8 +260,6 @@ defmodule WawTramsWeb.AuditLive do
               <span class="text-gray-600 mx-2">•</span>
               {format_number(@stats.total_delays)} {gettext("delays")}
               <span class="text-gray-600 mx-2">•</span>
-              <span class="text-purple-400">{format_number(@stats.multi_cycle_count)}</span> {gettext("priority failures")}
-              <span class="text-gray-600 mx-2">•</span>
               <span class="text-amber-400">{@stats.total_hours_formatted}</span> {gettext("lost")}
             </p>
           </div>
@@ -346,6 +344,32 @@ defmodule WawTramsWeb.AuditLive do
           </div>
 
           <div class="space-y-6 text-gray-300">
+            <%!-- Detection Thresholds --%>
+            <div>
+              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("What We Count")}</h3>
+              <div class="bg-gray-800/50 rounded-lg overflow-hidden">
+                <table class="w-full text-sm">
+                  <tbody class="divide-y divide-gray-700">
+                    <tr>
+                      <td class="px-3 py-2 text-orange-400 font-medium">{gettext("Delay")}</td>
+                      <td class="px-3 py-2 text-gray-400">
+                        {gettext("Stopped >30 seconds away from platform")}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-3 py-2 text-purple-400 font-medium">{gettext("Long delay")}</td>
+                      <td class="px-3 py-2 text-gray-400">
+                        {gettext("Stopped >2 minutes at intersection")}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                {gettext("We ignore: stops at platforms (<3 min), terminals, and brief stops (<30s)")}
+              </p>
+            </div>
+
             <%!-- Formula --%>
             <div>
               <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Formula")}</h3>
@@ -549,13 +573,13 @@ defmodule WawTramsWeb.AuditLive do
         </a>
       </div>
 
-      <%!-- Stats grid --%>
-      <div class="grid grid-cols-2 gap-3 mb-6">
+      <%!-- Stats --%>
+      <div class="grid grid-cols-3 gap-3 mb-6">
         <div class="bg-gray-800/50 rounded-lg p-3 border border-red-900/50">
           <div class="text-2xl font-bold text-red-400">
             {format_cost(@selected.cost.total)}
           </div>
-          <div class="text-xs text-gray-500">{gettext("Economic Cost")}</div>
+          <div class="text-xs text-gray-500">{gettext("Cost")}</div>
         </div>
         <div class="bg-gray-800/50 rounded-lg p-3 border border-amber-900/50">
           <div class="text-2xl font-bold text-amber-400">
@@ -568,13 +592,6 @@ defmodule WawTramsWeb.AuditLive do
             {@selected.delay_count}
           </div>
           <div class="text-xs text-gray-500">{gettext("Delays")}</div>
-        </div>
-        <div class="bg-gray-800/50 rounded-lg p-3 border border-purple-900/50">
-          <div class="text-2xl font-bold text-purple-400">
-            {@selected.multi_cycle_count}
-            <span class="text-lg text-gray-500">({Float.round(@selected.multi_cycle_pct, 0)}%)</span>
-          </div>
-          <div class="text-xs text-gray-500">{gettext("Priority Failures")}</div>
         </div>
       </div>
 

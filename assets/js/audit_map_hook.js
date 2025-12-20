@@ -47,25 +47,15 @@ const AuditMapHook = {
     })
 
     // Handle reset_view event to zoom out to show all markers
-    this.handleEvent("reset_view", (payload) => {
-      console.log("reset_view event received", payload)
+    this.handleEvent("reset_view", () => {
+      console.log("reset_view: resetting map view")
       // Clear selection highlight
       if (this.selectedMarker) {
         this.selectedMarker.setStyle({ weight: 2, color: "#0f0f0f" })
         this.selectedMarker = null
       }
-      // Fit bounds to show all markers, or reset to Warsaw center
-      const layers = this.markersLayer.getLayers()
-      if (layers.length > 0) {
-        const bounds = this.markersLayer.getBounds()
-        if (bounds.isValid()) {
-          this.map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 13, duration: 0.8 })
-        } else {
-          this.map.flyTo(center, 12, { duration: 0.8 })
-        }
-      } else {
-        this.map.flyTo(center, 12, { duration: 0.8 })
-      }
+      // Always reset to Warsaw center with default zoom
+      this.map.flyTo([52.2297, 21.0122], 12, { duration: 0.8 })
     })
 
     // Request initial data
