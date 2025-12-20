@@ -28,7 +28,7 @@ RUN mix local.hex --force && \
 # Set build environment
 ENV MIX_ENV="prod"
 
-# Install dependencies
+# Install mix dependencies
 COPY mix.exs mix.lock ./
 RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
@@ -41,17 +41,17 @@ RUN mix deps.compile
 COPY assets/package.json assets/package-lock.json ./assets/
 RUN cd assets && npm ci
 
-# Copy priv and assets
+# Copy all source files
 COPY priv priv
 COPY lib lib
 COPY assets assets
-
-# Compile assets
-RUN mix assets.deploy
-
-# Compile the application
 COPY config/runtime.exs config/
+
+# Compile the application FIRST (generates colocated hooks)
 RUN mix compile
+
+# THEN compile assets (needs colocated hooks from mix compile)
+RUN mix assets.deploy
 
 # Build release
 RUN mix release
