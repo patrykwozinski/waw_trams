@@ -3,17 +3,27 @@ defmodule WawTramsWeb.Helpers.Formatters do
   Shared formatting helpers for cost, duration, and numbers.
   """
 
-  @doc "Format cost amount as PLN with k/M suffix"
+  @doc "Format cost amount with locale-appropriate currency (PLN for EN, zł for PL)"
   def format_cost(amount) when is_number(amount) do
+    currency = currency_symbol()
+
     cond do
-      amount >= 1_000_000 -> "#{Float.round(amount / 1_000_000, 1)}M PLN"
-      amount >= 1_000 -> "#{Float.round(amount / 1_000, 1)}k PLN"
-      amount > 0 -> "#{trunc(amount)} PLN"
-      true -> "0 PLN"
+      amount >= 1_000_000 -> "#{Float.round(amount / 1_000_000, 1)}M #{currency}"
+      amount >= 1_000 -> "#{Float.round(amount / 1_000, 1)}k #{currency}"
+      amount > 0 -> "#{trunc(amount)} #{currency}"
+      true -> "0 #{currency}"
     end
   end
 
-  def format_cost(_), do: "0 PLN"
+  def format_cost(_), do: "0 #{currency_symbol()}"
+
+  @doc "Get currency symbol based on current locale"
+  def currency_symbol do
+    case Gettext.get_locale(WawTramsWeb.Gettext) do
+      "pl" -> "zł"
+      _ -> "PLN"
+    end
+  end
 
   @doc "Format large numbers with k suffix"
   def format_number(n) when is_integer(n) and n >= 1000 do

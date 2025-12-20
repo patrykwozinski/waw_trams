@@ -13,6 +13,9 @@ const AuditMapHook = {
     // Warsaw center
     const center = [52.2297, 21.0122]
     
+    // Get currency from data attribute (PLN for EN, zł for PL)
+    this.currency = this.el.dataset.currency || "PLN"
+    
     // Initialize map
     this.map = L.map(this.el, {
       center: center,
@@ -28,6 +31,13 @@ const AuditMapHook = {
     // Store markers layer
     this.markersLayer = L.layerGroup().addTo(this.map)
     this.selectedMarker = null
+    
+    // Track live delay bubbles (with ticking tooltips)
+    this.liveDelays = new Map()  // vehicle_id -> { marker, startedAt, line }
+    this.liveDelaysLayer = L.layerGroup().addTo(this.map)
+    
+    // Cost per second per tram (same as GlobalTickerHook)
+    this.costPerSecond = (50 * 22 + 85) / 3600
 
     // Handle leaderboard data from server
     this.handleEvent("leaderboard_data", ({ data }) => {
@@ -58,10 +68,22 @@ const AuditMapHook = {
       this.map.flyTo([52.2297, 21.0122], 12, { duration: 0.8 })
     })
 
-    // Handle pulse event for real-time delay notifications
-    this.handleEvent("pulse", ({ lat, lon, line, duration, cost }) => {
-      this.createPulse(lat, lon, line, duration, cost)
+    // NEW: Handle delay_started - add live ticking bubble
+    this.handleEvent("delay_started", (delay) => {
+      this.addLiveDelay(delay)
     })
+
+    // NEW: Handle delay_resolved - explosion effect!
+    this.handleEvent("delay_resolved", (data) => {
+      this.removeLiveDelay(data.vehicle_id)
+      this.createExplosion(data.lat, data.lon, data.line, data.duration, data.cost)
+    })
+
+    // Start the live tooltip updater
+    this.startLiveTooltipUpdater()
+
+    // Load initial active delays from data attribute
+    this.loadInitialActiveDelays()
 
     // Request initial data
     this.pushEvent("request_leaderboard", {})
@@ -139,69 +161,149 @@ const AuditMapHook = {
     this.map.flyTo([lat, lon], 16, { animate: true, duration: 0.8 })
   },
 
-  createPulse(lat, lon, line, duration, cost) {
-    // Create expanding ring animation at the delay location
-    const pulseIcon = L.divIcon({
-      className: "pulse-marker",
-      iconSize: [150, 150],
-      iconAnchor: [75, 75],
+  // Load existing active delays on page load
+  loadInitialActiveDelays() {
+    try {
+      const activeDelays = JSON.parse(this.el.dataset.activeDelays) || []
+      console.log("Loading", activeDelays.length, "initial active delays")
+      activeDelays.forEach(delay => this.addLiveDelay(delay))
+    } catch (e) {
+      console.error("Failed to parse initial active delays", e)
+    }
+  },
+
+  // Add a live delay bubble with ticking tooltip
+  addLiveDelay(delay) {
+    const key = `${delay.lat}_${delay.lon}_${delay.started_at}`
+    
+    // Create pulsing live marker - compact: "L12 · 0s" on top, cost below
+    const liveIcon = L.divIcon({
+      className: "live-delay-marker",
+      html: `<div class="live-delay-bubble" data-line="${delay.line}">
+        <div class="live-top"><span class="live-line">L${delay.line}</span> · <span class="live-duration">0s</span></div>
+        <span class="live-cost">0 PLN</span>
+      </div>`,
+      iconSize: [100, 50],
+      iconAnchor: [50, 25],
     })
 
-    const pulseMarker = L.marker([lat, lon], { icon: pulseIcon, interactive: false }).addTo(this.map)
+    const marker = L.marker([delay.lat, delay.lon], { 
+      icon: liveIcon, 
+      interactive: true,
+      zIndexOffset: 1000  // Above other markers
+    }).addTo(this.liveDelaysLayer)
 
-    // Create info popup with line and cost
-    if (line && cost) {
-      const durationText = this.formatDuration(duration)
-      const costText = this.formatCost(cost)
+    this.liveDelays.set(key, {
+      marker,
+      startedAt: delay.started_at,
+      line: delay.line,
+      lat: delay.lat,
+      lon: delay.lon
+    })
+  },
+
+  // Remove live delay when resolved
+  removeLiveDelay(vehicleId) {
+    // Find and remove by matching (we don't have vehicle_id in key, so find by proximity)
+    // For now, just let it get cleaned up - the explosion replaces it
+  },
+
+  // Update all live delay tooltips every 100ms
+  startLiveTooltipUpdater() {
+    this.liveUpdateInterval = setInterval(() => {
+      const now = Date.now()
       
-      const infoIcon = L.divIcon({
-        className: "pulse-info",
-        html: `<div class="pulse-info-content">
-          <span class="pulse-line">L${line}</span>
-          <span class="pulse-duration">${durationText}</span>
-          <span class="pulse-cost">${costText}</span>
-        </div>`,
-        iconSize: [80, 50],
-        iconAnchor: [40, -10],  // Position above the pulse
+      this.liveDelays.forEach((delay, key) => {
+        const elapsedMs = now - delay.startedAt
+        const elapsedSeconds = Math.floor(elapsedMs / 1000)
+        const cost = (elapsedMs / 1000) * this.costPerSecond
+        
+        // Update the DOM inside the marker
+        const bubble = delay.marker.getElement()?.querySelector('.live-delay-bubble')
+        if (bubble) {
+          bubble.querySelector('.live-duration').textContent = this.formatDuration(elapsedSeconds)
+          bubble.querySelector('.live-cost').textContent = this.formatCostLive(cost)
+        }
       })
-      
-      const infoMarker = L.marker([lat, lon], { icon: infoIcon, interactive: false }).addTo(this.map)
-      
-      // Fade out info after delay
+    }, 100)
+  },
+
+  // EXPLOSION effect when delay resolves
+  createExplosion(lat, lon, line, duration, cost) {
+    // Remove any live delay marker at this location
+    this.liveDelays.forEach((delay, key) => {
+      if (Math.abs(delay.lat - lat) < 0.0001 && Math.abs(delay.lon - lon) < 0.0001) {
+        delay.marker.remove()
+        this.liveDelays.delete(key)
+      }
+    })
+
+    // Create explosion rings (multiple expanding)
+    for (let i = 0; i < 3; i++) {
       setTimeout(() => {
-        infoMarker.remove()
-      }, 3500)
+        const explosionIcon = L.divIcon({
+          className: `explosion-ring explosion-ring-${i}`,
+          iconSize: [200, 200],
+          iconAnchor: [100, 100],
+        })
+        const explosionMarker = L.marker([lat, lon], { icon: explosionIcon, interactive: false }).addTo(this.map)
+        
+        setTimeout(() => explosionMarker.remove(), 1500)
+      }, i * 100)
     }
 
-    // Remove pulse after animation completes
-    setTimeout(() => {
-      pulseMarker.remove()
-    }, 2500)
+    // Create final cost "receipt" that floats up - compact layout
+    const receiptIcon = L.divIcon({
+      className: "explosion-receipt",
+      html: `<div class="receipt-content">
+        <div class="receipt-top">L${line} · ${this.formatDuration(duration)}</div>
+        <div class="receipt-cost">-${this.formatCostLive(cost)}</div>
+      </div>`,
+      iconSize: [120, 50],
+      iconAnchor: [60, 25],
+    })
+    
+    const receiptMarker = L.marker([lat, lon], { icon: receiptIcon, interactive: false }).addTo(this.map)
+    
+    // Float up and fade out
+    setTimeout(() => receiptMarker.remove(), 3000)
 
-    // Flash nearby markers more dramatically
+    // Flash nearby intersection markers
     this.markersLayer.eachLayer((layer) => {
       const pos = layer.getLatLng()
       const dist = this.map.distance([lat, lon], pos)
       if (dist < 800) {
-        // Within 800m - dramatic pulse effect
         const originalRadius = layer.options.radius
         const originalColor = layer.options.fillColor
         
-        // Flash white then back to red
+        // Dramatic flash sequence
         layer.setStyle({ fillColor: "#fff", fillOpacity: 1 })
-        layer.setRadius(originalRadius * 1.5)
+        layer.setRadius(originalRadius * 2)
         
         setTimeout(() => {
-          layer.setStyle({ fillColor: "#fbbf24", fillOpacity: 0.9 }) // amber flash
-          layer.setRadius(originalRadius * 1.3)
-        }, 150)
+          layer.setStyle({ fillColor: "#ef4444", fillOpacity: 1 })
+          layer.setRadius(originalRadius * 1.5)
+        }, 100)
+        
+        setTimeout(() => {
+          layer.setStyle({ fillColor: "#fbbf24", fillOpacity: 0.9 })
+          layer.setRadius(originalRadius * 1.2)
+        }, 200)
         
         setTimeout(() => {
           layer.setStyle({ fillColor: originalColor, fillOpacity: layer.options.fillOpacity })
           layer.setRadius(originalRadius)
-        }, 400)
+        }, 500)
       }
     })
+  },
+
+  // Format cost with decimals for live ticking effect
+  formatCostLive(amount) {
+    const c = this.currency
+    if (amount < 10) return `${amount.toFixed(2)} ${c}`
+    if (amount < 100) return `${amount.toFixed(1)} ${c}`
+    return `${Math.round(amount)} ${c}`
   },
 
   formatDuration(seconds) {
@@ -213,12 +315,16 @@ const AuditMapHook = {
   },
 
   formatCost(amount) {
-    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M PLN`
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k PLN`
-    return `${Math.round(amount)} PLN`
+    const c = this.currency
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M ${c}`
+    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k ${c}`
+    return `${Math.round(amount)} ${c}`
   },
 
   destroyed() {
+    if (this.liveUpdateInterval) {
+      clearInterval(this.liveUpdateInterval)
+    }
     if (this.map) {
       this.map.remove()
     }

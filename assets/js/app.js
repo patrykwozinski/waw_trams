@@ -26,12 +26,13 @@ import {hooks as colocatedHooks} from "phoenix-colocated/waw_trams"
 import topbar from "../vendor/topbar"
 import AuditMapHook from "./audit_map_hook"
 import LeaderboardHook from "./leaderboard_hook"
+import GlobalTickerHook from "./global_ticker_hook"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, AuditMapHook, LeaderboardHook},
+  hooks: {...colocatedHooks, AuditMapHook, LeaderboardHook, GlobalTickerHook},
 })
 
 // Show progress bar on live navigation and form submits

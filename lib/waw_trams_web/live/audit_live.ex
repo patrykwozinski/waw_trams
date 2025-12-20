@@ -8,6 +8,7 @@ defmodule WawTramsWeb.AuditLive do
   use WawTramsWeb, :live_view
 
   alias WawTrams.Audit.{Summary, Intersection}
+  alias WawTrams.Queries.ActiveDelays
   alias WawTramsWeb.Components.Audit.{MethodologyModal, Leaderboard, ReportCard}
   import WawTramsWeb.Helpers.Formatters
 
@@ -39,14 +40,23 @@ defmodule WawTramsWeb.AuditLive do
       |> assign(:selected_heatmap, %{grid: [], max_count: 0, total_delays: 0})
       |> assign(:show_methodology, false)
       |> assign(:leaderboard_refresh_timer, nil)
+      # Track active (unresolved) delays for live ticker
+      |> assign(:active_delays, %{})
 
-    if connected?(socket) do
-      # Subscribe to real-time delay updates
-      Phoenix.PubSub.subscribe(WawTrams.PubSub, "delays")
-      # Add random jitter to prevent all users refreshing at exactly the same time
-      schedule_refresh()
-      send(self(), :load_initial_data)
-    end
+    socket =
+      if connected?(socket) do
+        # Subscribe to real-time delay updates
+        Phoenix.PubSub.subscribe(WawTrams.PubSub, "delays")
+        # Add random jitter to prevent all users refreshing at exactly the same time
+        schedule_refresh()
+        send(self(), :load_initial_data)
+
+        # Load currently active delays from DB to show live bubbles
+        active_delays = load_active_delays()
+        assign(socket, :active_delays, active_delays)
+      else
+        socket
+      end
 
     {:ok, socket}
   end
@@ -66,20 +76,28 @@ defmodule WawTramsWeb.AuditLive do
   @leaderboard_debounce_ms 3_000
 
   # Real-time delay events
-  # delay_created: Just increment counter (we don't know final duration yet)
-  # delay_resolved: Pulse map, update final stats, refresh leaderboard
+  # delay_created: Track active delay for live ticker
+  # delay_resolved: Explosion effect, update final stats, refresh leaderboard
   @impl true
   def handle_info({:delay_created, event}, socket) do
     if event.near_intersection do
-      # Just increment delay counter - we don't know final duration yet
-      stats = socket.assigns.stats
-
-      updated_stats = %{
-        stats
-        | total_delays: stats.total_delays + 1
+      # Track this delay as "active" with start time
+      active_delay = %{
+        lat: event.lat,
+        lon: event.lon,
+        line: event.line,
+        started_at: DateTime.utc_now() |> DateTime.to_unix(:millisecond)
       }
 
-      {:noreply, assign(socket, :stats, updated_stats)}
+      active_delays = Map.put(socket.assigns.active_delays, event.vehicle_id, active_delay)
+
+      # Push to JS for live bubble on map
+      socket =
+        socket
+        |> assign(:active_delays, active_delays)
+        |> push_event("delay_started", active_delay)
+
+      {:noreply, socket}
     else
       {:noreply, socket}
     end
@@ -94,9 +112,15 @@ defmodule WawTramsWeb.AuditLive do
       hour = DateTime.utc_now().hour
       cost = WawTrams.Audit.CostCalculator.calculate(duration, hour)
 
-      # Pulse animation with line and cost info
+      # Remove from active delays
+      active_delays = Map.delete(socket.assigns.active_delays, event.vehicle_id)
+
+      # EXPLOSION animation with final cost
       socket =
-        push_event(socket, "pulse", %{
+        socket
+        |> assign(:active_delays, active_delays)
+        |> push_event("delay_resolved", %{
+          vehicle_id: event.vehicle_id,
           lat: event.lat,
           lon: event.lon,
           line: event.line,
@@ -109,7 +133,8 @@ defmodule WawTramsWeb.AuditLive do
 
       updated_stats = %{
         stats
-        | total_seconds: stats.total_seconds + duration,
+        | total_delays: stats.total_delays + 1,
+          total_seconds: Map.get(stats, :total_seconds, 0) + duration,
           cost: %{stats.cost | total: stats.cost.total + cost.total}
       }
 
@@ -294,6 +319,20 @@ defmodule WawTramsWeb.AuditLive do
   defp get_since("30d"), do: DateTime.add(DateTime.utc_now(), -30, :day)
   defp get_since(_), do: DateTime.add(DateTime.utc_now(), -1, :day)
 
+  # Load currently active delays from DB for live bubbles
+  defp load_active_delays do
+    ActiveDelays.active()
+    |> Enum.filter(& &1.near_intersection)
+    |> Enum.reduce(%{}, fn delay, acc ->
+      Map.put(acc, delay.vehicle_id, %{
+        lat: delay.lat,
+        lon: delay.lon,
+        line: delay.line,
+        started_at: DateTime.to_unix(delay.started_at, :millisecond)
+      })
+    end)
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -356,18 +395,34 @@ defmodule WawTramsWeb.AuditLive do
             </button>
           </div>
 
-          <%!-- Big Headline --%>
-          <div class="text-center">
+          <%!-- Big Headline - updates on delay resolve --%>
+          <div
+            class="text-center"
+            id="global-ticker"
+            phx-hook="GlobalTickerHook"
+            data-base-cost={@stats.cost.total}
+            data-base-delays={@stats.total_delays}
+            data-base-seconds={Map.get(@stats, :total_seconds, 0)}
+            data-currency={currency_symbol()}
+          >
             <h1 class="text-3xl md:text-5xl font-bold mb-1">
-              <span class="text-red-400">{format_cost(@stats.cost.total)}</span>
+              <span id="ticker-cost" class="text-red-400 tabular-nums">
+                {format_cost(@stats.cost.total)}
+              </span>
               <span class="text-white">{gettext("Wasted")}</span>
             </h1>
             <p class="text-sm md:text-base text-gray-400">
               {period_label(@date_range)}
               <span class="text-gray-600 mx-2">•</span>
-              {format_number(@stats.total_delays)} {gettext("delays")}
+              <span id="ticker-delays" class="tabular-nums">
+                {format_number(@stats.total_delays)}
+              </span>
+              {gettext("delays")}
               <span class="text-gray-600 mx-2">•</span>
-              <span class="text-amber-400">{@stats.total_hours_formatted}</span> {gettext("lost")}
+              <span id="ticker-time" class="text-amber-400 tabular-nums">
+                {@stats.total_hours_formatted}
+              </span>
+              {gettext("lost")}
             </p>
           </div>
         </div>
@@ -408,6 +463,8 @@ defmodule WawTramsWeb.AuditLive do
             id="audit-map"
             phx-hook="AuditMapHook"
             phx-update="ignore"
+            data-currency={currency_symbol()}
+            data-active-delays={Jason.encode!(Map.values(@active_delays))}
             class="absolute inset-0"
           >
           </div>

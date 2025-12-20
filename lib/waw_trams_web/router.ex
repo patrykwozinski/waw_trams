@@ -46,8 +46,10 @@ defmodule WawTramsWeb.Router do
       live_dashboard "/dashboard", metrics: WawTramsWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
 
-      # Test endpoint to simulate delay pulses
+      # Test endpoints to simulate delays
       get "/pulse", WawTramsWeb.DevController, :pulse
+      get "/delay/start", WawTramsWeb.DevController, :delay_start
+      get "/delay/end", WawTramsWeb.DevController, :delay_end
     end
   end
 end

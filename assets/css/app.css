@@ -282,3 +282,200 @@ a[href],
 .leaderboard-item span:first-child {
   transition: color 300ms ease-out;
 }
+
+/* ============================================
+   LIVE DELAY BUBBLES (Ticking Tooltips)
+   ============================================ */
+.live-delay-marker {
+  z-index: 1000 !important;
+}
+
+.live-delay-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(17, 24, 39, 0.95);
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 
+    0 0 20px rgba(239, 68, 68, 0.5),
+    0 4px 15px rgba(0, 0, 0, 0.5);
+  animation: live-bubble-pulse 1.5s ease-in-out infinite;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.live-top {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.live-line {
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.live-duration {
+  font-variant-numeric: tabular-nums;
+}
+
+.live-cost {
+  font-weight: 700;
+  font-size: 14px;
+  color: #ef4444;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes live-bubble-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 0 20px rgba(239, 68, 68, 0.5),
+      0 4px 15px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 30px rgba(239, 68, 68, 0.7),
+      0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ============================================
+   EXPLOSION EFFECT (On Delay Resolve)
+   ============================================ */
+.explosion-ring {
+  pointer-events: none;
+}
+
+.explosion-ring::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(239, 68, 68, 0.9) 0%,
+    rgba(249, 115, 22, 0.6) 30%,
+    rgba(239, 68, 68, 0) 70%
+  );
+  animation: explosion-expand 1.5s ease-out forwards;
+}
+
+.explosion-ring-0::before {
+  animation-delay: 0s;
+  border: 3px solid #ef4444;
+}
+
+.explosion-ring-1::before {
+  animation-delay: 0.1s;
+  border: 3px solid #f97316;
+}
+
+.explosion-ring-2::before {
+  animation-delay: 0.2s;
+  border: 3px solid #fbbf24;
+}
+
+@keyframes explosion-expand {
+  0% {
+    width: 30px;
+    height: 30px;
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+  }
+}
+
+/* Explosion "receipt" that floats up */
+.explosion-receipt {
+  pointer-events: none;
+}
+
+.receipt-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(30, 41, 59, 0.98));
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 
+    0 0 25px rgba(239, 68, 68, 0.7),
+    0 8px 30px rgba(0, 0, 0, 0.6);
+  animation: receipt-float 3s ease-out forwards;
+  white-space: nowrap;
+}
+
+.receipt-top {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.receipt-top::first-letter {
+  color: #fbbf24;
+}
+
+.receipt-cost {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 16px;
+  color: #ef4444;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes receipt-float {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  25% {
+    transform: translateY(-5px) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+  }
+}
+
+/* Header cost flash on delay resolve */
+.cost-flash {
+  animation: cost-flash-anim 0.6s ease-out;
+}
+
+@keyframes cost-flash-anim {
+  0% {
+    text-shadow: 0 0 0 transparent;
+  }
+  30% {
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.4);
+    transform: scale(1.05);
+  }
+  100% {
+    text-shadow: 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
