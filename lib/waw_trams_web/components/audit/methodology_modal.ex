@@ -67,7 +67,9 @@ defmodule WawTramsWeb.Components.Audit.MethodologyModal do
               </div>
 
               <p class="text-xs text-gray-500 mt-2">
-                {gettext("We ignore: terminal layovers, normal boarding (<3 min), brief stops (<30s).")}
+                {gettext(
+                  "We ignore: terminal layovers, normal boarding (<3 min), brief stops (<30s)."
+                )}
               </p>
             </div>
 
