@@ -22,32 +22,48 @@ defmodule WawTramsWeb.Helpers.Formatters do
 
   def format_number(n), do: to_string(n || 0)
 
-  @doc "Format seconds as human-readable duration"
-  def format_duration(seconds) when is_integer(seconds) do
+  @doc """
+  Format seconds as human-readable duration.
+
+  Options:
+  - `:compact` (default) - "5m", "2h 30m"
+  - `:detailed` - "5m 30s", "2h 30m"
+  """
+  def format_duration(seconds, opts \\ [])
+  def format_duration(nil, _opts), do: "-"
+  def format_duration(0, _opts), do: "0s"
+
+  def format_duration(seconds, opts) when is_integer(seconds) do
+    detailed = Keyword.get(opts, :detailed, false)
+
     cond do
-      seconds < 60 -> "#{seconds}s"
-      seconds < 3600 -> "#{div(seconds, 60)}m"
-      true -> "#{div(seconds, 3600)}h #{rem(seconds, 3600) |> div(60)}m"
+      seconds < 60 ->
+        "#{seconds}s"
+
+      seconds < 3600 ->
+        mins = div(seconds, 60)
+        secs = rem(seconds, 60)
+        if detailed and secs > 0, do: "#{mins}m #{secs}s", else: "#{mins}m"
+
+      true ->
+        hours = div(seconds, 3600)
+        mins = div(rem(seconds, 3600), 60)
+        "#{hours}h #{mins}m"
     end
   end
 
-  def format_duration(_), do: "0s"
-
-  @doc "Format datetime as time string"
-  def format_time(nil), do: "-"
-
-  def format_time(datetime) do
-    Calendar.strftime(datetime, "%H:%M:%S")
-  end
+  def format_duration(_, _opts), do: "0s"
 
   @doc "Format duration in minutes as hours/minutes"
-  def format_time_lost(minutes) when minutes < 60, do: "#{minutes}m"
+  def format_time_lost(minutes) when is_integer(minutes) and minutes < 60, do: "#{minutes}m"
 
-  def format_time_lost(minutes) do
+  def format_time_lost(minutes) when is_integer(minutes) do
     hours = div(minutes, 60)
     mins = rem(minutes, 60)
     "#{hours}h #{mins}m"
   end
+
+  def format_time_lost(_), do: "0m"
 
   @doc "Format datetime as relative time ago"
   def time_ago(nil), do: "-"
@@ -56,9 +72,17 @@ defmodule WawTramsWeb.Helpers.Formatters do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
 
     cond do
-      diff < 60 -> "#{diff}s ago"
+      diff < 60 -> "just now"
       diff < 3600 -> "#{div(diff, 60)}m ago"
       true -> "#{div(diff, 3600)}h ago"
     end
+  end
+
+  @doc "Format duration since a given datetime"
+  def duration_since(nil), do: "-"
+
+  def duration_since(started_at) do
+    seconds = DateTime.diff(DateTime.utc_now(), started_at, :second)
+    format_duration(seconds, detailed: true)
   end
 end

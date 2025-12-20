@@ -3,6 +3,7 @@ defmodule WawTramsWeb.LineLive do
 
   alias WawTrams.QueryRouter
   alias WawTrams.WarsawTime
+  import WawTramsWeb.Helpers.Formatters
 
   @impl true
   def mount(%{"line" => line}, _session, socket) do
@@ -305,21 +306,7 @@ defmodule WawTramsWeb.LineLive do
     """
   end
 
-  # Helper functions
-
-  defp format_duration(nil), do: "-"
-  defp format_duration(0), do: "0s"
-  defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"
-
-  defp format_duration(seconds) when seconds < 3600 do
-    "#{div(seconds, 60)}m #{rem(seconds, 60)}s"
-  end
-
-  defp format_duration(seconds) do
-    hours = div(seconds, 3600)
-    mins = div(rem(seconds, 3600), 60)
-    "#{hours}h #{mins}m"
-  end
+  # Helper functions (UI-specific, not shared)
 
   defp bar_color(seconds, max) when max > 0 do
     ratio = seconds / max

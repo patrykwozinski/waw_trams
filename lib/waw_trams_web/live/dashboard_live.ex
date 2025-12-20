@@ -4,6 +4,7 @@ defmodule WawTramsWeb.DashboardLive do
   alias WawTrams.Queries.{ActiveDelays, HotSpots}
   alias WawTrams.Analytics.Stats
   alias WawTrams.WarsawTime
+  import WawTramsWeb.Helpers.Formatters
 
   # 5 seconds
   @refresh_interval 5_000
@@ -449,30 +450,10 @@ defmodule WawTramsWeb.DashboardLive do
     """
   end
 
-  # Helper functions
+  # Helper functions (UI-specific, not shared)
 
   defp format_time(datetime) do
     WarsawTime.format_time(datetime)
-  end
-
-  defp duration_since(started_at) do
-    seconds = DateTime.diff(DateTime.utc_now(), started_at, :second)
-
-    cond do
-      seconds < 60 -> "#{seconds}s"
-      seconds < 3600 -> "#{div(seconds, 60)}m #{rem(seconds, 60)}s"
-      true -> "#{div(seconds, 3600)}h #{div(rem(seconds, 3600), 60)}m"
-    end
-  end
-
-  defp time_ago(datetime) do
-    seconds = DateTime.diff(DateTime.utc_now(), datetime, :second)
-
-    cond do
-      seconds < 60 -> "just now"
-      seconds < 3600 -> "#{div(seconds, 60)}m ago"
-      true -> "#{div(seconds, 3600)}h ago"
-    end
   end
 
   defp classification_color("delay"), do: "bg-orange-500/20 text-orange-400"
@@ -483,25 +464,4 @@ defmodule WawTramsWeb.DashboardLive do
   defp rank_color(2), do: "bg-orange-500 text-white"
   defp rank_color(3), do: "bg-amber-500 text-black"
   defp rank_color(_), do: "bg-gray-700 text-gray-300"
-
-  defp format_duration(nil), do: "-"
-  defp format_duration(seconds) when seconds < 60, do: "#{seconds}s"
-
-  defp format_duration(seconds) when seconds < 3600 do
-    "#{div(seconds, 60)}m #{rem(seconds, 60)}s"
-  end
-
-  defp format_duration(seconds) do
-    hours = div(seconds, 3600)
-    mins = div(rem(seconds, 3600), 60)
-    "#{hours}h #{mins}m"
-  end
-
-  defp format_time_lost(minutes) when minutes < 60, do: "#{minutes}m"
-
-  defp format_time_lost(minutes) do
-    hours = div(minutes, 60)
-    mins = rem(minutes, 60)
-    "#{hours}h #{mins}m"
-  end
 end
