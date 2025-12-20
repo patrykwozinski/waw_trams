@@ -1,6 +1,9 @@
 /* See the Tailwind configuration guide for advanced usage
    https://tailwindcss.com/docs/configuration */
 
+/* Leaflet styles bundled locally for better performance */
+@import "../vendor/leaflet.css";
+
 @import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
@@ -135,128 +138,13 @@ a[href],
   border-bottom-color: rgba(17, 24, 39, 0.85) !important;
 }
 
-/* Legacy prominent-tooltip class */
-.prominent-tooltip {
-  background: rgba(17, 24, 39, 0.85) !important;
-  border: 1px solid rgba(55, 65, 81, 0.6) !important;
-  border-radius: 6px !important;
-  padding: 0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  font-family: inherit !important;
-}
 
-.prominent-tooltip .leaflet-tooltip-content {
-  margin: 0 !important;
-}
 
-.leaflet-tooltip-top.prominent-tooltip::before {
-  border-top-color: rgba(17, 24, 39, 0.85) !important;
-}
-
-.leaflet-tooltip-bottom.prominent-tooltip::before {
-  border-bottom-color: rgba(17, 24, 39, 0.85) !important;
-}
-
-/* Real-time pulse animation for new delays */
-.pulse-marker {
-  position: relative;
-}
-
-.pulse-marker::before,
-.pulse-marker::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 4px solid #ef4444;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0) 70%);
-  box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.5);
-  animation: pulse-ring 2.5s ease-out forwards;
-}
-
-.pulse-marker::after {
-  animation-delay: 0.4s;
-  border-color: #f97316;
-  background: radial-gradient(circle, rgba(249, 115, 22, 0.6) 0%, rgba(249, 115, 22, 0) 70%);
-  box-shadow: 0 0 25px 8px rgba(249, 115, 22, 0.4);
-}
-
-@keyframes pulse-ring {
-  0% {
-    width: 20px;
-    height: 20px;
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-  100% {
-    width: 150px;
-    height: 150px;
-    opacity: 0;
-  }
-}
-
-/* Pulse info popup (shows line, duration, cost) */
-.pulse-info {
-  pointer-events: none;
-}
-
-.pulse-info-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: rgba(17, 24, 39, 0.95);
-  border: 1px solid rgba(239, 68, 68, 0.6);
-  border-radius: 8px;
-  padding: 6px 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.3);
-  animation: pulse-info-fade 3.5s ease-out forwards;
-}
-
-.pulse-line {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-weight: 700;
-  font-size: 14px;
-  color: #fbbf24;
-}
-
-.pulse-duration {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.pulse-cost {
-  font-weight: 600;
-  font-size: 12px;
-  color: #ef4444;
-}
-
-@keyframes pulse-info-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-}
-
-/* Leaderboard animations */
+/* Leaderboard animations - GPU accelerated */
 .leaderboard-item {
   will-change: transform;
   backface-visibility: hidden;
+  contain: layout;
 }
 
 /* Highlight effect when item moves up in ranking */
@@ -305,6 +193,9 @@ a[href],
   animation: live-bubble-pulse 1.5s ease-in-out infinite;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   white-space: nowrap;
+  /* GPU acceleration hints */
+  will-change: transform, box-shadow;
+  contain: layout paint;
 }
 
 .live-top {
@@ -346,118 +237,19 @@ a[href],
   }
 }
 
-/* ============================================
-   EXPLOSION EFFECT (On Delay Resolve)
-   ============================================ */
-.explosion-ring {
-  pointer-events: none;
+/* Smooth fade-out for resolved delays */
+.live-delay-marker.fade-out .live-delay-bubble {
+  animation: bubble-fade-out 400ms ease-out forwards;
 }
 
-.explosion-ring::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(239, 68, 68, 0.9) 0%,
-    rgba(249, 115, 22, 0.6) 30%,
-    rgba(239, 68, 68, 0) 70%
-  );
-  animation: explosion-expand 1.5s ease-out forwards;
-}
-
-.explosion-ring-0::before {
-  animation-delay: 0s;
-  border: 3px solid #ef4444;
-}
-
-.explosion-ring-1::before {
-  animation-delay: 0.1s;
-  border: 3px solid #f97316;
-}
-
-.explosion-ring-2::before {
-  animation-delay: 0.2s;
-  border: 3px solid #fbbf24;
-}
-
-@keyframes explosion-expand {
+@keyframes bubble-fade-out {
   0% {
-    width: 30px;
-    height: 30px;
     opacity: 1;
-  }
-  30% {
-    opacity: 0.9;
-  }
-  100% {
-    width: 200px;
-    height: 200px;
-    opacity: 0;
-  }
-}
-
-/* Explosion "receipt" that floats up */
-.explosion-receipt {
-  pointer-events: none;
-}
-
-.receipt-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(30, 41, 59, 0.98));
-  border: 2px solid #ef4444;
-  border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 
-    0 0 25px rgba(239, 68, 68, 0.7),
-    0 8px 30px rgba(0, 0, 0, 0.6);
-  animation: receipt-float 3s ease-out forwards;
-  white-space: nowrap;
-}
-
-.receipt-top {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.receipt-top::first-letter {
-  color: #fbbf24;
-}
-
-.receipt-cost {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-weight: 700;
-  font-size: 16px;
-  color: #ef4444;
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-  font-variant-numeric: tabular-nums;
-}
-
-@keyframes receipt-float {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.8);
-  }
-  15% {
-    opacity: 1;
-    transform: translateY(0) scale(1.1);
-  }
-  25% {
-    transform: translateY(-5px) scale(1);
-  }
-  70% {
-    opacity: 1;
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-40px) scale(0.9);
+    transform: scale(0.8);
   }
 }
 

@@ -58,7 +58,6 @@ const AuditMapHook = {
 
     // Handle reset_view event to zoom out to show all markers
     this.handleEvent("reset_view", () => {
-      console.log("reset_view: resetting map view")
       // Clear selection highlight
       if (this.selectedMarker) {
         this.selectedMarker.setStyle({ weight: 2, color: "#0f0f0f" })
@@ -165,7 +164,6 @@ const AuditMapHook = {
   loadInitialActiveDelays() {
     try {
       const activeDelays = JSON.parse(this.el.dataset.activeDelays) || []
-      console.log("Loading", activeDelays.length, "initial active delays")
       activeDelays.forEach(delay => this.addLiveDelay(delay))
     } catch (e) {
       console.error("Failed to parse initial active delays", e)
@@ -193,12 +191,20 @@ const AuditMapHook = {
       zIndexOffset: 1000  // Above other markers
     }).addTo(this.liveDelaysLayer)
 
+    // Cache DOM references to avoid querySelector in hot loop
+    const el = marker.getElement()
+    const durationEl = el?.querySelector('.live-duration')
+    const costEl = el?.querySelector('.live-cost')
+
     this.liveDelays.set(key, {
       marker,
       startedAt: delay.started_at,
       line: delay.line,
       lat: delay.lat,
-      lon: delay.lon
+      lon: delay.lon,
+      // Cached DOM refs for performance
+      durationEl,
+      costEl
     })
   },
 
@@ -208,92 +214,44 @@ const AuditMapHook = {
     // For now, just let it get cleaned up - the explosion replaces it
   },
 
-  // Update all live delay tooltips every 100ms
+  // Update all live delay tooltips every 250ms (human perception is ~200ms, no need for 100ms)
   startLiveTooltipUpdater() {
     this.liveUpdateInterval = setInterval(() => {
       const now = Date.now()
       
-      this.liveDelays.forEach((delay, key) => {
+      this.liveDelays.forEach((delay) => {
         const elapsedMs = now - delay.startedAt
         const elapsedSeconds = Math.floor(elapsedMs / 1000)
         const cost = (elapsedMs / 1000) * this.costPerSecond
         
-        // Update the DOM inside the marker
-        const bubble = delay.marker.getElement()?.querySelector('.live-delay-bubble')
-        if (bubble) {
-          bubble.querySelector('.live-duration').textContent = this.formatDuration(elapsedSeconds)
-          bubble.querySelector('.live-cost').textContent = this.formatCostLive(cost)
+        // Use cached DOM references (much faster than querySelector)
+        if (delay.durationEl) {
+          delay.durationEl.textContent = this.formatDuration(elapsedSeconds)
+        }
+        if (delay.costEl) {
+          delay.costEl.textContent = this.formatCostLive(cost)
         }
       })
-    }, 100)
+    }, 250)
   },
 
-  // EXPLOSION effect when delay resolves
+  // Smooth fade-out when delay resolves
   createExplosion(lat, lon, line, duration, cost) {
-    // Remove any live delay marker at this location
+    // Find and fade out the live delay marker at this location
     this.liveDelays.forEach((delay, key) => {
       if (Math.abs(delay.lat - lat) < 0.0001 && Math.abs(delay.lon - lon) < 0.0001) {
-        delay.marker.remove()
-        this.liveDelays.delete(key)
-      }
-    })
-
-    // Create explosion rings (multiple expanding)
-    for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
-        const explosionIcon = L.divIcon({
-          className: `explosion-ring explosion-ring-${i}`,
-          iconSize: [200, 200],
-          iconAnchor: [100, 100],
-        })
-        const explosionMarker = L.marker([lat, lon], { icon: explosionIcon, interactive: false }).addTo(this.map)
-        
-        setTimeout(() => explosionMarker.remove(), 1500)
-      }, i * 100)
-    }
-
-    // Create final cost "receipt" that floats up - compact layout
-    const receiptIcon = L.divIcon({
-      className: "explosion-receipt",
-      html: `<div class="receipt-content">
-        <div class="receipt-top">L${line} · ${this.formatDuration(duration)}</div>
-        <div class="receipt-cost">-${this.formatCostLive(cost)}</div>
-      </div>`,
-      iconSize: [120, 50],
-      iconAnchor: [60, 25],
-    })
-    
-    const receiptMarker = L.marker([lat, lon], { icon: receiptIcon, interactive: false }).addTo(this.map)
-    
-    // Float up and fade out
-    setTimeout(() => receiptMarker.remove(), 3000)
-
-    // Flash nearby intersection markers
-    this.markersLayer.eachLayer((layer) => {
-      const pos = layer.getLatLng()
-      const dist = this.map.distance([lat, lon], pos)
-      if (dist < 800) {
-        const originalRadius = layer.options.radius
-        const originalColor = layer.options.fillColor
-        
-        // Dramatic flash sequence
-        layer.setStyle({ fillColor: "#fff", fillOpacity: 1 })
-        layer.setRadius(originalRadius * 2)
-        
-        setTimeout(() => {
-          layer.setStyle({ fillColor: "#ef4444", fillOpacity: 1 })
-          layer.setRadius(originalRadius * 1.5)
-        }, 100)
-        
-        setTimeout(() => {
-          layer.setStyle({ fillColor: "#fbbf24", fillOpacity: 0.9 })
-          layer.setRadius(originalRadius * 1.2)
-        }, 200)
-        
-        setTimeout(() => {
-          layer.setStyle({ fillColor: originalColor, fillOpacity: layer.options.fillOpacity })
-          layer.setRadius(originalRadius)
-        }, 500)
+        const el = delay.marker.getElement()
+        if (el) {
+          // Add fade-out class for smooth disappearance
+          el.classList.add('fade-out')
+          setTimeout(() => {
+            delay.marker.remove()
+            this.liveDelays.delete(key)
+          }, 400)
+        } else {
+          delay.marker.remove()
+          this.liveDelays.delete(key)
+        }
       }
     })
   },

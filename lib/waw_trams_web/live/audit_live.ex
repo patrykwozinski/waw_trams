@@ -336,8 +336,6 @@ defmodule WawTramsWeb.AuditLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <div class="h-screen flex flex-col bg-gray-950 text-gray-100">
       <%!-- Loading overlay --%>
       <%= if @loading do %>

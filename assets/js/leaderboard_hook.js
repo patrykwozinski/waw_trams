@@ -38,9 +38,8 @@ const LeaderboardHook = {
   animateReorder() {
     const items = this.el.querySelectorAll('[data-leaderboard-item]')
     
-    items.forEach(item => {
-      const id = item.dataset.leaderboardItem
-      const oldPos = this.positions.get(id)
+    items.forEach((item) => {
+      const oldPos = this.positions.get(item.dataset.leaderboardItem)
       
       if (!oldPos) {
         // New item - fade in
