@@ -13,15 +13,15 @@ Warsaw's trams frequently wait at red lights because the traffic signal priority
 
 ## What It Detects
 
-| Location | Duration | What We Log | Priority Failure? |
-|----------|----------|-------------|-------------------|
-| **At terminal** | Any | ❌ Ignored | — |
-| **At stop** | ≤ 3 min | ❌ Ignored (normal boarding) | — |
-| **At stop** | > 3 min | ✅ `blockage` | Only if near intersection AND > 180s |
-| **Not at stop** | ≤ 30s | ❌ Ignored (brief) | — |
-| **Not at stop** | > 30s | ✅ `delay` | If near intersection AND > 120s |
+| Location | Duration | What We Log |
+|----------|----------|-------------|
+| **At terminal** | Any | ❌ Ignored |
+| **At stop** | ≤ 3 min | ❌ Ignored (normal boarding) |
+| **At stop** | > 3 min | ✅ `blockage` |
+| **Not at stop** | ≤ 30s | ❌ Ignored (brief) |
+| **Not at stop** | > 30s | ✅ `delay` |
 
-**Priority Failure** = tram waited through multiple signal cycles (120s+) because the traffic signal priority system failed to give it a green light.
+All delays near intersections are tracked and their economic cost is calculated.
 
 ## Quick Start
 
@@ -56,7 +56,6 @@ Visit http://localhost:4000
 | Metric | What It Means |
 |--------|---------------|
 | **Delays** | All logged delay events (>30s not at stop, or >180s at stop) |
-| **Priority Failures** | Delays at intersections exceeding threshold (120s or 180s if at stop) |
 | **Economic Cost** | Time × passengers × value-of-time + driver wages + energy |
 
 ### Cost Calculation
@@ -110,7 +109,7 @@ mix credo
 ## Documentation
 
 ### For Everyone
-- [Detection Logic](guides/detection_logic.md) — How we identify delays and priority failures
+- [Detection Logic](guides/detection_logic.md) — How we identify delays
 
 ### For Tramwaje Warszawskie / City Hall
 - [**Thresholds**](guides/thresholds.md) — All configurable values, validation questions

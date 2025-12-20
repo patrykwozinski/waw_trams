@@ -46,55 +46,12 @@ See [Detection Logic](detection_logic.md) for the reasoning behind our approach.
 
 ### NOT at a Stop
 
-| Duration | Classification | Persisted? | Multi-Cycle? |
-|----------|---------------|------------|--------------|
-| ≤ 30s | `brief_stop` | ❌ No | - |
-| 30s – 120s | `delay` | ✅ Yes | ❌ No |
-| > 120s | `delay` | ✅ Yes | ⚡ Yes |
+| Duration | Classification | Persisted? |
+|----------|---------------|------------|
+| ≤ 30s | `brief_stop` | ❌ No |
+| > 30s | `delay` | ✅ Yes |
 
-**Note:** Warsaw major intersections use 120s signal cycles. Delays >120s indicate tram missed multiple green phases (priority failure).
-
-**Warsaw Signal Reference:**
-
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| Standard Cycle | 120s | Major intersections (Rondo ONZ, Zawiszy, Dmowskiego) |
-| Night Cycle | 90-100s | 23:00–05:00 |
-| Typical Red | 80-100s | Wait if no priority |
-| Max Green (Priority) | 30-45s | Priority extension limit |
-| Min Green | 8-12s | Minimum crossing window |
-
-### Multi-Cycle Logic (Priority Failures)
-
-`multi_cycle = true` requires:
-- `near_intersection = true` (traffic signal exists)
-- Duration exceeds threshold (depends on location)
-
-| Location | Threshold | Rationale |
-|----------|-----------|-----------|
-| Intersection only | **120s** | One signal cycle |
-| Stop + Intersection | **180s** | Cycle + 60s boarding buffer |
-
-**Rationale:** Priority failures can ONLY happen where there are traffic signals.
-When a stop is near an intersection, we add 60s buffer to account for normal boarding time.
-
-| Scenario | at_stop | near_intersection | Duration | Threshold | Multi-Cycle? |
-|----------|---------|-------------------|----------|-----------|--------------|
-| Pure intersection | ❌ | ✅ | 150s | 120s | ⚡ Yes |
-| Stop far from intersection | ✅ | ❌ | 200s | — | ❌ No |
-| Stop near intersection | ✅ | ✅ | 150s | 180s | ❌ No |
-| Stop near intersection | ✅ | ✅ | 200s | 180s | ⚡ Yes |
-
-### Stop + Intersection Overlap
-
-Many Warsaw stops are within 50m of intersections. The boarding buffer prevents false positives:
-
-**Example:** Tram at "Centrum" platform (also near intersection):
-- 45s wait → `normal_dwell`, not persisted
-- 150s wait → `blockage`, `multi_cycle=false` (150s < 180s, probably just boarding)
-- 200s wait → `blockage`, `multi_cycle=true` (200s > 180s, priority failed)
-
-**❓ Question:** Are there intersections with different cycle lengths?
+**Note:** All delays near intersections are tracked and contribute to the total economic cost. Longer delays have higher costs.
 
 ### At Terminal
 

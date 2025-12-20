@@ -102,12 +102,6 @@ defmodule WawTramsWeb.DashboardLive do
                 <span class="text-gray-500">{gettext(">30s away from platform")}</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
-                  {gettext("long")}
-                </span>
-                <span class="text-gray-500">{gettext(">2 min at intersection")}</span>
-              </div>
-              <div class="flex items-center gap-2">
                 <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
                   {gettext("blockage")}
                 </span>
@@ -193,20 +187,9 @@ defmodule WawTramsWeb.DashboardLive do
                             {delay.classification}
                           </span>
                           <span class="font-mono text-gray-400">L{delay.line}</span>
-                          <%= if delay.multi_cycle do %>
-                            <span
-                              class="text-purple-400 text-xs"
-                              title={gettext("Long delay: stopped >2 minutes")}
-                            >
-                              ⚡
-                            </span>
-                          <% end %>
                         </div>
                         <div class="text-right">
-                          <span class={[
-                            "text-xs font-medium",
-                            if(delay.multi_cycle, do: "text-purple-400", else: "text-green-400")
-                          ]}>
+                          <span class="text-xs font-medium text-green-400">
                             {format_duration(delay.duration_seconds)}
                           </span>
                           <span class="text-gray-600 text-xs ml-2">

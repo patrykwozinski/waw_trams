@@ -17,23 +17,28 @@ defmodule WawTramsWeb.DevController do
     # Pick a random intersection
     {lat, lon, name} = Enum.random(@intersections)
 
-    # Create a fake delay event
+    # Random duration between 45s and 300s
+    duration = Enum.random(45..300)
+
+    # Create a fake resolved delay event (pulse triggers on resolve)
     event = %{
       lat: lat,
       lon: lon,
       near_intersection: true,
       line: "#{Enum.random(1..35)}",
-      vehicle_id: "test-#{:rand.uniform(1000)}"
+      vehicle_id: "test-#{:rand.uniform(1000)}",
+      duration_seconds: duration
     }
 
-    # Broadcast to all connected AuditLive processes
-    Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_created, event})
+    # Broadcast resolved event to trigger pulse animation
+    Phoenix.PubSub.broadcast(WawTrams.PubSub, "delays", {:delay_resolved, event})
 
     json(conn, %{
       ok: true,
       message: "Pulsed at #{name}",
       lat: lat,
-      lon: lon
+      lon: lon,
+      duration: duration
     })
   end
 end

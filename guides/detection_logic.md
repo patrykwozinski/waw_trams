@@ -24,27 +24,9 @@ Instead of guessing in real-time, we:
 | At stop | ≤ 3 min | ✅ Ignored (normal boarding) |
 | At stop | > 3 min | 🔴 **Blockage** — something wrong |
 | Not at stop | ≤ 30s | ✅ Ignored (brief/GPS noise) |
-| Not at stop | 30s – 120s | 🟠 **Delay** — single signal cycle |
-| Not at stop | > 120s | ⚡ **Delay + Multi-Cycle** — priority failure |
+| Not at stop | > 30s | 🟠 **Delay** — traffic or signal issue |
 
-### Multi-Cycle Flag (Priority Failures)
-
-Warsaw intersections use 120-second signal cycles. `multi_cycle = true` indicates a tram missed multiple green phases — clear evidence of broken transit priority.
-
-**Key:** The threshold is **location-aware**:
-- **Intersection only:** 120s (one signal cycle)
-- **Stop + Intersection:** 180s (cycle + 60s boarding buffer)
-
-The boarding buffer prevents false positives when a tram is legitimately boarding passengers at a stop that happens to be near an intersection.
-
-| Scenario | at_stop | near_intersection | Duration | Threshold | multi_cycle |
-|----------|---------|-------------------|----------|-----------|-------------|
-| Intersection only | ❌ | ✅ | 150s | 120s | ⚡ Yes |
-| Stop near intersection | ✅ | ✅ | 150s | 180s | ❌ No |
-| Stop near intersection | ✅ | ✅ | 200s | 180s | ⚡ Yes |
-| Stop far from intersection | ✅ | ❌ | 200s | — | ❌ No |
-
-> **For detailed thresholds and validation questions**, see [Thresholds](thresholds.md).
+> **For detailed thresholds**, see [Thresholds](thresholds.md).
 
 ## Terminal Detection
 

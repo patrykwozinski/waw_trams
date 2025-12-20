@@ -47,15 +47,11 @@ WawTrams.Queries.ActiveDelays.count_today()
 ```elixir
 # Summary stats (last 24 hours default)
 WawTrams.Analytics.Stats.summary()
-# => %{delay_count: 45, blockage_count: 12, total_seconds: 3600, multi_cycle_count: 3, ...}
+# => %{delay_count: 45, blockage_count: 12, total_seconds: 3600, ...}
 
 # Stats by classification
 WawTrams.Analytics.Stats.for_period()
 # => [%{classification: "delay", count: 45, avg_duration_seconds: 52.3}, ...]
-
-# Priority failure count (intersection delays > threshold)
-WawTrams.Analytics.Stats.multi_cycle_count()
-# => 3
 ```
 
 ### Hot Spots (Intersection Analysis)
@@ -111,7 +107,7 @@ WawTrams.Queries.Heatmap.grid()
 ```elixir
 # City-wide stats with economic cost
 WawTrams.Audit.Summary.stats(since: DateTime.add(DateTime.utc_now(), -7, :day))
-# => %{total_delays: 140, cost: %{total: 3330.51}, multi_cycle_count: 3, ...}
+# => %{total_delays: 140, cost: %{total: 3330.51}, ...}
 
 # Leaderboard (worst intersections by cost)
 WawTrams.Audit.Summary.leaderboard(limit: 20)

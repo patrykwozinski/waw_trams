@@ -35,14 +35,39 @@ defmodule WawTramsWeb.Components.Audit.MethodologyModal do
           </div>
 
           <div class="space-y-4 text-gray-300 text-sm">
-            <%!-- What is a delay --%>
-            <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-              <div class="font-semibold text-orange-400 mb-1">{gettext("What is a delay?")}</div>
-              <p class="text-gray-300">
-                {gettext("Tram stopped >30 seconds away from any platform.")}
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                {gettext("We ignore platform stops, terminals, and stops under 30s.")}
+            <%!-- What we track --%>
+            <div>
+              <div class="font-semibold text-amber-400 mb-2">{gettext("What We Track")}</div>
+              <div class="space-y-2">
+                <%!-- Delay --%>
+                <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
+                      {gettext("delay")}
+                    </span>
+                    <span class="text-gray-400 text-xs">{gettext("Away from platform")}</span>
+                  </div>
+                  <p class="text-gray-300 text-xs">
+                    {gettext("Stopped >30 seconds NOT at any platform. Signal or traffic issue.")}
+                  </p>
+                </div>
+
+                <%!-- Blockage --%>
+                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+                      {gettext("blockage")}
+                    </span>
+                    <span class="text-gray-400 text-xs">{gettext("At platform")}</span>
+                  </div>
+                  <p class="text-gray-300 text-xs">
+                    {gettext("Stopped >3 minutes at a platform. Abnormal dwell time.")}
+                  </p>
+                </div>
+              </div>
+
+              <p class="text-xs text-gray-500 mt-2">
+                {gettext("We ignore: terminal layovers, normal boarding (<3 min), brief stops (<30s).")}
               </p>
             </div>
 
