@@ -332,162 +332,89 @@ defmodule WawTramsWeb.AuditLive do
       phx-click="toggle_methodology"
     >
       <div
-        class="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        class="bg-gray-900 border border-gray-700 rounded-xl max-w-xl w-full mx-4 max-h-[90vh] overflow-y-auto"
         phx-click-away="toggle_methodology"
       >
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-white">📊 {gettext("Cost Calculation Methodology")}</h2>
-            <button phx-click="toggle_methodology" class="text-gray-400 hover:text-white">
-              <.icon name="hero-x-mark" class="w-6 h-6" />
+        <div class="p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">📊 {gettext("How We Calculate Cost")}</h2>
+            <button phx-click="toggle_methodology" class="text-gray-400 hover:text-white cursor-pointer">
+              <.icon name="hero-x-mark" class="w-5 h-5" />
             </button>
           </div>
 
-          <div class="space-y-6 text-gray-300">
-            <%!-- Detection Thresholds --%>
-            <div>
-              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("What We Count")}</h3>
-              <div class="bg-gray-800/50 rounded-lg overflow-hidden">
-                <table class="w-full text-sm">
-                  <tbody class="divide-y divide-gray-700">
-                    <tr>
-                      <td class="px-3 py-2 text-orange-400 font-medium">{gettext("Delay")}</td>
-                      <td class="px-3 py-2 text-gray-400">
-                        {gettext("Stopped >30 seconds away from platform")}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="px-3 py-2 text-purple-400 font-medium">{gettext("Long delay")}</td>
-                      <td class="px-3 py-2 text-gray-400">
-                        {gettext("Stopped >2 minutes at intersection")}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p class="text-xs text-gray-500 mt-2">
-                {gettext("We ignore: stops at platforms (<3 min), terminals, and brief stops (<30s)")}
+          <div class="space-y-4 text-gray-300 text-sm">
+            <%!-- What is a delay --%>
+            <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+              <div class="font-semibold text-orange-400 mb-1">{gettext("What is a delay?")}</div>
+              <p class="text-gray-300">
+                {gettext("Tram stopped >30 seconds away from any platform.")}
+              </p>
+              <p class="text-xs text-gray-500 mt-1">
+                {gettext("We ignore platform stops, terminals, and stops under 30s.")}
               </p>
             </div>
 
             <%!-- Formula --%>
             <div>
-              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Formula")}</h3>
-              <div class="bg-gray-800/50 rounded-lg p-4 font-mono text-sm">
-                <p class="text-white">
-                  {gettext("Total Cost")} = {gettext("Passenger Cost")} + {gettext("Operational Cost")}
-                </p>
-                <p class="mt-2 text-gray-400">
-                  {gettext("Passenger Cost")} = {gettext("delay_hours")} × {gettext("passengers")} × 22 PLN/h
-                </p>
-                <p class="text-gray-400">
-                  {gettext("Operational Cost")} = {gettext("delay_hours")} × (80 + 5) PLN/h
-                </p>
-              </div>
-            </div>
-
-            <%!-- Assumptions --%>
-            <div>
-              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Assumptions")}</h3>
-              <div class="grid gap-3">
-                <div class="bg-gray-800/50 rounded-lg p-3">
-                  <div class="flex justify-between">
-                    <span class="text-gray-400">{gettext("Value of Time (VoT)")}</span>
-                    <span class="font-semibold text-white">22 PLN/{gettext("hour")}</span>
+              <div class="font-semibold text-amber-400 mb-2">{gettext("Cost Formula")}</div>
+              <div class="bg-gray-800/50 rounded-lg p-3 space-y-3">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-red-400 font-medium">{gettext("Passenger Time")}</span>
+                    <span class="text-gray-500">=</span>
+                    <span class="text-gray-400 text-xs">{gettext("hours")} × {gettext("passengers")} × 22 PLN/h</span>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {gettext("Polish commuter weighted average")}
-                  </p>
+                  <p class="text-xs text-gray-500 ml-4">{gettext("22 PLN/h = value of commuter time (Polish studies)")}</p>
                 </div>
-                <div class="bg-gray-800/50 rounded-lg p-3">
-                  <div class="flex justify-between">
-                    <span class="text-gray-400">{gettext("Driver wage")}</span>
-                    <span class="font-semibold text-white">80 PLN/{gettext("hour")}</span>
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-amber-400 font-medium">{gettext("Operations")}</span>
+                    <span class="text-gray-500">=</span>
+                    <span class="text-gray-400 text-xs">{gettext("hours")} × 85 PLN/h</span>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {gettext("Full employer cost (incl. ZUS/taxes)")}
-                  </p>
-                </div>
-                <div class="bg-gray-800/50 rounded-lg p-3">
-                  <div class="flex justify-between">
-                    <span class="text-gray-400">{gettext("Energy (idling)")}</span>
-                    <span class="font-semibold text-white">5 PLN/{gettext("hour")}</span>
-                  </div>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {gettext("HVAC, lights, systems during idle")}
-                  </p>
+                  <p class="text-xs text-gray-500 ml-4">{gettext("Driver wage")}: 80 PLN/h • {gettext("Energy (HVAC, systems)")}: 5 PLN/h</p>
                 </div>
               </div>
             </div>
 
-            <%!-- Passenger estimates --%>
+            <%!-- Passengers per time --%>
             <div>
-              <h3 class="text-lg font-semibold text-amber-400 mb-2">
-                {gettext("Passenger Estimates")}
-              </h3>
-              <div class="bg-gray-800/50 rounded-lg p-4">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="text-gray-400 text-left">
-                      <th class="pb-2">{gettext("Time Period")}</th>
-                      <th class="pb-2">{gettext("Hours")}</th>
-                      <th class="pb-2 text-right">{gettext("Passengers")}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="text-gray-300">
-                    <tr>
-                      <td class="py-1">🌅 {gettext("Morning Peak")}</td>
-                      <td>7:00–8:59</td>
-                      <td class="text-right font-semibold text-red-400">150</td>
-                    </tr>
-                    <tr>
-                      <td class="py-1">🌆 {gettext("Afternoon Peak")}</td>
-                      <td>15:00–17:59</td>
-                      <td class="text-right font-semibold text-red-400">150</td>
-                    </tr>
-                    <tr>
-                      <td class="py-1">☀️ {gettext("Off-Peak")}</td>
-                      <td>6:00–6:59, 9:00–14:59</td>
-                      <td class="text-right font-semibold text-amber-400">50</td>
-                    </tr>
-                    <tr>
-                      <td class="py-1">🌙 {gettext("Evening")}</td>
-                      <td>18:00–21:59</td>
-                      <td class="text-right font-semibold text-amber-400">50</td>
-                    </tr>
-                    <tr>
-                      <td class="py-1">🌃 {gettext("Night")}</td>
-                      <td>22:00–5:59</td>
-                      <td class="text-right font-semibold text-gray-400">10</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="font-semibold text-amber-400 mb-2">{gettext("Passengers per Tram")}</div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
+                  <span>🌅 {gettext("Rush")} <span class="text-gray-500">7–9, 15–18</span></span>
+                  <span class="text-red-400 font-semibold">150</span>
+                </div>
+                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
+                  <span>☀️ {gettext("Day")} <span class="text-gray-500">6–7, 9–15</span></span>
+                  <span class="text-amber-400 font-semibold">50</span>
+                </div>
+                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
+                  <span>🌙 {gettext("Evening")} <span class="text-gray-500">18–22</span></span>
+                  <span class="text-amber-400 font-semibold">50</span>
+                </div>
+                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
+                  <span>🌃 {gettext("Night")} <span class="text-gray-500">22–6</span></span>
+                  <span class="text-gray-400 font-semibold">10</span>
+                </div>
               </div>
-              <p class="text-xs text-gray-500 mt-2">
-                {gettext("Based on Pesa Jazz 134N tram capacity (~240 max, ~150 comfortable)")}
-              </p>
             </div>
 
             <%!-- Example --%>
-            <div>
-              <h3 class="text-lg font-semibold text-amber-400 mb-2">{gettext("Example")}</h3>
-              <div class="bg-gray-800/50 rounded-lg p-4 text-sm">
-                <p class="text-gray-400">{gettext("10-minute delay at 8:00 AM (peak hour):")}</p>
-                <div class="mt-2 space-y-1">
-                  <p>
-                    {gettext("Passenger cost")}: 0.167h × 150 × 22 PLN =
-                    <span class="text-red-400 font-semibold">550 PLN</span>
-                  </p>
-                  <p>
-                    {gettext("Operational cost")}: 0.167h × 85 PLN =
-                    <span class="text-amber-400 font-semibold">14 PLN</span>
-                  </p>
-                  <p class="border-t border-gray-700 pt-2 mt-2">
-                    {gettext("Total")}: <span class="text-white font-bold">564 PLN</span>
-                  </p>
-                </div>
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+              <div class="font-semibold text-amber-400 mb-1">💡 {gettext("Example")}</div>
+              <p class="text-gray-300 mb-2">{gettext("5 min delay during morning rush:")}</p>
+              <div class="font-mono text-xs">
+                <span class="text-gray-400">(0.08h × 150 × 22) + (0.08h × 85) =</span>
+                <span class="text-white font-bold ml-1">271 PLN</span>
               </div>
             </div>
+
+            <%!-- Sources --%>
+            <p class="text-xs text-gray-500 text-center">
+              {gettext("Value of Time: Polish commuter studies")} • {gettext("Capacity: Pesa Jazz 134N")}
+            </p>
           </div>
         </div>
       </div>

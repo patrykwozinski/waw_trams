@@ -8,7 +8,7 @@ msgstr ""
 msgid "Updated"
 msgstr "Updated"
 
-#: lib/waw_trams_web/live/audit_live.ex:278
+#: lib/waw_trams_web/live/audit_live.ex:276
 #, elixir-autogen
 msgid "Map"
 msgstr "Map"
@@ -59,7 +59,7 @@ msgstr "Most Impacted Lines"
 msgid "Line"
 msgstr "Line"
 
-#: lib/waw_trams_web/live/audit_live.ex:596
+#: lib/waw_trams_web/live/audit_live.ex:521
 #: lib/waw_trams_web/live/dashboard_live.ex:187
 #: lib/waw_trams_web/live/dashboard_live.ex:271
 #: lib/waw_trams_web/live/line_live.ex:143
@@ -73,7 +73,6 @@ msgstr "Delays"
 msgid "Avg"
 msgstr "Avg"
 
-#: lib/waw_trams_web/live/audit_live.ex:488
 #: lib/waw_trams_web/live/dashboard_live.ex:273
 #, elixir-autogen
 msgid "Total"
@@ -84,7 +83,7 @@ msgstr "Total"
 msgid "Intersection Hot Spots"
 msgstr "Intersection Hot Spots"
 
-#: lib/waw_trams_web/live/audit_live.ex:565
+#: lib/waw_trams_web/live/audit_live.ex:490
 #: lib/waw_trams_web/live/dashboard_live.ex:186
 #: lib/waw_trams_web/live/line_live.ex:245
 #, elixir-autogen
@@ -258,7 +257,7 @@ msgstr "Lines"
 msgid "Blockages"
 msgstr "Blockages"
 
-#: lib/waw_trams_web/live/audit_live.ex:567
+#: lib/waw_trams_web/live/audit_live.ex:492
 #: lib/waw_trams_web/live/dashboard_live.ex:209
 #: lib/waw_trams_web/live/line_live.ex:269
 #, elixir-autogen
@@ -289,7 +288,7 @@ msgstr "more"
 msgid "Actions"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:611
+#: lib/waw_trams_web/live/audit_live.ex:536
 #, elixir-autogen, elixir-format
 msgid "Affected Lines"
 msgstr ""
@@ -316,7 +315,7 @@ msgstr ""
 msgid "Audit"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:560
+#: lib/waw_trams_web/live/audit_live.ex:485
 #, elixir-autogen, elixir-format
 msgid "Back to Leaderboard"
 msgstr ""
@@ -346,7 +345,6 @@ msgstr "Events"
 msgid "Find the worst times to travel on a specific tram line"
 msgstr "Find the worst times to travel on a specific tram line"
 
-#: lib/waw_trams_web/live/audit_live.ex:435
 #: lib/waw_trams_web/live/dashboard_live.ex:259
 #, elixir-autogen, elixir-format
 msgid "Hours"
@@ -378,7 +376,7 @@ msgstr "Last 30 days"
 msgid "Last 7 days"
 msgstr "Last 7 days"
 
-#: lib/waw_trams_web/live/audit_live.ex:515
+#: lib/waw_trams_web/live/audit_live.ex:440
 #, elixir-autogen, elixir-format
 msgid "No data available for this period"
 msgstr ""
@@ -413,12 +411,12 @@ msgstr "Sorted by time"
 msgid "Summary"
 msgstr "Summary"
 
-#: lib/waw_trams_web/live/audit_live.ex:590
+#: lib/waw_trams_web/live/audit_live.ex:515
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Time Lost"
 msgstr "Time Lost (24h)"
 
-#: lib/waw_trams_web/live/audit_live.ex:505
+#: lib/waw_trams_web/live/audit_live.ex:430
 #, elixir-autogen, elixir-format
 msgid "Top Worst Intersections"
 msgstr ""
@@ -429,7 +427,7 @@ msgstr ""
 msgid "Total Time"
 msgstr "Total Time"
 
-#: lib/waw_trams_web/live/audit_live.ex:531
+#: lib/waw_trams_web/live/audit_live.ex:456
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Unknown location"
 msgstr "Unknown"
@@ -444,7 +442,7 @@ msgstr "WORST"
 msgid "We can't find the internet"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:603
+#: lib/waw_trams_web/live/audit_live.ex:528
 #, elixir-autogen, elixir-format
 msgid "When It Fails"
 msgstr ""
@@ -460,7 +458,7 @@ msgid "close"
 msgstr ""
 
 #: lib/waw_trams_web/live/audit_live.ex:261
-#: lib/waw_trams_web/live/audit_live.ex:534
+#: lib/waw_trams_web/live/audit_live.ex:459
 #, elixir-autogen, elixir-format, fuzzy
 msgid "delays"
 msgstr "delays"
@@ -470,12 +468,12 @@ msgstr "delays"
 msgid "yet"
 msgstr "yet"
 
-#: lib/waw_trams_web/live/audit_live.ex:293
+#: lib/waw_trams_web/live/audit_live.ex:291
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:285
+#: lib/waw_trams_web/live/audit_live.ex:283
 #, elixir-autogen, elixir-format
 msgid "List"
 msgstr ""
@@ -485,64 +483,14 @@ msgstr ""
 msgid "Loading data..."
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:477
-#, elixir-autogen, elixir-format
-msgid "10-minute delay at 8:00 AM (peak hour):"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:446
-#, elixir-autogen, elixir-format
-msgid "Afternoon Peak"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:393
-#, elixir-autogen, elixir-format
-msgid "Assumptions"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:469
-#, elixir-autogen, elixir-format
-msgid "Based on Pesa Jazz 134N tram capacity (~240 max, ~150 comfortable)"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:342
-#, elixir-autogen, elixir-format
-msgid "Cost Calculation Methodology"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:406
-#, elixir-autogen, elixir-format
-msgid "Driver wage"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:415
-#, elixir-autogen, elixir-format
-msgid "Energy (idling)"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:456
+#: lib/waw_trams_web/live/audit_live.ex:394
 #, elixir-autogen, elixir-format
 msgid "Evening"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:475
+#: lib/waw_trams_web/live/audit_live.ex:406
 #, elixir-autogen, elixir-format
 msgid "Example"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:377
-#, elixir-autogen, elixir-format
-msgid "Formula"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:410
-#, elixir-autogen, elixir-format
-msgid "Full employer cost (incl. ZUS/taxes)"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:419
-#, elixir-autogen, elixir-format
-msgid "HVAC, lights, systems during idle"
 msgstr ""
 
 #: lib/waw_trams_web/live/audit_live.ex:245
@@ -560,56 +508,9 @@ msgstr ""
 msgid "Live delay monitoring"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:441
-#, elixir-autogen, elixir-format
-msgid "Morning Peak"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:461
+#: lib/waw_trams_web/live/audit_live.ex:398
 #, elixir-autogen, elixir-format
 msgid "Night"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:451
-#, elixir-autogen, elixir-format
-msgid "Off-Peak"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:380
-#: lib/waw_trams_web/live/audit_live.ex:386
-#, elixir-autogen, elixir-format
-msgid "Operational Cost"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:484
-#, elixir-autogen, elixir-format
-msgid "Operational cost"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:380
-#: lib/waw_trams_web/live/audit_live.ex:383
-#, elixir-autogen, elixir-format
-msgid "Passenger Cost"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:428
-#, elixir-autogen, elixir-format
-msgid "Passenger Estimates"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:480
-#, elixir-autogen, elixir-format
-msgid "Passenger cost"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:436
-#, elixir-autogen, elixir-format
-msgid "Passengers"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:401
-#, elixir-autogen, elixir-format
-msgid "Polish commuter weighted average"
 msgstr ""
 
 #: lib/waw_trams_web/live/dashboard_live.ex:103
@@ -617,60 +518,32 @@ msgstr ""
 msgid "Real-time Dashboard"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:690
+#: lib/waw_trams_web/live/audit_live.ex:615
 #, elixir-autogen, elixir-format
 msgid "This Month"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:689
+#: lib/waw_trams_web/live/audit_live.ex:614
 #, elixir-autogen, elixir-format
 msgid "This Week"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:434
-#, elixir-autogen, elixir-format
-msgid "Time Period"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:688
+#: lib/waw_trams_web/live/audit_live.ex:613
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Today"
 msgstr "Monday"
 
-#: lib/waw_trams_web/live/audit_live.ex:380
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Total Cost"
-msgstr "Total Time Lost"
-
-#: lib/waw_trams_web/live/audit_live.ex:397
-#, elixir-autogen, elixir-format
-msgid "Value of Time (VoT)"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:383
-#: lib/waw_trams_web/live/audit_live.ex:386
-#, elixir-autogen, elixir-format, fuzzy
-msgid "delay_hours"
-msgstr "delay"
-
-#: lib/waw_trams_web/live/audit_live.ex:398
-#: lib/waw_trams_web/live/audit_live.ex:407
-#: lib/waw_trams_web/live/audit_live.ex:416
-#, elixir-autogen, elixir-format, fuzzy
-msgid "hour"
-msgstr "Hour"
-
-#: lib/waw_trams_web/live/audit_live.ex:265
+#: lib/waw_trams_web/live/audit_live.ex:263
 #, elixir-autogen, elixir-format
 msgid "lost"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:508
+#: lib/waw_trams_web/live/audit_live.ex:433
 #, elixir-autogen, elixir-format
 msgid "of total cost"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:383
+#: lib/waw_trams_web/live/audit_live.ex:366
 #, elixir-autogen, elixir-format
 msgid "passengers"
 msgstr ""
@@ -680,54 +553,19 @@ msgstr ""
 msgid "Wasted"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:356
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Delay"
-msgstr "Delays"
-
 #: lib/waw_trams_web/live/dashboard_live.ex:152
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Long Delays (24h)"
 msgstr "Long Delays (24h)"
-
-#: lib/waw_trams_web/live/audit_live.ex:362
-#, elixir-autogen, elixir-format
-msgid "Long delay"
-msgstr ""
 
 #: lib/waw_trams_web/live/dashboard_live.ex:387
 #, elixir-autogen, elixir-format
 msgid "Long delay: stopped >2 minutes"
 msgstr ""
 
-#: lib/waw_trams_web/live/audit_live.ex:263
-#, elixir-autogen, elixir-format
-msgid "long delays"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:584
+#: lib/waw_trams_web/live/audit_live.ex:509
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Cost"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:364
-#, elixir-autogen, elixir-format
-msgid "Stopped >2 minutes at intersection"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:358
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Stopped >30 seconds away from platform"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:371
-#, elixir-autogen, elixir-format
-msgid "We ignore: stops at platforms (<3 min), terminals, and brief stops (<30s)"
-msgstr ""
-
-#: lib/waw_trams_web/live/audit_live.ex:351
-#, elixir-autogen, elixir-format
-msgid "What We Count"
 msgstr ""
 
 #: lib/waw_trams_web/live/dashboard_live.ex:124
@@ -753,4 +591,90 @@ msgstr ""
 #: lib/waw_trams_web/live/dashboard_live.ex:122
 #, elixir-autogen, elixir-format
 msgid "long"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:407
+#, elixir-autogen, elixir-format
+msgid "5 min delay during morning rush:"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:416
+#, elixir-autogen, elixir-format
+msgid "Capacity: Pesa Jazz 134N"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:360
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Cost Formula"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:390
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Day"
+msgstr "Delays"
+
+#: lib/waw_trams_web/live/audit_live.ex:340
+#, elixir-autogen, elixir-format
+msgid "How We Calculate Cost"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:372
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Operations"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:383
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Passengers per Tram"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:386
+#, elixir-autogen, elixir-format
+msgid "Rush"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:351
+#, elixir-autogen, elixir-format
+msgid "Tram stopped >30 seconds away from any platform."
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:416
+#, elixir-autogen, elixir-format
+msgid "Value of Time: Polish commuter studies"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:354
+#, elixir-autogen, elixir-format
+msgid "We ignore platform stops, terminals, and stops under 30s."
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:349
+#, elixir-autogen, elixir-format
+msgid "What is a delay?"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:366
+#: lib/waw_trams_web/live/audit_live.ex:374
+#, elixir-autogen, elixir-format, fuzzy
+msgid "hours"
+msgstr "Hour"
+
+#: lib/waw_trams_web/live/audit_live.ex:368
+#, elixir-autogen, elixir-format
+msgid "22 PLN/h = value of commuter time (Polish studies)"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:376
+#, elixir-autogen, elixir-format
+msgid "Driver wage"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:376
+#, elixir-autogen, elixir-format
+msgid "Energy (HVAC, systems)"
+msgstr ""
+
+#: lib/waw_trams_web/live/audit_live.ex:364
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Passenger Time"
 msgstr ""
