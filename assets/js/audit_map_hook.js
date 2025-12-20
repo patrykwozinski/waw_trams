@@ -58,6 +58,11 @@ const AuditMapHook = {
       this.map.flyTo([52.2297, 21.0122], 12, { duration: 0.8 })
     })
 
+    // Handle pulse event for real-time delay notifications
+    this.handleEvent("pulse", ({ lat, lon }) => {
+      this.createPulse(lat, lon)
+    })
+
     // Request initial data
     this.pushEvent("request_leaderboard", {})
   },
@@ -134,6 +139,46 @@ const AuditMapHook = {
     this.map.flyTo([lat, lon], 16, { animate: true, duration: 0.8 })
   },
 
+  createPulse(lat, lon) {
+    // Create expanding ring animation at the delay location
+    const pulseIcon = L.divIcon({
+      className: "pulse-marker",
+      iconSize: [150, 150],
+      iconAnchor: [75, 75],
+    })
+
+    const pulseMarker = L.marker([lat, lon], { icon: pulseIcon, interactive: false }).addTo(this.map)
+
+    // Remove after animation completes
+    setTimeout(() => {
+      pulseMarker.remove()
+    }, 2500)
+
+    // Flash nearby markers more dramatically
+    this.markersLayer.eachLayer((layer) => {
+      const pos = layer.getLatLng()
+      const dist = this.map.distance([lat, lon], pos)
+      if (dist < 800) {
+        // Within 800m - dramatic pulse effect
+        const originalRadius = layer.options.radius
+        const originalColor = layer.options.fillColor
+        
+        // Flash white then back to red
+        layer.setStyle({ fillColor: "#fff", fillOpacity: 1 })
+        layer.setRadius(originalRadius * 1.5)
+        
+        setTimeout(() => {
+          layer.setStyle({ fillColor: "#fbbf24", fillOpacity: 0.9 }) // amber flash
+          layer.setRadius(originalRadius * 1.3)
+        }, 150)
+        
+        setTimeout(() => {
+          layer.setStyle({ fillColor: originalColor, fillOpacity: layer.options.fillOpacity })
+          layer.setRadius(originalRadius)
+        }, 400)
+      }
+    })
+  },
 
   formatCost(amount) {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M PLN`

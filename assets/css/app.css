@@ -156,3 +156,45 @@ a[href],
 .leaflet-tooltip-bottom.prominent-tooltip::before {
   border-bottom-color: rgba(17, 24, 39, 0.85) !important;
 }
+
+/* Real-time pulse animation for new delays */
+.pulse-marker {
+  position: relative;
+}
+
+.pulse-marker::before,
+.pulse-marker::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 4px solid #ef4444;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0) 70%);
+  box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.5);
+  animation: pulse-ring 2.5s ease-out forwards;
+}
+
+.pulse-marker::after {
+  animation-delay: 0.4s;
+  border-color: #f97316;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.6) 0%, rgba(249, 115, 22, 0) 70%);
+  box-shadow: 0 0 25px 8px rgba(249, 115, 22, 0.4);
+}
+
+@keyframes pulse-ring {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    width: 150px;
+    height: 150px;
+    opacity: 0;
+  }
+}

@@ -11,7 +11,7 @@ defmodule WawTramsWeb.AuditLive do
   alias WawTramsWeb.Components.Audit.{MethodologyModal, Leaderboard, ReportCard}
   import WawTramsWeb.Helpers.Formatters
 
-  @refresh_interval :timer.seconds(30)
+  @refresh_interval :timer.minutes(5)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -38,6 +38,8 @@ defmodule WawTramsWeb.AuditLive do
       |> assign(:show_methodology, false)
 
     if connected?(socket) do
+      # Subscribe to real-time delay updates
+      Phoenix.PubSub.subscribe(WawTrams.PubSub, "delays")
       :timer.send_interval(@refresh_interval, :refresh)
       send(self(), :load_initial_data)
     end
@@ -53,6 +55,57 @@ defmodule WawTramsWeb.AuditLive do
   @impl true
   def handle_info(:refresh, socket) do
     {:noreply, load_data(socket)}
+  end
+
+  # Real-time delay events - instant UI update, NO database query!
+  @impl true
+  def handle_info({:delay_created, event}, socket) do
+    if event.near_intersection do
+      # Pulse animation
+      socket = push_event(socket, "pulse", %{lat: event.lat, lon: event.lon})
+
+      # Instantly update stats in memory (no DB query!)
+      # Calculate cost for this single event
+      hour = DateTime.utc_now().hour
+      event_cost = WawTrams.Audit.CostCalculator.calculate(event.duration_seconds || 60, hour)
+
+      stats = socket.assigns.stats
+      updated_stats = %{stats |
+        total_delays: stats.total_delays + 1,
+        total_seconds: stats.total_seconds + (event.duration_seconds || 60),
+        cost: %{stats.cost | total: stats.cost.total + event_cost.total}
+      }
+
+      {:noreply, assign(socket, :stats, updated_stats)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:delay_resolved, event}, socket) do
+    # Update duration when delay ends (we now know final duration)
+    if event.near_intersection do
+      stats = socket.assigns.stats
+      # Add the additional seconds (beyond initial 60s estimate)
+      extra_seconds = max(0, (event.duration_seconds || 0) - 60)
+
+      if extra_seconds > 0 do
+        hour = DateTime.utc_now().hour
+        extra_cost = WawTrams.Audit.CostCalculator.calculate(extra_seconds, hour)
+
+        updated_stats = %{stats |
+          total_seconds: stats.total_seconds + extra_seconds,
+          cost: %{stats.cost | total: stats.cost.total + extra_cost.total}
+        }
+
+        {:noreply, assign(socket, :stats, updated_stats)}
+      else
+        {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
