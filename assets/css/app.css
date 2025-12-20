@@ -113,13 +113,35 @@ a[href],
   cursor: pointer !important;
 }
 
-/* Leaflet map tooltip styling */
-.prominent-tooltip {
-  background: rgba(17, 24, 39, 0.95) !important;
-  border: 1px solid rgba(75, 85, 99, 0.8) !important;
-  border-radius: 8px !important;
+/* Leaflet map tooltip styling - subtle version */
+.subtle-tooltip {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border: 1px solid rgba(55, 65, 81, 0.6) !important;
+  border-radius: 6px !important;
   padding: 0 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  font-family: inherit !important;
+}
+
+.subtle-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+}
+
+.leaflet-tooltip-top.subtle-tooltip::before {
+  border-top-color: rgba(17, 24, 39, 0.85) !important;
+}
+
+.leaflet-tooltip-bottom.subtle-tooltip::before {
+  border-bottom-color: rgba(17, 24, 39, 0.85) !important;
+}
+
+/* Legacy prominent-tooltip class */
+.prominent-tooltip {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border: 1px solid rgba(55, 65, 81, 0.6) !important;
+  border-radius: 6px !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   font-family: inherit !important;
 }
 
@@ -128,9 +150,9 @@ a[href],
 }
 
 .leaflet-tooltip-top.prominent-tooltip::before {
-  border-top-color: rgba(17, 24, 39, 0.95) !important;
+  border-top-color: rgba(17, 24, 39, 0.85) !important;
 }
 
 .leaflet-tooltip-bottom.prominent-tooltip::before {
-  border-bottom-color: rgba(17, 24, 39, 0.95) !important;
+  border-bottom-color: rgba(17, 24, 39, 0.85) !important;
 }

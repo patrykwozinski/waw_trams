@@ -76,15 +76,25 @@ defmodule WawTrams.Audit.Summary do
     }
   end
 
-  # Get stats from current hour's raw events (not yet aggregated)
+  # Get stats from raw events not yet aggregated
+  # The hourly aggregator runs at minute 5, so we need to include:
+  # - Current hour (always not aggregated yet)
+  # - Previous hour (if we're before minute 5)
   defp get_current_hour_stats(line) do
     now = DateTime.utc_now()
-    hour_start = %{now | minute: 0, second: 0, microsecond: {0, 0}}
-    hour = now.hour
+    current_hour_start = %{now | minute: 0, second: 0, microsecond: {0, 0}}
+
+    # If before minute 5, include previous hour too (not yet aggregated)
+    unaggregated_since =
+      if now.minute < 5 do
+        DateTime.add(current_hour_start, -1, :hour)
+      else
+        current_hour_start
+      end
 
     base_query =
       from(d in DelayEvent,
-        where: d.started_at >= ^hour_start and d.near_intersection == true
+        where: d.started_at >= ^unaggregated_since and d.near_intersection == true
       )
 
     base_query =
@@ -107,7 +117,8 @@ defmodule WawTrams.Audit.Summary do
       |> Repo.one() ||
         %{delay_count: 0, multi_cycle_count: 0, blockage_count: 0, total_seconds: 0}
 
-    cost = CostCalculator.calculate(stats.total_seconds || 0, hour)
+    # Use current hour for cost calculation (approximate)
+    cost = CostCalculator.calculate(stats.total_seconds || 0, now.hour)
 
     %{
       delay_count: stats.delay_count || 0,

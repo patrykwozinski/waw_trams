@@ -66,24 +66,26 @@ const AuditMapHook = {
     // Clear existing markers
     this.markersLayer.clearLayers()
 
-    // Find max cost for scaling
+    // Find max values for scaling
     const maxCost = Math.max(...data.map(d => d.cost?.total || 0), 1)
+    const maxDelays = Math.max(...data.map(d => d.delay_count || 0), 1)
 
     data.forEach((spot, index) => {
-      // Size based on cost (proportional, min 15, max 40)
-      const costRatio = (spot.cost?.total || 0) / maxCost
-      const radius = 15 + costRatio * 25
+      // SIZE based on delay count (number of events)
+      const delayRatio = (spot.delay_count || 0) / maxDelays
+      const radius = 12 + delayRatio * 20  // min 12, max 32
 
-      // Color based on severity
-      const color = this.severityColor(spot.severity)
+      // COLOR based on cost ($$$ = redder)
+      const costRatio = (spot.cost?.total || 0) / maxCost
+      const color = this.costColor(costRatio)
 
       const marker = L.circleMarker([spot.lat, spot.lon], {
         radius: radius,
         fillColor: color,
-        color: "#0f0f0f",
-        weight: 2,
+        color: "#1f2937",
+        weight: 1.5,
         opacity: 1,
-        fillOpacity: 0.7,
+        fillOpacity: 0.75,
       })
 
       // Click handler - notify LiveView
@@ -97,31 +99,33 @@ const AuditMapHook = {
       const cost = this.formatCost(spot.cost?.total || 0)
       const rank = index + 1
       
-      // Prominent tooltip with rank badge
-      const tooltipContent = `
-        <div style="text-align: center; padding: 6px 8px; color: #fff;">
-          <div style="background: ${color}; color: #000; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
-            #${rank}
-          </div>
-          <div style="font-size: 12px; font-weight: 600; color: #e5e7eb; line-height: 1.3; max-width: 180px;">${stopName}</div>
-          <div style="color: ${color}; font-size: 14px; font-weight: bold; margin-top: 4px;">${cost}</div>
-        </div>
-      `
-      
-      // Top 3 markers get permanent labels
+      // Top 3 get subtle permanent labels
       if (index < 3) {
+        const tooltipContent = `
+          <div style="text-align: center; padding: 4px 6px;">
+            <div style="font-size: 11px; font-weight: 500; color: #9ca3af; line-height: 1.2; max-width: 140px;">${stopName}</div>
+            <div style="color: #f87171; font-size: 12px; font-weight: 600; margin-top: 2px;">${cost}</div>
+          </div>
+        `
         marker.bindTooltip(tooltipContent, { 
           permanent: true, 
           direction: "top", 
-          offset: [0, -radius - 5],
-          className: "prominent-tooltip"
+          offset: [0, -radius - 3],
+          className: "subtle-tooltip"
         })
       } else {
-        // Others show on hover with larger tooltip
+        // Others show on hover
+        const tooltipContent = `
+          <div style="text-align: center; padding: 4px 6px;">
+            <div style="font-size: 10px; color: #6b7280;">#${rank}</div>
+            <div style="font-size: 11px; font-weight: 500; color: #d1d5db; max-width: 140px;">${stopName}</div>
+            <div style="color: #f87171; font-size: 12px; font-weight: 600; margin-top: 2px;">${cost}</div>
+          </div>
+        `
         marker.bindTooltip(tooltipContent, { 
           direction: "top", 
           offset: [0, -radius],
-          className: "prominent-tooltip"
+          className: "subtle-tooltip"
         })
       }
 
@@ -149,13 +153,12 @@ const AuditMapHook = {
     this.map.flyTo([lat, lon], 16, { animate: true, duration: 0.8 })
   },
 
-  severityColor(severity) {
-    switch (severity) {
-      case "red": return "#ef4444"
-      case "orange": return "#f97316"
-      case "yellow": return "#eab308"
-      default: return "#eab308"
-    }
+  costColor(ratio) {
+    // Color gradient based on cost ratio: gray -> amber -> red
+    if (ratio > 0.7) return "#ef4444"  // red-500 (highest cost)
+    if (ratio > 0.4) return "#f97316"  // orange-500
+    if (ratio > 0.2) return "#eab308"  // yellow-500
+    return "#6b7280"                   // gray-500 (lowest cost)
   },
 
   formatCost(amount) {

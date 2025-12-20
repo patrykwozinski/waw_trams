@@ -427,7 +427,7 @@ defmodule WawTramsWeb.AuditLive do
     ~H"""
     <div class="p-4">
       <div class="flex items-baseline justify-between mb-4">
-        <h2 class="text-lg font-bold text-red-400">🔥 {gettext("Top Worst Intersections")}</h2>
+        <h2 class="text-lg font-bold text-gray-200">🔥 {gettext("Top Worst Intersections")}</h2>
         <%= if @coverage_pct > 0 do %>
           <span class="text-xs text-gray-500">
             {trunc(@coverage_pct)}% {gettext("of total cost")}
@@ -440,19 +440,27 @@ defmodule WawTramsWeb.AuditLive do
           {gettext("No data available for this period")}
         </div>
       <% else %>
-        <div class="space-y-2">
+        <div class="space-y-1.5">
           <%= for {spot, idx} <- Enum.with_index(@data) do %>
             <div
               phx-click="select_intersection"
               phx-value-lat={spot.lat}
               phx-value-lon={spot.lon}
-              class={"p-3 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition #{severity_class(spot.severity)}"}
+              class={[
+                "p-2.5 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition",
+                if(idx < 3, do: "border-gray-700 bg-gray-800/30", else: "border-gray-800/50 bg-transparent")
+              ]}
             >
-              <div class="flex items-start justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="text-gray-500 text-sm w-6">#{idx + 1}</span>
-                  <div>
-                    <div class="font-medium text-gray-200">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class={[
+                    "text-sm font-medium w-5 flex-shrink-0",
+                    if(idx < 3, do: "text-red-400", else: "text-gray-600")
+                  ]}>
+                    {idx + 1}
+                  </span>
+                  <div class="min-w-0">
+                    <div class="font-medium text-gray-300 text-sm truncate">
                       {spot.location_name || gettext("Unknown location")}
                     </div>
                     <div class="text-xs text-gray-500">
@@ -460,10 +468,11 @@ defmodule WawTramsWeb.AuditLive do
                     </div>
                   </div>
                 </div>
-                <div class="text-right">
-                  <div class="font-bold text-red-400 text-lg">
-                    {format_cost(spot.cost.total)}
-                  </div>
+                <div class={[
+                  "font-semibold text-sm flex-shrink-0",
+                  if(idx < 3, do: "text-red-400", else: "text-gray-400")
+                ]}>
+                  {format_cost(spot.cost.total)}
                 </div>
               </div>
             </div>
@@ -614,11 +623,6 @@ defmodule WawTramsWeb.AuditLive do
   defp period_label("7d"), do: gettext("This Week")
   defp period_label("30d"), do: gettext("This Month")
   defp period_label(_), do: ""
-
-  defp severity_class(:red), do: "severity-red"
-  defp severity_class(:orange), do: "severity-orange"
-  defp severity_class(:yellow), do: "severity-yellow"
-  defp severity_class(_), do: ""
 
   defp heatmap_color(intensity) when intensity > 0.8, do: "rgba(239, 68, 68, 0.9)"
   defp heatmap_color(intensity) when intensity > 0.6, do: "rgba(239, 68, 68, 0.7)"
