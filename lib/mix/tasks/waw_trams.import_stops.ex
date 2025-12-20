@@ -102,10 +102,10 @@ defmodule Mix.Tasks.WawTrams.ImportStops do
   end
 
   defp import_stops(file_path) do
-    unless File.exists?(file_path) do
-      {:error, "File not found: #{file_path}"}
-    else
+    if File.exists?(file_path) do
       do_import(file_path)
+    else
+      {:error, "File not found: #{file_path}"}
     end
   end
 
@@ -212,11 +212,9 @@ defmodule Mix.Tasks.WawTrams.ImportStops do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     values =
-      rows
-      |> Enum.map(fn %{stop_id: stop_id, name: name, lon: lon, lat: lat} ->
+      Enum.map_join(rows, ", ", fn %{stop_id: stop_id, name: name, lon: lon, lat: lat} ->
         "(#{escape_string(stop_id)}, #{escape_string(name)}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), '#{now}', '#{now}')"
       end)
-      |> Enum.join(", ")
 
     query = """
     INSERT INTO stops (stop_id, name, geom, inserted_at, updated_at)

@@ -428,15 +428,17 @@ defmodule WawTrams.HourlyAggregator do
     # Find missing hours
     missing_hours =
       hours_with_events
-      |> Enum.reject(fn hour -> MapSet.member?(aggregated_hours, hour) end)
-      # Don't aggregate current hour (incomplete)
-      |> Enum.reject(fn hour -> hour.hour == now.hour and Date.compare(hour, now) == :eq end)
+      |> Enum.reject(fn hour ->
+        # Skip already aggregated hours AND current (incomplete) hour
+        MapSet.member?(aggregated_hours, hour) or
+          (hour.hour == now.hour and Date.compare(hour, now) == :eq)
+      end)
       |> Enum.sort(DateTime)
 
     if missing_hours == [] do
       {:ok, 0}
     else
-      hours_list = Enum.map(missing_hours, &format_hour/1) |> Enum.join(", ")
+      hours_list = Enum.map_join(missing_hours, ", ", &format_hour/1)
 
       Logger.info(
         "[HourlyAggregator] Aggregating #{length(missing_hours)} missed hours: #{hours_list}"
@@ -454,9 +456,7 @@ defmodule WawTrams.HourlyAggregator do
               :ok
 
             {:error, reason} ->
-              Logger.warning(
-                "[HourlyAggregator]   ✗ #{format_hour(hour)}: #{inspect(reason)}"
-              )
+              Logger.warning("[HourlyAggregator]   ✗ #{format_hour(hour)}: #{inspect(reason)}")
 
               :error
           end

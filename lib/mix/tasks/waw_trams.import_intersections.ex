@@ -42,10 +42,10 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
   end
 
   defp import_intersections(file_path) do
-    unless File.exists?(file_path) do
-      {:error, "File not found: #{file_path}"}
-    else
+    if File.exists?(file_path) do
       do_import(file_path)
+    else
+      {:error, "File not found: #{file_path}"}
     end
   end
 
@@ -117,12 +117,11 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
 
     values =
       rows
-      |> Enum.map(fn %{osm_id: osm_id, lon: lon, lat: lat, name: name} ->
+      |> Enum.map_join(", ", fn %{osm_id: osm_id, lon: lon, lat: lat, name: name} ->
         name_sql = if name && name != "", do: escape_string(name), else: "NULL"
 
         "(#{escape_string(osm_id)}, #{name_sql}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), '#{now}', '#{now}')"
       end)
-      |> Enum.join(", ")
 
     query = """
     INSERT INTO intersections (osm_id, name, geom, inserted_at, updated_at)

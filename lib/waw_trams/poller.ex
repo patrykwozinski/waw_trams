@@ -150,7 +150,7 @@ defmodule WawTrams.Poller do
     # Tram lines are 1-79, bus lines are 100+
     Enum.filter(vehicles, fn vehicle ->
       line = extract_line_number(vehicle)
-      is_tram_line?(line)
+      tram_line?(line)
     end)
   end
 
@@ -180,9 +180,9 @@ defmodule WawTrams.Poller do
 
   @doc false
   # Exposed for testing
-  def is_tram_line?(nil), do: false
+  def tram_line?(nil), do: false
 
-  def is_tram_line?(line) do
+  def tram_line?(line) do
     # Warsaw tram lines are 1-79
     # Bus lines are 100+, night buses N*, etc.
     case Integer.parse(line) do

@@ -61,33 +61,15 @@ defmodule WawTramsWeb.DashboardLive do
     active_delays = ActiveDelays.active()
     recent_resolved = ActiveDelays.recent_resolved(20)
 
-    # These use cache to reduce DB load
-    stats = Cache.get_dashboard_stats()
+    # Lines use cache to reduce DB load
     impacted_lines = Cache.get_dashboard_impacted_lines(limit: 10)
-    multi_cycle_count = Cache.get_dashboard_multi_cycle()
-
-    # Summarize stats for cleaner display
-    stats_summary = summarize_stats(stats, multi_cycle_count)
 
     socket
     |> assign(:active_delays, active_delays)
     |> assign(:active_count, length(active_delays))
     |> assign(:recent_resolved, recent_resolved)
-    |> assign(:stats_summary, stats_summary)
     |> assign(:impacted_lines, impacted_lines)
     |> assign(:last_updated, DateTime.utc_now())
-  end
-
-  defp summarize_stats(stats, multi_cycle_count) do
-    delays = Enum.find(stats, %{count: 0}, &(&1.classification == "delay")).count
-    blockages = Enum.find(stats, %{count: 0}, &(&1.classification == "blockage")).count
-
-    %{
-      delays: delays,
-      blockages: blockages,
-      total: delays + blockages,
-      multi_cycle: multi_cycle_count
-    }
   end
 
   @impl true
@@ -132,26 +114,6 @@ defmodule WawTramsWeb.DashboardLive do
                 <span class="text-gray-500">{gettext(">3 min at platform")}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <%!-- Stats Cards --%>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-red-400">{@active_count}</div>
-            <div class="text-gray-400 text-sm mt-1">🔴 {gettext("Active Now")}</div>
-          </div>
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-orange-400">{@stats_summary.delays}</div>
-            <div class="text-gray-400 text-sm mt-1">{gettext("Delays (24h)")}</div>
-          </div>
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-red-400">{@stats_summary.blockages}</div>
-            <div class="text-gray-400 text-sm mt-1">{gettext("Blockages (24h)")}</div>
-          </div>
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-purple-400">{@stats_summary.multi_cycle}</div>
-            <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Long Delays (24h)")}</div>
           </div>
         </div>
 

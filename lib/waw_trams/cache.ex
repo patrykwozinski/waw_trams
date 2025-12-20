@@ -12,8 +12,6 @@ defmodule WawTrams.Cache do
   - `{:audit_leaderboard, since, line, limit}` — Top intersections
 
   Dashboard page:
-  - `:dashboard_stats` — Period stats
-  - `:dashboard_multi_cycle` — Long delay count
   - `{:dashboard_impacted_lines, limit}` — Most impacted lines
 
   ## TTL Strategy
@@ -78,24 +76,6 @@ defmodule WawTrams.Cache do
   end
 
   # --- Dashboard Page ---
-
-  @doc """
-  Get cached dashboard stats.
-  """
-  def get_dashboard_stats do
-    fetch_cached(:dashboard_stats, @dashboard_ttl_ms, fn ->
-      WawTrams.Analytics.Stats.for_period()
-    end)
-  end
-
-  @doc """
-  Get cached dashboard multi-cycle count.
-  """
-  def get_dashboard_multi_cycle do
-    fetch_cached(:dashboard_multi_cycle, @dashboard_ttl_ms, fn ->
-      WawTrams.Analytics.Stats.multi_cycle_count()
-    end)
-  end
 
   @doc """
   Get cached dashboard impacted lines.

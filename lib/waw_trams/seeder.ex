@@ -81,9 +81,7 @@ defmodule WawTrams.Seeder do
   # --- Intersections (from CSV) ---
 
   defp import_intersections_from_csv(file_path) do
-    unless File.exists?(file_path) do
-      {:error, "File not found: #{file_path}"}
-    else
+    if File.exists?(file_path) do
       file_path
       |> File.stream!([], :line)
       |> Stream.map(fn line ->
@@ -99,6 +97,8 @@ defmodule WawTrams.Seeder do
           error -> error
         end
       end)
+    else
+      {:error, "File not found: #{file_path}"}
     end
   end
 
@@ -138,13 +138,11 @@ defmodule WawTrams.Seeder do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     values =
-      rows
-      |> Enum.map(fn %{osm_id: osm_id, lon: lon, lat: lat, name: name} ->
+      Enum.map_join(rows, ", ", fn %{osm_id: osm_id, lon: lon, lat: lat, name: name} ->
         name_sql = if name && name != "", do: escape_string(name), else: "NULL"
 
         "(#{escape_string(osm_id)}, #{name_sql}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), '#{now}', '#{now}')"
       end)
-      |> Enum.join(", ")
 
     query = """
     INSERT INTO intersections (osm_id, name, geom, inserted_at, updated_at)
@@ -245,11 +243,9 @@ defmodule WawTrams.Seeder do
     |> Enum.chunk_every(500)
     |> Enum.reduce({:ok, 0}, fn batch, {:ok, total} ->
       values =
-        batch
-        |> Enum.map(fn %{stop_id: id, name: name, lat: lat, lon: lon} ->
+        Enum.map_join(batch, ", ", fn %{stop_id: id, name: name, lat: lat, lon: lon} ->
           "(#{escape_string(id)}, #{escape_string(name)}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), false, '#{now}', '#{now}')"
         end)
-        |> Enum.join(", ")
 
       query = """
       INSERT INTO stops (stop_id, name, geom, is_terminal, inserted_at, updated_at)
@@ -366,10 +362,9 @@ defmodule WawTrams.Seeder do
     |> Enum.reduce({:ok, 0}, fn batch, {:ok, total} ->
       values =
         batch
-        |> Enum.map(fn {line, stop_id} ->
+        |> Enum.map_join(", ", fn {line, stop_id} ->
           "(#{escape_string(line)}, #{escape_string(stop_id)}, '#{now}', '#{now}')"
         end)
-        |> Enum.join(", ")
 
       query = """
       INSERT INTO line_terminals (line, stop_id, inserted_at, updated_at)

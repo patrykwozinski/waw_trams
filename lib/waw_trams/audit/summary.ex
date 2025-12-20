@@ -178,13 +178,26 @@ defmodule WawTrams.Audit.Summary do
         %Date{} = d -> {d, 0}
       end
 
+    # Calculate unaggregated period (same logic as get_current_hour_stats)
+    now = DateTime.utc_now()
+    current_hour_start = %{now | minute: 0, second: 0, microsecond: {0, 0}}
+
+    unaggregated_since =
+      if now.minute < 5 do
+        DateTime.add(current_hour_start, -1, :hour)
+      else
+        current_hour_start
+      end
+
     # Use spatial clustering to group nearby points (~55m radius)
     # This handles cases where the same physical intersection has slightly different coordinates
-    line_filter = if line, do: "AND $4 = ANY(h.lines)", else: ""
+    line_filter_agg = if line, do: "AND $5 = ANY(h.lines)", else: ""
+    line_filter_raw = if line, do: "AND d.line = $5", else: ""
 
-    # Filter: full days after since_date, OR since_date with hour >= since_hour
+    # Combined query: aggregated data + current hour raw events
     query = """
     WITH hourly_points AS (
+      -- Aggregated data from hourly_intersection_stats
       SELECT
         lat,
         lon,
@@ -195,7 +208,27 @@ defmodule WawTrams.Audit.Summary do
         ST_SetSRID(ST_MakePoint(lon, lat), 4326) as geom
       FROM hourly_intersection_stats h
       WHERE (date > $1 OR (date = $1 AND hour >= $3))
-        #{line_filter}
+        #{line_filter_agg}
+
+      UNION ALL
+
+      -- Current hour raw events (not yet aggregated)
+      SELECT
+        ROUND(d.lat::numeric, 4)::float as lat,
+        ROUND(d.lon::numeric, 4)::float as lon,
+        1 as delay_count,
+        CASE WHEN d.duration_seconds > 120 THEN 1 ELSE 0 END as multi_cycle_count,
+        COALESCE(d.duration_seconds, 60) as total_seconds,
+        CASE
+          WHEN EXTRACT(HOUR FROM d.started_at) BETWEEN 7 AND 9 THEN COALESCE(d.duration_seconds, 60) * 0.15
+          WHEN EXTRACT(HOUR FROM d.started_at) BETWEEN 15 AND 18 THEN COALESCE(d.duration_seconds, 60) * 0.15
+          ELSE COALESCE(d.duration_seconds, 60) * 0.08
+        END as cost_pln,
+        ST_SetSRID(ST_MakePoint(d.lon, d.lat), 4326) as geom
+      FROM delay_events d
+      WHERE d.started_at >= $4
+        AND d.near_intersection = true
+        #{line_filter_raw}
     ),
     clustered AS (
       SELECT
@@ -248,9 +281,11 @@ defmodule WawTrams.Audit.Summary do
     LIMIT $2
     """
 
-    # Params: $1=since_date, $2=limit, $3=since_hour, $4=line (optional)
+    # Params: $1=since_date, $2=limit, $3=since_hour, $4=unaggregated_since, $5=line (optional)
     params =
-      if line, do: [since_date, limit, since_hour, line], else: [since_date, limit, since_hour]
+      if line,
+        do: [since_date, limit, since_hour, unaggregated_since, line],
+        else: [since_date, limit, since_hour, unaggregated_since]
 
     case Repo.query(query, params) do
       {:ok, %{rows: rows}} ->

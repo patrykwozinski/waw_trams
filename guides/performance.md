@@ -29,7 +29,7 @@ Built-in Erlang Term Storage — **zero external dependencies**.
 |------|-------|-----|-----------|
 | Audit | `stats` | 30s | Balance freshness vs load |
 | Audit | `leaderboard` | 60s | Expensive spatial clustering |
-| Dashboard | All queries | 30s | Matches refresh interval |
+| Dashboard | `impacted_lines` | 30s | Matches refresh interval |
 
 ### Impact
 
@@ -47,7 +47,8 @@ Built-in Erlang Term Storage — **zero external dependencies**.
 ```elixir
 # Usage
 WawTrams.Cache.get_audit_stats(since: since)
-WawTrams.Cache.get_dashboard_hot_spots(limit: 10)
+WawTrams.Cache.get_audit_leaderboard(limit: 20)
+WawTrams.Cache.get_dashboard_impacted_lines(limit: 10)
 WawTrams.Cache.invalidate_all()
 ```
 
@@ -248,13 +249,10 @@ WawTrams.Cache.cache_stats()
 # lib/waw_trams_web/live/audit_live.ex
 @refresh_interval_base :timer.minutes(5)
 @refresh_jitter_max :timer.seconds(30)
+@leaderboard_debounce_ms 3_000  # Real-time leaderboard updates
 
 # lib/waw_trams_web/live/dashboard_live.ex
 @refresh_interval_base 30_000
 @refresh_jitter_max 5_000
-
-# lib/waw_trams/queries/hot_spots.ex
-hot_spots_fast/1      # Uses aggregated data (~10ms)
-hot_spot_summary_fast/1  # Uses aggregated data (~2ms)
 ```
 

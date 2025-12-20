@@ -198,3 +198,33 @@ a[href],
     opacity: 0;
   }
 }
+
+/* Leaderboard animations */
+.leaderboard-item {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Highlight effect when item moves up in ranking */
+.leaderboard-moved-up {
+  animation: glow-pulse 1.5s ease-out;
+}
+
+@keyframes glow-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    border-color: rgb(239, 68, 68);
+  }
+  30% {
+    box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    border-color: inherit;
+  }
+}
+
+/* Smooth rank number transitions */
+.leaderboard-item span:first-child {
+  transition: color 300ms ease-out;
+}

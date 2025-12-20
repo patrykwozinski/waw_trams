@@ -38,6 +38,7 @@ defmodule WawTramsWeb.AuditLive do
       |> assign(:leaderboard_coverage_pct, 0)
       |> assign(:selected_heatmap, %{grid: [], max_count: 0, total_delays: 0})
       |> assign(:show_methodology, false)
+      |> assign(:leaderboard_refresh_timer, nil)
 
     if connected?(socket) do
       # Subscribe to real-time delay updates
@@ -61,25 +62,21 @@ defmodule WawTramsWeb.AuditLive do
     {:noreply, load_data(socket)}
   end
 
-  # Real-time delay events - instant UI update, NO database query!
+  # Debounce delay for leaderboard refresh (3 seconds)
+  @leaderboard_debounce_ms 3_000
+
+  # Real-time delay events
+  # delay_created: Just increment counter (we don't know final duration yet)
+  # delay_resolved: Pulse map, update final stats, refresh leaderboard
   @impl true
   def handle_info({:delay_created, event}, socket) do
     if event.near_intersection do
-      # Pulse animation
-      socket = push_event(socket, "pulse", %{lat: event.lat, lon: event.lon})
-
-      # Instantly update stats in memory (no DB query!)
-      # Calculate cost for this single event
-      hour = DateTime.utc_now().hour
-      event_cost = WawTrams.Audit.CostCalculator.calculate(event.duration_seconds || 60, hour)
-
+      # Just increment delay counter - we don't know final duration yet
       stats = socket.assigns.stats
 
       updated_stats = %{
         stats
-        | total_delays: stats.total_delays + 1,
-          total_seconds: stats.total_seconds + (event.duration_seconds || 60),
-          cost: %{stats.cost | total: stats.cost.total + event_cost.total}
+        | total_delays: stats.total_delays + 1
       }
 
       {:noreply, assign(socket, :stats, updated_stats)}
@@ -90,29 +87,63 @@ defmodule WawTramsWeb.AuditLive do
 
   @impl true
   def handle_info({:delay_resolved, event}, socket) do
-    # Update duration when delay ends (we now know final duration)
+    # Delay resolved - NOW we know the final duration and cost
     if event.near_intersection do
+      # Pulse animation at the resolved location
+      socket = push_event(socket, "pulse", %{lat: event.lat, lon: event.lon})
+
+      # Update stats with final duration and cost
       stats = socket.assigns.stats
-      # Add the additional seconds (beyond initial 60s estimate)
-      extra_seconds = max(0, (event.duration_seconds || 0) - 60)
+      duration = event.duration_seconds || 0
+      hour = DateTime.utc_now().hour
+      cost = WawTrams.Audit.CostCalculator.calculate(duration, hour)
 
-      if extra_seconds > 0 do
-        hour = DateTime.utc_now().hour
-        extra_cost = WawTrams.Audit.CostCalculator.calculate(extra_seconds, hour)
+      updated_stats = %{
+        stats
+        | total_seconds: stats.total_seconds + duration,
+          cost: %{stats.cost | total: stats.cost.total + cost.total}
+      }
 
-        updated_stats = %{
-          stats
-          | total_seconds: stats.total_seconds + extra_seconds,
-            cost: %{stats.cost | total: stats.cost.total + extra_cost.total}
-        }
+      # Schedule debounced leaderboard refresh (final data now available)
+      socket =
+        socket
+        |> assign(:stats, updated_stats)
+        |> schedule_leaderboard_refresh()
 
-        {:noreply, assign(socket, :stats, updated_stats)}
-      else
-        {:noreply, socket}
-      end
+      {:noreply, socket}
     else
       {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_info(:refresh_leaderboard, socket) do
+    # Refresh leaderboard from database
+    since = get_since(socket.assigns.date_range)
+    line = socket.assigns.line_filter
+    opts = [since: since] ++ if(line, do: [line: line], else: [])
+
+    leaderboard = Summary.leaderboard(opts ++ [limit: 20])
+
+    # Push updated data to map
+    socket = push_event(socket, "leaderboard_data", %{data: leaderboard})
+
+    {:noreply,
+     socket
+     |> assign(:leaderboard, leaderboard)
+     |> assign(:leaderboard_refresh_timer, nil)}
+  end
+
+  # Debounce leaderboard refresh - cancels previous timer if exists
+  defp schedule_leaderboard_refresh(socket) do
+    # Cancel existing timer if any
+    if timer = socket.assigns[:leaderboard_refresh_timer] do
+      Process.cancel_timer(timer)
+    end
+
+    # Schedule new refresh
+    timer = Process.send_after(self(), :refresh_leaderboard, @leaderboard_debounce_ms)
+    assign(socket, :leaderboard_refresh_timer, timer)
   end
 
   # Schedules next refresh with random jitter to spread DB load

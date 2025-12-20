@@ -32,14 +32,15 @@ defmodule WawTramsWeb.Components.Audit.Leaderboard do
           {gettext("No data available for this period")}
         </div>
       <% else %>
-        <div class="space-y-1.5">
+        <div id="leaderboard-list" phx-hook="LeaderboardHook" class="space-y-1.5">
           <%= for {spot, idx} <- Enum.with_index(@data) do %>
             <div
+              data-leaderboard-item={leaderboard_item_id(spot)}
               phx-click="select_intersection"
               phx-value-lat={spot.lat}
               phx-value-lon={spot.lon}
               class={[
-                "p-2.5 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition",
+                "p-2.5 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition-colors leaderboard-item",
                 if(idx < 3,
                   do: "border-gray-700 bg-gray-800/30",
                   else: "border-gray-800/50 bg-transparent"
@@ -76,5 +77,12 @@ defmodule WawTramsWeb.Components.Audit.Leaderboard do
       <% end %>
     </div>
     """
+  end
+
+  # Generate a stable ID for each leaderboard item based on location
+  defp leaderboard_item_id(spot) do
+    lat = Float.round(spot.lat * 10_000) |> trunc()
+    lon = Float.round(spot.lon * 10_000) |> trunc()
+    "#{lat}_#{lon}"
   end
 end

@@ -6,9 +6,20 @@ This project relies on external data sources for spatial analysis:
 
 | Source | Data | Update Frequency |
 |--------|------|------------------|
-| mkuran.pl GTFS | Stop locations | Weekly (download fresh) |
+| mkuran.pl GTFS | Stop locations, line terminals | Weekly (download fresh) |
 | OpenStreetMap | Tram-road intersections | Rarely (committed to repo) |
 | ZTM API | Real-time tram positions | Every 10s (runtime) |
+
+## Automatic Seeding (First Run)
+
+On first deployment, the `WawTrams.Seeder` module automatically imports all spatial data:
+
+```elixir
+# Called by WawTrams.Release.seed() or automatically on first run
+WawTrams.Seeder.seed_all()
+```
+
+This is **idempotent** — it skips tables that already have data.
 
 ## 1. Stops (GTFS)
 

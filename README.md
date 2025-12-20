@@ -33,23 +33,20 @@ docker compose up -d
 mix deps.get
 mix ecto.setup
 
-# Import spatial data
-mix waw_trams.import_intersections   # ~1,250 tram-road crossings with street names
-mix waw_trams.import_stops           # ~4,900 Warsaw platforms
-mix waw_trams.import_line_terminals  # ~172 line-specific terminals
-
-# Run
+# Run (auto-imports data on first start via Seeder)
 mix phx.server
 ```
 
 Visit http://localhost:4000
+
+> **First run:** The Seeder automatically imports ~1,250 intersections, ~4,900 stops, and ~172 line terminals from GTFS.
 
 ## Pages & Navigation
 
 | Route | Description |
 |-------|-------------|
 | `/` | 🚨 **Infrastructure Report Card** — worst intersections ranked by economic cost (homepage) |
-| `/dashboard` | Real-time delays, hot spots, impacted lines |
+| `/dashboard` | Real-time live feed: active delays, recently resolved, impacted lines |
 | `/line/:number` | Per-line analysis with hourly breakdown |
 
 **Language:** Switch between 🇬🇧 English and 🇵🇱 Polish via header buttons.

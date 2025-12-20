@@ -338,14 +338,13 @@ mix waw_trams.cleanup --execute
 # 0 1 * * * cd /app && mix waw_trams.cleanup --execute
 ```
 
-### Phase 5: Dashboard Updates ⬜ (Optional/Future)
+### Phase 5: Future Enhancements ⬜ (Optional)
 
-Add trend visualization using aggregated data.
+Potential future improvements using aggregated data:
 
-**Tasks:**
-- [ ] Add "Last 30 days" option to dashboard filters
-- [ ] Add trend chart (delays over time) using `daily_line_stats`
-- [ ] Add month-over-month comparison
+- [ ] Trend charts (delays over time) using `daily_line_stats`
+- [ ] Month-over-month comparison
+- [ ] Extended date range options (30d, 90d)
 
 ---
 

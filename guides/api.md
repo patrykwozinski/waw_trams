@@ -145,11 +145,7 @@ WawTrams.Audit.Summary.stats()      # Uses cache (30s TTL)
 WawTrams.Audit.Summary.leaderboard() # Uses cache (60s TTL)
 
 # Direct cache access (for Dashboard)
-WawTrams.Cache.get_dashboard_stats()
-WawTrams.Cache.get_dashboard_hot_spots(limit: 10)
-WawTrams.Cache.get_dashboard_hot_spot_summary()
 WawTrams.Cache.get_dashboard_impacted_lines(limit: 10)
-WawTrams.Cache.get_dashboard_multi_cycle()
 
 # Generic cache with custom TTL
 WawTrams.Cache.fetch_cached(:my_key, 30_000, fn ->
@@ -164,9 +160,9 @@ WawTrams.Cache.cache_stats()     # => %{size: 12, hits: 450, misses: 23}
 **TTL Strategy:**
 - Audit stats: 30s (balance freshness vs load)
 - Audit leaderboard: 60s (expensive spatial query)
-- Dashboard queries: 10s (needs to feel more "live")
+- Dashboard impacted_lines: 30s (matches refresh interval)
 
-**Note:** Real-time updates via PubSub are NOT cached — they update the UI instantly.
+**Note:** Real-time updates via PubSub are NOT cached — they update the UI instantly. Active delays and recently resolved delays are fetched directly from the database for true real-time accuracy.
 
 ## Mix Tasks
 
