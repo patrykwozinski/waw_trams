@@ -3,9 +3,9 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
   Imports tram-road intersection points from a CSV file into the database.
 
   The CSV file should be located at `priv/data/intersections.csv` with the format:
-      osm_id,lon,lat
+      "osm_id",lon,lat,"Street Name / Cross Street"
 
-  No header row is expected.
+  No header row is expected. The name field contains street names from OSM.
 
   ## Usage
 
@@ -53,8 +53,13 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
     alias WawTrams.Repo
 
     file_path
-    |> File.stream!()
-    |> Stream.map(&parse_line/1)
+    |> File.stream!([], :line)
+    |> Stream.map(fn line ->
+      # Ensure proper UTF-8 handling
+      line
+      |> :unicode.characters_to_binary(:utf8)
+      |> parse_line()
+    end)
     |> Stream.reject(&is_nil/1)
     |> Stream.chunk_every(500)
     |> Enum.reduce({:ok, 0}, fn batch, {:ok, total} ->
@@ -66,25 +71,43 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
   end
 
   defp parse_line(line) do
-    line
-    |> String.trim()
-    |> String.split(",")
-    |> case do
-      [osm_id, lon, lat] ->
-        # Remove quotes from osm_id if present
-        osm_id = String.trim(osm_id, "\"")
+    # CSV format: "osm_id",lon,lat,"name"
+    # Split carefully to handle quoted name field with special chars
+    line = String.trim(line)
 
-        with {lon_f, ""} <- Float.parse(lon),
-             {lat_f, ""} <- Float.parse(lat) do
-          %{osm_id: osm_id, lon: lon_f, lat: lat_f}
-        else
+    # First, extract osm_id (first quoted field)
+    case Regex.run(~r/^"([^"]+)",(.+)$/, line) do
+      [_, osm_id, rest] ->
+        # Now split the rest: lon,lat,"name" or lon,lat,""
+        parts = String.split(rest, ",", parts: 3)
+
+        case parts do
+          [lon, lat, name] ->
+            # Remove surrounding quotes from name
+            name = name |> String.trim("\"")
+            parse_fields(osm_id, lon, lat, name)
+
+          [lon, lat] ->
+            parse_fields(osm_id, lon, lat, "")
+
           _ ->
-            Logger.warning("Skipping invalid line: #{line}")
+            Logger.warning("Skipping malformed line: #{line}")
             nil
         end
 
+      nil ->
+        Logger.warning("Skipping malformed line (no osm_id): #{line}")
+        nil
+    end
+  end
+
+  defp parse_fields(osm_id, lon, lat, name) do
+    with {lon_f, ""} <- Float.parse(lon),
+         {lat_f, ""} <- Float.parse(lat) do
+      %{osm_id: osm_id, lon: lon_f, lat: lat_f, name: name || ""}
+    else
       _ ->
-        Logger.warning("Skipping malformed line: #{line}")
+        Logger.warning("Skipping invalid coordinates: #{lon}, #{lat}")
         nil
     end
   end
@@ -94,15 +117,17 @@ defmodule Mix.Tasks.WawTrams.ImportIntersections do
 
     values =
       rows
-      |> Enum.map(fn %{osm_id: osm_id, lon: lon, lat: lat} ->
-        "(#{escape_string(osm_id)}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), '#{now}', '#{now}')"
+      |> Enum.map(fn %{osm_id: osm_id, lon: lon, lat: lat, name: name} ->
+        name_sql = if name && name != "", do: escape_string(name), else: "NULL"
+
+        "(#{escape_string(osm_id)}, #{name_sql}, ST_SetSRID(ST_MakePoint(#{lon}, #{lat}), 4326), '#{now}', '#{now}')"
       end)
       |> Enum.join(", ")
 
     query = """
-    INSERT INTO intersections (osm_id, geom, inserted_at, updated_at)
+    INSERT INTO intersections (osm_id, name, geom, inserted_at, updated_at)
     VALUES #{values}
-    ON CONFLICT (osm_id) DO NOTHING
+    ON CONFLICT (osm_id) DO UPDATE SET name = EXCLUDED.name, updated_at = EXCLUDED.updated_at
     """
 
     case repo.query(query) do

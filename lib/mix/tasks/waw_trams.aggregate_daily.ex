@@ -160,7 +160,7 @@ defmodule Mix.Tasks.WawTrams.AggregateDaily do
         date: date,
         lat: lat,
         lon: lon,
-        nearest_stop: find_nearest_stop(lat, lon),
+        location_name: find_location_name(lat, lon),
         delay_count: count_by_classification(group_events, "delay"),
         blockage_count: count_by_classification(group_events, "blockage"),
         total_seconds: sum_duration(group_events),
@@ -182,12 +182,23 @@ defmodule Mix.Tasks.WawTrams.AggregateDaily do
     Float.round(coord, precision)
   end
 
-  defp find_nearest_stop(lat, lon) do
+  defp find_location_name(lat, lon) do
+    # Prefer intersection street name, fallback to stop name
     query = """
-    SELECT name FROM stops
-    WHERE NOT is_terminal
-    ORDER BY geom::geography <-> ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
-    LIMIT 1
+    SELECT COALESCE(
+      (
+        SELECT name FROM intersections
+        WHERE name IS NOT NULL AND name != ''
+        ORDER BY geom::geography <-> ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
+        LIMIT 1
+      ),
+      (
+        SELECT name FROM stops
+        WHERE NOT is_terminal
+        ORDER BY geom::geography <-> ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
+        LIMIT 1
+      )
+    )
     """
 
     case Repo.query(query, [lon, lat]) do

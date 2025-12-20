@@ -66,7 +66,8 @@ defmodule WawTrams.Audit.Summary do
       total_hours_formatted: format_hours(total_hours),
       cost: %{
         total: Float.round(total_cost, 2),
-        passenger: 0.0,  # Not tracked separately in aggregation
+        # Not tracked separately in aggregation
+        passenger: 0.0,
         operational: 0.0,
         count: total_delays
       },
@@ -98,11 +99,13 @@ defmodule WawTrams.Audit.Summary do
         select: %{
           delay_count: count(d.id),
           multi_cycle_count: sum(fragment("CASE WHEN duration_seconds > 120 THEN 1 ELSE 0 END")),
-          blockage_count: sum(fragment("CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END")),
+          blockage_count:
+            sum(fragment("CASE WHEN classification = 'blockage' THEN 1 ELSE 0 END")),
           total_seconds: coalesce(sum(d.duration_seconds), 0)
         }
       )
-      |> Repo.one() || %{delay_count: 0, multi_cycle_count: 0, blockage_count: 0, total_seconds: 0}
+      |> Repo.one() ||
+        %{delay_count: 0, multi_cycle_count: 0, blockage_count: 0, total_seconds: 0}
 
     cost = CostCalculator.calculate(stats.total_seconds || 0, hour)
 
@@ -130,7 +133,7 @@ defmodule WawTrams.Audit.Summary do
 
   List of maps with:
   - `:lat`, `:lon` - Cluster centroid
-  - `:nearest_stop` - Name of nearest stop
+  - `:location_name` - Name of nearest stop
   - `:cost` - Economic cost (PLN)
   - `:delay_count` - Number of delays
   - `:multi_cycle_count` - Priority failures
@@ -192,13 +195,24 @@ defmodule WawTrams.Audit.Summary do
       cs.multi_cycle_count,
       cs.total_seconds,
       cs.cost_pln,
-      (
-        SELECT s.name
-        FROM stops s
-        WHERE NOT s.is_terminal
-        ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
-        LIMIT 1
-      ) as nearest_stop
+      COALESCE(
+        -- First try: intersection street name from OSM
+        (
+          SELECT i.name
+          FROM intersections i
+          WHERE i.name IS NOT NULL AND i.name != ''
+          ORDER BY i.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
+          LIMIT 1
+        ),
+        -- Fallback: nearest tram stop name
+        (
+          SELECT s.name
+          FROM stops s
+          WHERE NOT s.is_terminal
+          ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
+          LIMIT 1
+        )
+      ) as location_name
     FROM cluster_stats cs
     ORDER BY cs.cost_pln DESC
     LIMIT $2
@@ -225,7 +239,7 @@ defmodule WawTrams.Audit.Summary do
             multi_cycle_pct: multi_pct,
             total_seconds: total_sec || 0,
             cost: %{total: Float.round((cost || 0) * 1.0, 2)},
-            nearest_stop: stop_name,
+            location_name: stop_name,
             severity: severity_from_rank(rank)
           }
         end)

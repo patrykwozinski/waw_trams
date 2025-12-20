@@ -40,11 +40,20 @@ defmodule WawTrams.HourlyIntersectionStat do
   def upsert!(attrs) do
     %__MODULE__{}
     |> Ecto.Changeset.cast(attrs, [
-      :date, :hour, :lat, :lon, :delay_count, :multi_cycle_count,
-      :total_seconds, :cost_pln, :lines
+      :date,
+      :hour,
+      :lat,
+      :lon,
+      :delay_count,
+      :multi_cycle_count,
+      :total_seconds,
+      :cost_pln,
+      :lines
     ])
     |> Repo.insert!(
-      on_conflict: {:replace, [:delay_count, :multi_cycle_count, :total_seconds, :cost_pln, :lines, :updated_at]},
+      on_conflict:
+        {:replace,
+         [:delay_count, :multi_cycle_count, :total_seconds, :cost_pln, :lines, :updated_at]},
       conflict_target: [:date, :hour, :lat, :lon]
     )
   end

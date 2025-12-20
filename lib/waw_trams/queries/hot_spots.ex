@@ -77,13 +77,22 @@ defmodule WawTrams.Queries.HotSpots do
       h.total_delay_seconds,
       h.avg_delay_seconds,
       h.affected_lines,
-      (
-        SELECT s.name
-        FROM stops s
-        WHERE NOT s.is_terminal
-        ORDER BY s.geom::geography <-> h.centroid::geography
-        LIMIT 1
-      ) as nearest_stop
+      COALESCE(
+        (
+          SELECT i.name
+          FROM intersections i
+          WHERE i.name IS NOT NULL AND i.name != ''
+          ORDER BY i.geom::geography <-> h.centroid::geography
+          LIMIT 1
+        ),
+        (
+          SELECT s.name
+          FROM stops s
+          WHERE NOT s.is_terminal
+          ORDER BY s.geom::geography <-> h.centroid::geography
+          LIMIT 1
+        )
+      ) as location_name
     FROM hot_spot_data h
     ORDER BY h.delay_count DESC, h.total_delay_seconds DESC
     LIMIT $3
@@ -101,7 +110,7 @@ defmodule WawTrams.Queries.HotSpots do
             total_delay_seconds: total,
             avg_delay_seconds: to_float(avg),
             affected_lines: Enum.reject(lines, &is_nil/1) |> Enum.sort(),
-            nearest_stop: stop_name
+            location_name: stop_name
           }
         end)
 

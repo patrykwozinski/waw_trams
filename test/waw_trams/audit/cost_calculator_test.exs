@@ -124,7 +124,7 @@ defmodule WawTrams.Audit.CostCalculatorTest do
 
   describe "format_pln/1" do
     test "formats with thousands separator" do
-      assert CostCalculator.format_pln(1234567) == "1 234 567 PLN"
+      assert CostCalculator.format_pln(1_234_567) == "1 234 567 PLN"
     end
 
     test "handles small numbers" do

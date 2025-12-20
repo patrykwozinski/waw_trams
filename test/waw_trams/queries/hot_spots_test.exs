@@ -57,7 +57,7 @@ defmodule WawTrams.Queries.HotSpotsTest do
       assert length(result) >= 1
       hot_spot = hd(result)
       assert hot_spot.delay_count >= 1
-      assert hot_spot.nearest_stop != nil
+      assert hot_spot.location_name != nil
     end
 
     test "filters by since parameter" do

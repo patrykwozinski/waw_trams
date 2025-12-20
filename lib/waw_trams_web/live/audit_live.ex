@@ -189,7 +189,8 @@ defmodule WawTramsWeb.AuditLive do
       <%= if @loading do %>
         <div class="absolute inset-0 z-50 bg-gray-950/80 flex items-center justify-center">
           <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin">
+            </div>
             <p class="text-gray-400">{gettext("Loading data...")}</p>
           </div>
         </div>
@@ -199,8 +200,12 @@ defmodule WawTramsWeb.AuditLive do
       <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-900 border-b border-gray-800">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 md:mb-4">
           <div>
-            <h1 class="text-xl md:text-2xl font-bold text-red-400">🚨 {gettext("Infrastructure Report Card")}</h1>
-            <p class="text-gray-500 text-xs md:text-sm hidden md:block">{gettext("Where is money being wasted on tram delays?")}</p>
+            <h1 class="text-xl md:text-2xl font-bold text-red-400">
+              🚨 {gettext("Infrastructure Report Card")}
+            </h1>
+            <p class="text-gray-500 text-xs md:text-sm hidden md:block">
+              {gettext("Where is money being wasted on tram delays?")}
+            </p>
           </div>
           <div class="flex items-center gap-2 md:gap-4 flex-wrap">
             <%!-- Date range filter --%>
@@ -230,7 +235,10 @@ defmodule WawTramsWeb.AuditLive do
               </select>
             </form>
 
-            <.link navigate={~p"/dashboard"} class="text-gray-400 hover:text-white text-xs md:text-sm hidden md:inline">
+            <.link
+              navigate={~p"/dashboard"}
+              class="text-gray-400 hover:text-white text-xs md:text-sm hidden md:inline"
+            >
               ← {gettext("Back to Dashboard")}
             </.link>
           </div>
@@ -248,7 +256,9 @@ defmodule WawTramsWeb.AuditLive do
             <div class="text-xl md:text-3xl font-bold text-amber-400">
               {@stats.total_hours_formatted}
             </div>
-            <div class="text-gray-500 text-xs md:text-sm">{gettext("Time Lost at Intersections")}</div>
+            <div class="text-gray-500 text-xs md:text-sm">
+              {gettext("Time Lost at Intersections")}
+            </div>
           </div>
           <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
             <div class="text-xl md:text-3xl font-bold text-orange-400">
@@ -306,7 +316,7 @@ defmodule WawTramsWeb.AuditLive do
         </div>
 
         <%!-- Sidebar (right 1/3 on desktop, full on mobile list/detail tab) --%>
-        <div class={"w-full md:w-96 bg-gray-900 md:border-l border-gray-800 overflow-y-auto #{if @mobile_tab == "map", do: "hidden md:block"}"}>
+        <div class={"w-full md:w-[28rem] bg-gray-900 md:border-l border-gray-800 overflow-y-auto #{if @mobile_tab == "map", do: "hidden md:block"}"}>
           <%= if @selected != nil and (@mobile_tab == "detail" or @mobile_tab != "list") do %>
             <.report_card selected={@selected} heatmap={@selected_heatmap} />
           <% else %>
@@ -325,7 +335,9 @@ defmodule WawTramsWeb.AuditLive do
       <div class="flex items-baseline justify-between mb-4">
         <h2 class="text-lg font-bold text-red-400">🔥 {gettext("Top Worst Intersections")}</h2>
         <%= if @coverage_pct > 0 do %>
-          <span class="text-xs text-gray-500">{trunc(@coverage_pct)}% {gettext("of total cost")}</span>
+          <span class="text-xs text-gray-500">
+            {trunc(@coverage_pct)}% {gettext("of total cost")}
+          </span>
         <% end %>
       </div>
 
@@ -347,7 +359,7 @@ defmodule WawTramsWeb.AuditLive do
                   <span class="text-gray-500 text-sm w-6">#{idx + 1}</span>
                   <div>
                     <div class="font-medium text-gray-200">
-                      {spot.nearest_stop || gettext("Unknown location")}
+                      {spot.location_name || gettext("Unknown location")}
                     </div>
                     <div class="text-xs text-gray-500">
                       {spot.delay_count} {gettext("delays")} · {format_duration(spot.total_seconds)}
@@ -377,7 +389,10 @@ defmodule WawTramsWeb.AuditLive do
   defp report_card(assigns) do
     ~H"""
     <div class="p-4">
-      <button phx-click="deselect" class="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1">
+      <button
+        phx-click="deselect"
+        class="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1"
+      >
         ← {gettext("Back to Leaderboard")}
       </button>
 
@@ -385,7 +400,7 @@ defmodule WawTramsWeb.AuditLive do
       <div class="mb-6">
         <div class="text-xs text-gray-500 uppercase tracking-wide">{gettext("Location")}</div>
         <h2 class="text-xl font-bold text-gray-200">
-          📍 {@selected.nearest_stop || gettext("Unknown")}
+          📍 {@selected.location_name || gettext("Unknown")}
         </h2>
         <a
           href={"https://www.google.com/maps?q=#{@selected.lat},#{@selected.lon}"}
@@ -427,13 +442,17 @@ defmodule WawTramsWeb.AuditLive do
 
       <%!-- Mini heatmap --%>
       <div class="mb-6">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">📊 {gettext("When It Fails")}</div>
+        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+          📊 {gettext("When It Fails")}
+        </div>
         <.mini_heatmap heatmap={@heatmap} />
       </div>
 
       <%!-- Affected lines --%>
       <div class="mb-6">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">🚋 {gettext("Affected Lines")}</div>
+        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">
+          🚋 {gettext("Affected Lines")}
+        </div>
         <div class="flex flex-wrap gap-2">
           <%= for line <- @selected.affected_lines do %>
             <.link
@@ -492,7 +511,6 @@ defmodule WawTramsWeb.AuditLive do
   end
 
   defp format_cost(_), do: "0 PLN"
-
 
   defp format_number(n) when is_integer(n) and n >= 1000 do
     "#{div(n, 1000)}.#{rem(n, 1000) |> div(100)}k"

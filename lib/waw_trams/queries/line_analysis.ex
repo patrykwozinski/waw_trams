@@ -166,13 +166,22 @@ defmodule WawTrams.Queries.LineAnalysis do
       cs.blockage_count,
       cs.total_seconds,
       cs.avg_seconds,
-      (
-        SELECT s.name
-        FROM stops s
-        WHERE NOT s.is_terminal
-        ORDER BY s.geom::geography <-> cs.centroid::geography
-        LIMIT 1
-      ) as nearest_stop
+      COALESCE(
+        (
+          SELECT i.name
+          FROM intersections i
+          WHERE i.name IS NOT NULL AND i.name != ''
+          ORDER BY i.geom::geography <-> cs.centroid::geography
+          LIMIT 1
+        ),
+        (
+          SELECT s.name
+          FROM stops s
+          WHERE NOT s.is_terminal
+          ORDER BY s.geom::geography <-> cs.centroid::geography
+          LIMIT 1
+        )
+      ) as location_name
     FROM cluster_stats cs
     ORDER BY cs.total_seconds DESC, cs.event_count DESC
     LIMIT $3
@@ -180,7 +189,16 @@ defmodule WawTrams.Queries.LineAnalysis do
 
     case Repo.query(query, [line, since, limit]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [lat, lon, event_count, delay_count, blockage_count, total, avg, stop_name] ->
+        Enum.map(rows, fn [
+                            lat,
+                            lon,
+                            event_count,
+                            delay_count,
+                            blockage_count,
+                            total,
+                            avg,
+                            stop_name
+                          ] ->
           %{
             lat: lat,
             lon: lon,
@@ -189,7 +207,7 @@ defmodule WawTrams.Queries.LineAnalysis do
             blockage_count: blockage_count,
             total_seconds: total || 0,
             avg_seconds: to_float(avg),
-            nearest_stop: stop_name
+            location_name: stop_name
           }
         end)
 

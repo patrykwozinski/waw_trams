@@ -16,7 +16,7 @@ defmodule WawTrams.DailyIntersectionStat do
     field :date, :date
     field :lat, :float
     field :lon, :float
-    field :nearest_stop, :string
+    field :location_name, :string
     field :delay_count, :integer, default: 0
     field :blockage_count, :integer, default: 0
     field :total_seconds, :integer, default: 0
@@ -26,7 +26,7 @@ defmodule WawTrams.DailyIntersectionStat do
   end
 
   @required_fields ~w(date lat lon)a
-  @optional_fields ~w(nearest_stop delay_count blockage_count total_seconds affected_lines)a
+  @optional_fields ~w(location_name delay_count blockage_count total_seconds affected_lines)a
 
   def changeset(stat, attrs) do
     stat
@@ -44,11 +44,11 @@ defmodule WawTrams.DailyIntersectionStat do
 
     from(s in __MODULE__,
       where: s.date >= ^since,
-      group_by: [s.lat, s.lon, s.nearest_stop],
+      group_by: [s.lat, s.lon, s.location_name],
       select: %{
         lat: s.lat,
         lon: s.lon,
-        nearest_stop: s.nearest_stop,
+        location_name: s.location_name,
         delay_count: sum(s.delay_count),
         blockage_count: sum(s.blockage_count),
         total_seconds: sum(s.total_seconds),
@@ -65,7 +65,7 @@ defmodule WawTrams.DailyIntersectionStat do
       %{
         lat: row.lat,
         lon: row.lon,
-        nearest_stop: row.nearest_stop,
+        location_name: row.location_name,
         delay_count: row.delay_count,
         blockage_count: row.blockage_count,
         total_seconds: row.total_seconds,

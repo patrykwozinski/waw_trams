@@ -8,7 +8,7 @@ defmodule WawTrams.Audit.IntersectionTest do
   @intersection_lon 21.01
 
   setup do
-    # Create a stop for nearest_stop lookup
+    # Create a stop for location_name lookup
     {:ok, _} =
       Repo.query(
         "INSERT INTO stops (stop_id, name, geom, is_terminal, inserted_at, updated_at) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326), $5, NOW(), NOW())",
@@ -40,7 +40,10 @@ defmodule WawTrams.Audit.IntersectionTest do
       # Create aggregated data
       create_aggregated_stat(%{delay_count: 3, total_seconds: 180, cost_pln: 4.5})
 
-      result = Intersection.summary(@intersection_lat, @intersection_lon, since: DateTime.add(DateTime.utc_now(), -1, :day))
+      result =
+        Intersection.summary(@intersection_lat, @intersection_lon,
+          since: DateTime.add(DateTime.utc_now(), -1, :day)
+        )
 
       assert result.delay_count == 3
       assert result.total_seconds == 180
@@ -72,7 +75,10 @@ defmodule WawTrams.Audit.IntersectionTest do
 
       DelayEvent.resolve(event)
 
-      result = Intersection.summary(@intersection_lat, @intersection_lon, since: DateTime.add(now, -2, :day))
+      result =
+        Intersection.summary(@intersection_lat, @intersection_lon,
+          since: DateTime.add(now, -2, :day)
+        )
 
       # Should have aggregated (2) + current hour (1) = 3
       assert result.delay_count == 3
@@ -90,7 +96,10 @@ defmodule WawTrams.Audit.IntersectionTest do
       # 2 delays, 1 multi-cycle = 50%
       create_aggregated_stat(%{delay_count: 2, multi_cycle_count: 1})
 
-      result = Intersection.summary(@intersection_lat, @intersection_lon, since: DateTime.add(DateTime.utc_now(), -1, :day))
+      result =
+        Intersection.summary(@intersection_lat, @intersection_lon,
+          since: DateTime.add(DateTime.utc_now(), -1, :day)
+        )
 
       assert result.multi_cycle_count == 1
       assert result.multi_cycle_pct == 50.0
@@ -103,7 +112,10 @@ defmodule WawTrams.Audit.IntersectionTest do
       create_aggregated_stat(%{hour: 8, delay_count: 2})
       create_aggregated_stat(%{hour: 17, delay_count: 3})
 
-      result = Intersection.heatmap(@intersection_lat, @intersection_lon, since: DateTime.add(DateTime.utc_now(), -1, :day))
+      result =
+        Intersection.heatmap(@intersection_lat, @intersection_lon,
+          since: DateTime.add(DateTime.utc_now(), -1, :day)
+        )
 
       assert Map.has_key?(result, :grid)
       assert Map.has_key?(result, :max_count)
@@ -140,7 +152,10 @@ defmodule WawTrams.Audit.IntersectionTest do
 
       DelayEvent.resolve(event)
 
-      result = Intersection.recent_delays(@intersection_lat, @intersection_lon, since: DateTime.add(now, -1, :hour))
+      result =
+        Intersection.recent_delays(@intersection_lat, @intersection_lon,
+          since: DateTime.add(now, -1, :hour)
+        )
 
       assert length(result) == 1
       assert hd(result).line == "19"
@@ -163,7 +178,11 @@ defmodule WawTrams.Audit.IntersectionTest do
         DelayEvent.resolve(event)
       end
 
-      result = Intersection.recent_delays(@intersection_lat, @intersection_lon, since: DateTime.add(now, -1, :hour), limit: 3)
+      result =
+        Intersection.recent_delays(@intersection_lat, @intersection_lon,
+          since: DateTime.add(now, -1, :hour),
+          limit: 3
+        )
 
       assert length(result) == 3
     end

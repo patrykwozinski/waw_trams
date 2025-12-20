@@ -33,7 +33,7 @@ defmodule WawTrams.Audit.Intersection do
   - `:multi_cycle_pct` - Percentage of multi-cycle delays
   - `:cost` - Economic cost breakdown
   - `:affected_lines` - List of tram lines affected
-  - `:nearest_stop` - Name of nearest stop
+  - `:location_name` - Name of nearest stop
   """
   def summary(lat, lon, opts \\ []) do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
@@ -70,7 +70,7 @@ defmodule WawTrams.Audit.Intersection do
         count: delay_count
       },
       affected_lines: lines,
-      nearest_stop: stop_name
+      location_name: stop_name
     }
   end
 
@@ -131,13 +131,22 @@ defmodule WawTrams.Audit.Intersection do
     query = """
     SELECT
       array_agg(DISTINCT line) as lines,
-      (
-        SELECT s.name
-        FROM stops s
-        WHERE NOT s.is_terminal
-        ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
-        LIMIT 1
-      ) as nearest_stop
+      COALESCE(
+        (
+          SELECT i.name
+          FROM intersections i
+          WHERE i.name IS NOT NULL AND i.name != ''
+          ORDER BY i.geom::geography <-> ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+          LIMIT 1
+        ),
+        (
+          SELECT s.name
+          FROM stops s
+          WHERE NOT s.is_terminal
+          ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+          LIMIT 1
+        )
+      ) as location_name
     FROM delay_events d
     WHERE d.started_at >= $3
       AND ST_DWithin(

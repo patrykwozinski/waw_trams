@@ -261,7 +261,7 @@ defmodule WawTramsWeb.LineLive do
                           <div class="text-sm">
                             <span class="text-gray-400">{gettext("Near")}</span>
                             <span class="text-white ml-1">
-                              {spot.nearest_stop || gettext("Unknown")}
+                              {spot.location_name || gettext("Unknown")}
                             </span>
                           </div>
                           <a

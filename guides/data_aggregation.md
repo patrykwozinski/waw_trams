@@ -63,7 +63,7 @@ schema "daily_intersection_stats" do
   field :date, :date
   field :lat, :float              # Rounded to 4 decimals
   field :lon, :float              # Rounded to 4 decimals
-  field :nearest_stop, :string    # Cached for display
+  field :location_name, :string   # Street name (e.g., "Puławska / Goworka")
   field :delay_count, :integer
   field :blockage_count, :integer
   field :total_seconds, :integer

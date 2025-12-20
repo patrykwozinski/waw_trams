@@ -88,7 +88,6 @@ defmodule WawTramsWeb.DashboardLive do
     }
   end
 
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -246,7 +245,7 @@ defmodule WawTramsWeb.DashboardLive do
                           <div class="text-sm">
                             <span class="text-gray-400">{gettext("Near")}</span>
                             <span class="text-white ml-1">
-                              {spot.nearest_stop || gettext("Unknown")}
+                              {spot.location_name || gettext("Unknown")}
                             </span>
                           </div>
                           <a
@@ -424,7 +423,11 @@ defmodule WawTramsWeb.DashboardLive do
                         <%= if delay.multi_cycle do %>
                           <span
                             class="text-purple-400 text-xs"
-                            title={gettext("Priority failure: tram waited through multiple signal cycles (>120s)")}
+                            title={
+                              gettext(
+                                "Priority failure: tram waited through multiple signal cycles (>120s)"
+                              )
+                            }
                           >
                             ⚡
                           </span>

@@ -5,7 +5,7 @@ defmodule WawTrams.Audit.SummaryTest do
   alias WawTrams.{DelayEvent, HourlyIntersectionStat}
 
   setup do
-    # Create a stop for nearest_stop lookup
+    # Create a stop for location_name lookup
     {:ok, _} =
       Repo.query(
         "INSERT INTO stops (stop_id, name, geom, is_terminal, inserted_at, updated_at) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326), $5, NOW(), NOW())",

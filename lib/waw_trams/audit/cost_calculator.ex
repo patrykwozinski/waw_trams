@@ -93,17 +93,19 @@ defmodule WawTrams.Audit.CostCalculator do
   Aggregated cost breakdown with additional `:count` field.
   """
   def calculate_total(delays) when is_list(delays) do
-    result = Enum.reduce(delays, %{total: 0.0, passenger: 0.0, operational: 0.0, count: 0}, fn delay, acc ->
-      hour = extract_hour(delay)
-      cost = calculate(delay.duration_seconds || 0, hour)
+    result =
+      Enum.reduce(delays, %{total: 0.0, passenger: 0.0, operational: 0.0, count: 0}, fn delay,
+                                                                                        acc ->
+        hour = extract_hour(delay)
+        cost = calculate(delay.duration_seconds || 0, hour)
 
-      %{
-        total: acc.total + cost.total,
-        passenger: acc.passenger + cost.passenger,
-        operational: acc.operational + cost.operational,
-        count: acc.count + 1
-      }
-    end)
+        %{
+          total: acc.total + cost.total,
+          passenger: acc.passenger + cost.passenger,
+          operational: acc.operational + cost.operational,
+          count: acc.count + 1
+        }
+      end)
 
     %{
       total: Float.round(result.total, 2),

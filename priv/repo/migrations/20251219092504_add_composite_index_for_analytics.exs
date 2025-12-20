@@ -16,14 +16,14 @@ defmodule WawTrams.Repo.Migrations.AddCompositeIndexForAnalytics do
     # Composite index for hot_spots and analytics queries
     # Covers: started_at range + near_intersection filter + classification filter
     create index(:delay_events, [:started_at, :near_intersection, :classification],
-      name: :delay_events_analytics_idx,
-      comment: "For hot_spots and analytics queries"
-    )
+             name: :delay_events_analytics_idx,
+             comment: "For hot_spots and analytics queries"
+           )
   end
 
   def down do
     drop index(:delay_events, [:started_at, :near_intersection, :classification],
-      name: :delay_events_analytics_idx
-    )
+           name: :delay_events_analytics_idx
+         )
   end
 end

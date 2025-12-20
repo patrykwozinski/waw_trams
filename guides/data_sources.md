@@ -92,35 +92,57 @@ This yields ~172 unique (line, stop_id) pairs from the GTFS data.
 
 ## 3. Intersections (OpenStreetMap)
 
-Tram-road intersection points from OpenStreetMap via Overpass API.
+Tram-road intersection points from OpenStreetMap via Overpass API, enriched with street names.
 
 > **Why commit to repo?** Unlike GTFS, intersection data changes rarely (new tram lines are infrequent). The CSV is small (~1,200 rows) and acts as static seed data.
 
-### The Query
-To update the `intersections.csv` file, run this query at [Overpass Turbo](https://overpass-turbo.eu/).
+### CSV Format
+
+```csv
+"osm_id",lon,lat,"Street Name / Cross Street"
+"node/32320979",21.0208934,52.2109083,"Puławska / Goworka"
+```
+
+The `name` field contains OSM street names for display (e.g., "Puławska / Goworka" instead of just a stop name). ~92% of intersections have street names; the rest fall back to nearest stop name.
+
+### Overpass Queries
+
+**1. Get intersection points:**
 
 ```c
-/* Goal: Find intersections between Tram Tracks and Car Roads in Warsaw.
-  Target Area: Warsaw Bounding Box.
-*/
 [out:json][timeout:180][bbox:52.09, 20.85, 52.37, 21.28];
 
-// 1. Get Tram Tracks
+// Get Tram Tracks
 way["railway"="tram"]->.trams;
 
-// 2. Get Car Roads (excluding pedestrian paths)
+// Get Car Roads (excluding pedestrian paths)
 way["highway"]["highway"!~"^(footway|cycleway|path|steps|service)$"]->.roads;
 
-// 3. Find Intersections (Nodes shared by both)
+// Find Intersections (Nodes shared by both)
 node(w.trams)(w.roads);
 
 out geom;
 ```
 
+**2. Get road names for enrichment:**
+
+```c
+[out:json][timeout:180][bbox:52.09, 20.85, 52.37, 21.28];
+
+way["railway"="tram"]->.trams;
+way["highway"]["highway"!~"^(footway|cycleway|path|steps|service)$"]["name"]->.roads;
+node(w.trams)(w.roads)->.intersections;
+way(bn.intersections)["highway"]["name"];
+
+out tags geom;
+```
+
 ### Import Process
-1. Export the result as GeoJSON.
-2. Convert to CSV using jq.
+
+1. Export intersection nodes as CSV (3-column format works too)
+2. Optionally enrich with street names using `scripts/enrich_intersections.exs`
 3. Run the mix task:
+
 ```sh
 mix waw_trams.import_intersections
 ```

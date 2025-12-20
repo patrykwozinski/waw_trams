@@ -185,7 +185,7 @@ defmodule WawTrams.QueryRouterTest do
           date: Date.utc_today(),
           lat: 52.2297,
           lon: 21.0122,
-          nearest_stop: "Test Stop",
+          location_name: "Test Stop",
           delay_count: 15,
           blockage_count: 5,
           total_seconds: 1500,

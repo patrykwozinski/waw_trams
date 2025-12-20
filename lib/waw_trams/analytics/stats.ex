@@ -77,8 +77,11 @@ defmodule WawTrams.Analytics.Stats do
   def summary(since \\ DateTime.add(DateTime.utc_now(), -24, :hour)) do
     stats = for_period(since)
 
-    delay_stats = Enum.find(stats, %{count: 0, avg_duration_seconds: 0}, &(&1.classification == "delay"))
-    blockage_stats = Enum.find(stats, %{count: 0, avg_duration_seconds: 0}, &(&1.classification == "blockage"))
+    delay_stats =
+      Enum.find(stats, %{count: 0, avg_duration_seconds: 0}, &(&1.classification == "delay"))
+
+    blockage_stats =
+      Enum.find(stats, %{count: 0, avg_duration_seconds: 0}, &(&1.classification == "blockage"))
 
     total_seconds = total_time_lost(since)
     multi_cycle = multi_cycle_count(since)

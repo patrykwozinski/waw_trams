@@ -12,6 +12,7 @@ defmodule WawTrams.Intersection do
 
   schema "intersections" do
     field :osm_id, :string
+    field :name, :string
     # geom is a PostGIS geometry column, handled via raw SQL
     field :geom, :map, load_in_query: false
 
