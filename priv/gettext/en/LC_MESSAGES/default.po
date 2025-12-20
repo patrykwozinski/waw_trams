@@ -469,9 +469,9 @@ msgid "This Week"
 msgstr ""
 
 #: lib/waw_trams_web/live/audit_live.ex:435
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Today"
-msgstr "Monday"
+msgstr "Today"
 
 #: lib/waw_trams_web/live/audit_live.ex:370
 #, elixir-autogen, elixir-format
