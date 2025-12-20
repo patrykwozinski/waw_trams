@@ -42,6 +42,7 @@ defmodule WawTrams.MixProject do
       extras: [
         "README.md",
         "guides/architecture.md",
+        "guides/performance.md",
         "guides/detection_logic.md",
         "guides/thresholds.md",
         "guides/data_sources.md",
