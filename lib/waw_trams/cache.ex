@@ -1,6 +1,6 @@
 defmodule WawTrams.Cache do
   @moduledoc """
-  Simple ETS-based cache for expensive queries across all pages.
+  Simple ETS-based cache for expensive queries.
 
   Caches expensive aggregation queries with a TTL to reduce database load.
   Uses built-in ETS — no external dependencies required.
@@ -8,20 +8,19 @@ defmodule WawTrams.Cache do
   ## Cache Keys
 
   Audit page:
-  - `{:audit_stats, date_range, line}` — Summary statistics
-  - `{:audit_leaderboard, date_range, line, limit}` — Top intersections
+  - `{:audit_stats, since, line}` — Summary statistics
+  - `{:audit_leaderboard, since, line, limit}` — Top intersections
 
   Dashboard page:
-  - `{:dashboard_stats}` — Period stats
-  - `{:dashboard_hot_spots}` — Hot spots
-  - `{:dashboard_summary}` — Hot spot summary
-  - `{:dashboard_lines}` — Impacted lines
+  - `:dashboard_stats` — Period stats
+  - `:dashboard_multi_cycle` — Long delay count
+  - `{:dashboard_impacted_lines, limit}` — Most impacted lines
 
   ## TTL Strategy
 
-  - Audit stats: 30 seconds
-  - Audit leaderboard: 60 seconds
-  - Dashboard queries: 30 seconds (matches refresh interval)
+  - Audit stats: 30s
+  - Audit leaderboard: 60s
+  - Dashboard queries: 30s (matches refresh interval)
 
   Real-time delay events update the UI instantly via PubSub,
   so slightly stale aggregate numbers are acceptable.
@@ -95,28 +94,6 @@ defmodule WawTrams.Cache do
   def get_dashboard_multi_cycle do
     fetch_cached(:dashboard_multi_cycle, @dashboard_ttl_ms, fn ->
       WawTrams.Analytics.Stats.multi_cycle_count()
-    end)
-  end
-
-  @doc """
-  Get cached dashboard hot spots.
-  Uses the fast aggregated version for ~15x better performance.
-  """
-  def get_dashboard_hot_spots(opts \\ []) do
-    key = {:dashboard_hot_spots, opts[:limit]}
-
-    fetch_cached(key, @dashboard_ttl_ms, fn ->
-      WawTrams.Queries.HotSpots.hot_spots_fast(opts)
-    end)
-  end
-
-  @doc """
-  Get cached dashboard hot spot summary.
-  Uses the fast aggregated version for better performance.
-  """
-  def get_dashboard_hot_spot_summary do
-    fetch_cached(:dashboard_hot_spot_summary, @dashboard_ttl_ms, fn ->
-      WawTrams.Queries.HotSpots.hot_spot_summary_fast()
     end)
   end
 

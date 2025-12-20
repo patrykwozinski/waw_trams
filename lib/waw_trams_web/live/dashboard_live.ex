@@ -61,10 +61,8 @@ defmodule WawTramsWeb.DashboardLive do
     active_delays = ActiveDelays.active()
     recent_resolved = ActiveDelays.recent_resolved(20)
 
-    # These use cache (10s TTL) to reduce DB load
+    # These use cache to reduce DB load
     stats = Cache.get_dashboard_stats()
-    hot_spots = Cache.get_dashboard_hot_spots(limit: 10)
-    hot_spot_summary = Cache.get_dashboard_hot_spot_summary()
     impacted_lines = Cache.get_dashboard_impacted_lines(limit: 10)
     multi_cycle_count = Cache.get_dashboard_multi_cycle()
 
@@ -76,8 +74,6 @@ defmodule WawTramsWeb.DashboardLive do
     |> assign(:active_count, length(active_delays))
     |> assign(:recent_resolved, recent_resolved)
     |> assign(:stats_summary, stats_summary)
-    |> assign(:hot_spots, hot_spots)
-    |> assign(:hot_spot_summary, hot_spot_summary)
     |> assign(:impacted_lines, impacted_lines)
     |> assign(:last_updated, DateTime.utc_now())
   end
@@ -140,7 +136,7 @@ defmodule WawTramsWeb.DashboardLive do
         </div>
 
         <%!-- Stats Cards --%>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div class="text-4xl font-bold text-red-400">{@active_count}</div>
             <div class="text-gray-400 text-sm mt-1">🔴 {gettext("Active Now")}</div>
@@ -157,256 +153,153 @@ defmodule WawTramsWeb.DashboardLive do
             <div class="text-4xl font-bold text-purple-400">{@stats_summary.multi_cycle}</div>
             <div class="text-gray-400 text-sm mt-1">⚡ {gettext("Long Delays (24h)")}</div>
           </div>
-          <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div class="text-4xl font-bold text-amber-400">
-              {format_time_lost(@hot_spot_summary.total_delay_minutes)}
-            </div>
-            <div class="text-gray-400 text-sm mt-1">⏱️ {gettext("Time Lost (24h)")}</div>
-          </div>
         </div>
 
-        <%!-- KEY INSIGHTS: Hot Spots + Most Impacted Lines (side by side) --%>
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-          <%!-- Hot Spots --%>
-          <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
-              <div>
-                <h2 class="font-semibold text-lg">🔥 {gettext("Intersection Hot Spots")}</h2>
-                <p class="text-gray-500 text-sm mt-1">{gettext("Top 10 by delay count (24h)")}</p>
+        <%!-- LIVE FEED + Lines (2/3 + 1/3 layout) --%>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <%!-- Live Feed Column (2/3 width) --%>
+          <div class="xl:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <%!-- Active Delays --%>
+            <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden flex flex-col min-h-[360px]">
+              <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
+                <h2 class="font-medium">
+                  🔴 {gettext("Active Delays")}
+                  <span class="text-red-400 ml-1">({@active_count})</span>
+                </h2>
+                <span class="text-xs text-gray-500 animate-pulse">● {gettext("LIVE")}</span>
               </div>
-              <.link
-                navigate={~p"/"}
-                class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
-              >
-                🚨 {gettext("Audit")}
-              </.link>
-            </div>
-            <div class="overflow-x-auto max-h-80 overflow-y-auto">
-              <%= if @hot_spots == [] do %>
-                <div class="p-8 text-center text-gray-500">{gettext("No data")}</div>
-              <% else %>
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-800/50 sticky top-0">
-                    <tr class="text-left text-gray-400">
-                      <th class="px-4 py-2 font-medium">#</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Location")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Delays")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Time")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Lines")}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-800">
-                    <%= for {spot, idx} <- Enum.with_index(@hot_spots, 1) do %>
-                      <tr class="hover:bg-gray-800/50">
-                        <td class="px-4 py-2">
+              <div class="divide-y divide-gray-800 flex-1 overflow-y-auto">
+                <%= if @active_delays == [] do %>
+                  <div class="p-6 text-center text-gray-500 text-sm">
+                    ✨ {gettext("No active delays")}
+                  </div>
+                <% else %>
+                  <%= for delay <- Enum.take(@active_delays, 10) do %>
+                    <div class="px-4 py-2 hover:bg-gray-800/50 text-sm">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
                           <span class={[
-                            "inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold",
-                            rank_color(idx)
+                            "px-1.5 py-0.5 rounded text-xs font-medium",
+                            classification_color(delay.classification)
                           ]}>
-                            {idx}
+                            {delay.classification}
                           </span>
-                        </td>
-                        <td class="px-4 py-2">
-                          <div class="text-sm">
-                            <%= if !spot.is_intersection do %>
-                              <span class="text-gray-400">{gettext("Near")}</span>
-                            <% end %>
-                            <span class={["text-white", !spot.is_intersection && "ml-1"]}>
-                              {spot.location_name || gettext("Unknown")}
+                          <span class="font-mono text-amber-300">L{delay.line}</span>
+                          <%= if delay.near_intersection do %>
+                            <span class="text-orange-400 text-xs">⚠️</span>
+                          <% end %>
+                        </div>
+                        <span
+                          id={"timer-#{delay.id}"}
+                          class="text-gray-500 text-xs font-mono"
+                          phx-hook=".LiveTimer"
+                          data-started={DateTime.to_iso8601(delay.started_at)}
+                        >
+                          {duration_since(delay.started_at)}
+                        </span>
+                      </div>
+                    </div>
+                  <% end %>
+                  <%= if length(@active_delays) > 10 do %>
+                    <div class="px-4 py-2 text-center text-gray-500 text-xs">
+                      + {length(@active_delays) - 10} more
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <%!-- Recent Resolved --%>
+            <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden flex flex-col min-h-[360px]">
+              <div class="px-5 py-3 border-b border-gray-800 shrink-0">
+                <h2 class="font-medium">✅ {gettext("Recently Resolved")}</h2>
+              </div>
+              <div class="divide-y divide-gray-800 flex-1 overflow-y-auto">
+                <%= if @recent_resolved == [] do %>
+                  <div class="p-6 text-center text-gray-500 text-sm">
+                    {gettext("No recent resolved delays")}
+                  </div>
+                <% else %>
+                  <%= for delay <- Enum.take(@recent_resolved, 10) do %>
+                    <div class="px-4 py-2 hover:bg-gray-800/50 text-sm">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span class={[
+                            "px-1.5 py-0.5 rounded text-xs font-medium opacity-60",
+                            classification_color(delay.classification)
+                          ]}>
+                            {delay.classification}
+                          </span>
+                          <span class="font-mono text-gray-400">L{delay.line}</span>
+                          <%= if delay.multi_cycle do %>
+                            <span
+                              class="text-purple-400 text-xs"
+                              title={gettext("Long delay: stopped >2 minutes")}
+                            >
+                              ⚡
                             </span>
-                          </div>
-                          <a
-                            href={"https://www.google.com/maps?q=#{spot.lat},#{spot.lon}"}
-                            target="_blank"
-                            class="text-xs text-gray-500 hover:text-amber-400 transition-colors"
-                          >
-                            📍 {Float.round(spot.lat, 4)}, {Float.round(spot.lon, 4)}
-                          </a>
-                        </td>
-                        <td class="px-4 py-2 text-red-400 font-semibold">{spot.delay_count}</td>
-                        <td class="px-4 py-2 text-amber-400">
-                          {format_duration(spot.total_delay_seconds)}
-                        </td>
-                        <td class="px-4 py-2">
-                          <div class="flex flex-wrap gap-1">
-                            <%= for line <- Enum.take(spot.affected_lines, 4) do %>
-                              <span class="px-1 py-0.5 bg-gray-800 rounded text-xs text-amber-300">
-                                {line}
-                              </span>
-                            <% end %>
-                            <%= if length(spot.affected_lines) > 4 do %>
-                              <span class="text-gray-500 text-xs">
-                                +{length(spot.affected_lines) - 4}
-                              </span>
-                            <% end %>
-                          </div>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              <% end %>
+                          <% end %>
+                        </div>
+                        <div class="text-right">
+                          <span class={[
+                            "text-xs font-medium",
+                            if(delay.multi_cycle, do: "text-purple-400", else: "text-green-400")
+                          ]}>
+                            {format_duration(delay.duration_seconds)}
+                          </span>
+                          <span class="text-gray-600 text-xs ml-2">
+                            {time_ago(delay.resolved_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
             </div>
           </div>
 
-          <%!-- Most Impacted Lines --%>
-          <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <%!-- Most Impacted Lines (1/3 width sidebar) --%>
+          <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden h-fit">
             <div class="px-5 py-4 border-b border-gray-800 flex items-start justify-between">
               <div>
-                <h2 class="font-semibold text-lg">🚋 {gettext("Most Impacted Lines")}</h2>
-                <p class="text-gray-500 text-sm mt-1">
-                  {gettext("Ranked by total delay time (24h)")}
-                </p>
+                <h2 class="font-semibold text-lg">🚋 {gettext("Lines")}</h2>
+                <p class="text-gray-500 text-sm mt-1">{gettext("By delay time (24h)")}</p>
               </div>
               <.link
                 navigate={~p"/line"}
                 class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
               >
-                ⏰ {gettext("Hours")}
+                {gettext("Details")} →
               </.link>
             </div>
-            <div class="overflow-x-auto max-h-80 overflow-y-auto">
+            <div class="divide-y divide-gray-800 max-h-[500px] overflow-y-auto">
               <%= if @impacted_lines == [] do %>
                 <div class="p-8 text-center text-gray-500">{gettext("No data")}</div>
               <% else %>
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-800/50 sticky top-0">
-                    <tr class="text-left text-gray-400">
-                      <th class="px-4 py-2 font-medium">#</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Line")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Delays")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Blockages")}</th>
-                      <th class="px-4 py-2 font-medium">{gettext("Total")}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-800">
-                    <%= for {line_data, idx} <- Enum.with_index(@impacted_lines, 1) do %>
-                      <tr class="hover:bg-gray-800/50">
-                        <td class="px-4 py-2">
-                          <span class={[
-                            "inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold",
-                            rank_color(idx)
-                          ]}>
-                            {idx}
-                          </span>
-                        </td>
-                        <td class="px-4 py-2">
-                          <.link
-                            navigate={~p"/line/#{line_data.line}"}
-                            class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold hover:bg-amber-500/30 transition-colors"
-                          >
-                            {line_data.line} →
-                          </.link>
-                        </td>
-                        <td class="px-4 py-2 text-orange-400 font-semibold">
-                          {line_data.delay_count}
-                        </td>
-                        <td class="px-4 py-2 text-red-400">{line_data.blockage_count}</td>
-                        <td class="px-4 py-2 text-amber-400">
-                          {format_duration(line_data.total_seconds)}
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              <% end %>
-            </div>
-          </div>
-        </div>
-
-        <%!-- LIVE FEED: Active + Resolved --%>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <%!-- Active Delays --%>
-          <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
-              <h2 class="font-medium">
-                🔴 {gettext("Active Delays")} <span class="text-red-400 ml-1">({@active_count})</span>
-              </h2>
-              <span class="text-xs text-gray-500 animate-pulse">● {gettext("LIVE")}</span>
-            </div>
-            <div class="divide-y divide-gray-800 max-h-64 overflow-y-auto">
-              <%= if @active_delays == [] do %>
-                <div class="p-6 text-center text-gray-500 text-sm">
-                  ✨ {gettext("No active delays")}
-                </div>
-              <% else %>
-                <%= for delay <- Enum.take(@active_delays, 10) do %>
-                  <div class="px-4 py-2 hover:bg-gray-800/50 text-sm">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <span class={[
-                          "px-1.5 py-0.5 rounded text-xs font-medium",
-                          classification_color(delay.classification)
-                        ]}>
-                          {delay.classification}
-                        </span>
-                        <span class="font-mono text-amber-300">L{delay.line}</span>
-                        <%= if delay.near_intersection do %>
-                          <span class="text-orange-400 text-xs">⚠️</span>
-                        <% end %>
-                      </div>
-                      <span
-                        id={"timer-#{delay.id}"}
-                        class="text-gray-500 text-xs font-mono"
-                        phx-hook=".LiveTimer"
-                        data-started={DateTime.to_iso8601(delay.started_at)}
-                      >
-                        {duration_since(delay.started_at)}
+                <%= for {line_data, idx} <- Enum.with_index(@impacted_lines, 1) do %>
+                  <.link
+                    navigate={~p"/line/#{line_data.line}"}
+                    class="flex items-center justify-between px-4 py-3 hover:bg-gray-800/50 transition-colors"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span class={[
+                        "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
+                        rank_color(idx)
+                      ]}>
+                        {idx}
                       </span>
+                      <span class="font-mono font-bold text-amber-300 text-lg">{line_data.line}</span>
                     </div>
-                  </div>
-                <% end %>
-                <%= if length(@active_delays) > 10 do %>
-                  <div class="px-4 py-2 text-center text-gray-500 text-xs">
-                    + {length(@active_delays) - 10} more
-                  </div>
-                <% end %>
-              <% end %>
-            </div>
-          </div>
-
-          <%!-- Recent Resolved --%>
-          <div class="bg-gray-900/70 rounded-xl border border-gray-800 overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-800">
-              <h2 class="font-medium">✅ {gettext("Recently Resolved")}</h2>
-            </div>
-            <div class="divide-y divide-gray-800 max-h-64 overflow-y-auto">
-              <%= if @recent_resolved == [] do %>
-                <div class="p-6 text-center text-gray-500 text-sm">
-                  {gettext("No recent resolved delays")}
-                </div>
-              <% else %>
-                <%= for delay <- Enum.take(@recent_resolved, 10) do %>
-                  <div class="px-4 py-2 hover:bg-gray-800/50 text-sm">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <span class={[
-                          "px-1.5 py-0.5 rounded text-xs font-medium opacity-60",
-                          classification_color(delay.classification)
-                        ]}>
-                          {delay.classification}
-                        </span>
-                        <span class="font-mono text-gray-400">L{delay.line}</span>
-                        <%= if delay.multi_cycle do %>
-                          <span
-                            class="text-purple-400 text-xs"
-                            title={gettext("Long delay: stopped >2 minutes")}
-                          >
-                            ⚡
-                          </span>
-                        <% end %>
+                    <div class="text-right">
+                      <div class="text-amber-400 font-medium">
+                        {format_duration(line_data.total_seconds)}
                       </div>
-                      <div class="text-right">
-                        <span class={[
-                          "text-xs font-medium",
-                          if(delay.multi_cycle, do: "text-purple-400", else: "text-green-400")
-                        ]}>
-                          {format_duration(delay.duration_seconds)}
-                        </span>
-                        <span class="text-gray-600 text-xs ml-2">{time_ago(delay.resolved_at)}</span>
+                      <div class="text-gray-500 text-xs">
+                        {line_data.delay_count} {gettext("delays")}
                       </div>
                     </div>
-                  </div>
+                  </.link>
                 <% end %>
               <% end %>
             </div>

@@ -289,6 +289,7 @@ defmodule WawTrams.Queries.HotSpots do
         multi_cycle_count,
         total_seconds,
         cost_pln,
+        lines,
         ST_SetSRID(ST_MakePoint(lon, lat), 4326) as geom
       FROM hourly_intersection_stats h
       WHERE (date > $1 OR (date = $1 AND hour >= $3))
@@ -301,6 +302,7 @@ defmodule WawTrams.Queries.HotSpots do
         multi_cycle_count,
         total_seconds,
         cost_pln,
+        lines,
         geom,
         ST_ClusterDBSCAN(geom::geometry, eps := 0.001, minpoints := 1) OVER () as cluster_id
       FROM hourly_points
@@ -313,7 +315,8 @@ defmodule WawTrams.Queries.HotSpots do
         SUM(delay_count) as delay_count,
         SUM(multi_cycle_count) as multi_cycle_count,
         SUM(total_seconds) as total_seconds,
-        SUM(cost_pln) as cost_pln
+        SUM(cost_pln) as cost_pln,
+        (SELECT array_agg(DISTINCT line ORDER BY line) FROM unnest(array_agg(lines)) AS t(line) WHERE line IS NOT NULL) as lines
       FROM clustered
       GROUP BY cluster_id
     )
@@ -323,6 +326,7 @@ defmodule WawTrams.Queries.HotSpots do
       cs.delay_count,
       cs.total_seconds,
       cs.multi_cycle_count,
+      cs.lines,
       COALESCE(loc.intersection_name, loc.stop_name) as location_name,
       loc.intersection_name IS NOT NULL as is_intersection
     FROM cluster_stats cs
@@ -345,7 +349,7 @@ defmodule WawTrams.Queries.HotSpots do
 
     case Repo.query(query, [since_date, limit, since_hour]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [lat, lon, count, total, multi, stop_name, is_intersection] ->
+        Enum.map(rows, fn [lat, lon, count, total, multi, lines, stop_name, is_intersection] ->
           %{
             lat: lat,
             lon: lon,
@@ -354,6 +358,7 @@ defmodule WawTrams.Queries.HotSpots do
             avg_delay_seconds:
               if(count && count > 0, do: Float.round((total || 0) / count, 1), else: 0.0),
             multi_cycle_count: multi || 0,
+            affected_lines: lines || [],
             location_name: stop_name,
             is_intersection: is_intersection
           }
