@@ -44,10 +44,9 @@ defmodule WawTrams.Audit.Summary do
   def stats_uncached(opts \\ []) do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
     line = Keyword.get(opts, :line, nil)
-    since_date = DateTime.to_date(since)
 
-    # Get aggregated stats from hourly_intersection_stats
-    agg_opts = [since: since_date]
+    # Pass DateTime directly - aggregate_stats handles partial days correctly
+    agg_opts = [since: since]
     agg_opts = if line, do: Keyword.put(agg_opts, :line, line), else: agg_opts
 
     aggregated = HourlyIntersectionStat.aggregate_stats(agg_opts)
@@ -171,12 +170,18 @@ defmodule WawTrams.Audit.Summary do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
     limit = Keyword.get(opts, :limit, 10)
     line = Keyword.get(opts, :line, nil)
-    since_date = DateTime.to_date(since)
+
+    # Extract date and hour for proper partial-day filtering
+    {since_date, since_hour} = case since do
+      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+      %Date{} = d -> {d, 0}
+    end
 
     # Use spatial clustering to group nearby points (~55m radius)
     # This handles cases where the same physical intersection has slightly different coordinates
-    line_filter = if line, do: "AND $3 = ANY(h.lines)", else: ""
+    line_filter = if line, do: "AND $4 = ANY(h.lines)", else: ""
 
+    # Filter: full days after since_date, OR since_date with hour >= since_hour
     query = """
     WITH hourly_points AS (
       SELECT
@@ -188,7 +193,7 @@ defmodule WawTrams.Audit.Summary do
         cost_pln,
         ST_SetSRID(ST_MakePoint(lon, lat), 4326) as geom
       FROM hourly_intersection_stats h
-      WHERE date >= $1
+      WHERE (date > $1 OR (date = $1 AND hour >= $3))
         #{line_filter}
     ),
     clustered AS (
@@ -242,7 +247,8 @@ defmodule WawTrams.Audit.Summary do
     LIMIT $2
     """
 
-    params = if line, do: [since_date, limit, line], else: [since_date, limit]
+    # Params: $1=since_date, $2=limit, $3=since_hour, $4=line (optional)
+    params = if line, do: [since_date, limit, since_hour, line], else: [since_date, limit, since_hour]
 
     case Repo.query(query, params) do
       {:ok, %{rows: rows}} ->

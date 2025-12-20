@@ -61,12 +61,25 @@ defmodule WawTrams.HourlyIntersectionStat do
   @doc """
   Returns aggregated stats for a date range.
   Used by Summary.stats/1.
+
+  Accepts either a Date or DateTime for the :since option.
+  When a DateTime is provided, it properly filters by (date, hour) to handle partial days.
   """
   def aggregate_stats(opts \\ []) do
-    since_date = Keyword.get(opts, :since, Date.add(Date.utc_today(), -7))
+    since = Keyword.get(opts, :since, Date.add(Date.utc_today(), -7))
     line = Keyword.get(opts, :line, nil)
 
-    query = from(s in __MODULE__, where: s.date >= ^since_date)
+    # Handle both Date and DateTime inputs
+    {since_date, since_hour} = case since do
+      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+      %Date{} = d -> {d, 0}
+    end
+
+    # Build query that handles partial days correctly
+    # Include: full days after since_date, OR since_date with hour >= since_hour
+    query = from(s in __MODULE__,
+      where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
+    )
 
     query =
       if line do
@@ -203,12 +216,21 @@ defmodule WawTrams.HourlyIntersectionStat do
 
   @doc """
   Counts unique intersection clusters in a date range.
+  Accepts either a Date or DateTime for the :since option.
   """
   def count_intersections(opts \\ []) do
-    since_date = Keyword.get(opts, :since, Date.add(Date.utc_today(), -7))
+    since = Keyword.get(opts, :since, Date.add(Date.utc_today(), -7))
     line = Keyword.get(opts, :line, nil)
 
-    query = from(s in __MODULE__, where: s.date >= ^since_date)
+    # Handle both Date and DateTime inputs
+    {since_date, since_hour} = case since do
+      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+      %Date{} = d -> {d, 0}
+    end
+
+    query = from(s in __MODULE__,
+      where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
+    )
 
     query =
       if line do
