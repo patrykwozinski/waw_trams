@@ -18,13 +18,11 @@ defmodule WawTramsWeb.Router do
   scope "/", WawTramsWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-
     live_session :default, on_mount: WawTramsWeb.LocaleHook do
+      live "/", AuditLive
       live "/dashboard", DashboardLive
       live "/line", LineLive
       live "/line/:line", LineLive
-      live "/audit", AuditLive
     end
   end
 

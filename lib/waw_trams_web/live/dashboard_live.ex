@@ -91,84 +91,45 @@ defmodule WawTramsWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gray-950 text-gray-100">
-      <div class="max-w-[1600px] mx-auto px-6 py-8">
-        <%!-- Header --%>
+    <div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+      <%!-- Site Header --%>
+      <Layouts.site_header active={:dashboard} locale={@locale} show_locale_switcher />
+
+      <div class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
+        <%!-- Page Header --%>
         <div class="mb-8 flex flex-wrap items-start justify-between gap-6">
           <div>
             <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
-              🚋 {gettext("Warsaw Tram Delays")}
+              📊 {gettext("Real-time Dashboard")}
             </h1>
             <p class="text-gray-400 mt-1">
-              {gettext("Real-time delay monitoring")} • {gettext("Updated")} {format_time(
-                @last_updated
-              )}
+              {gettext("Live delay monitoring")} • {gettext("Updated")} {format_time(@last_updated)}
             </p>
           </div>
 
-          <div class="flex flex-col items-end gap-3">
-            <%!-- Language Switcher + Navigation --%>
-            <div class="flex gap-2 items-center">
-              <div class="flex gap-1 bg-gray-800 rounded-lg p-1">
-                <.link
-                  patch={~p"/dashboard?locale=en"}
-                  class={[
-                    "px-2 py-1 rounded text-xs font-medium transition-colors",
-                    @locale == "en" && "bg-amber-500 text-gray-900",
-                    @locale != "en" && "text-gray-400 hover:text-gray-200"
-                  ]}
-                >
-                  EN
-                </.link>
-                <.link
-                  patch={~p"/dashboard?locale=pl"}
-                  class={[
-                    "px-2 py-1 rounded text-xs font-medium transition-colors",
-                    @locale == "pl" && "bg-amber-500 text-gray-900",
-                    @locale != "pl" && "text-gray-400 hover:text-gray-200"
-                  ]}
-                >
-                  PL
-                </.link>
+          <%!-- Legend --%>
+          <div class="bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-800 text-sm">
+            <div class="text-gray-400 font-medium mb-2">{gettext("Classification Legend")}</div>
+            <div class="flex flex-wrap gap-x-6 gap-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
+                  {gettext("delay")}
+                </span>
+                <span class="text-gray-500">{gettext("30s – 3min stop")}</span>
               </div>
-              <.link
-                navigate={~p"/line"}
-                class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-              >
-                🚋 {gettext("By Line")}
-              </.link>
-              <.link
-                navigate={~p"/audit"}
-                class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm transition-colors"
-              >
-                🚨 {gettext("Audit")}
-              </.link>
-            </div>
-
-            <%!-- Legend --%>
-            <div class="bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-800 text-sm">
-              <div class="text-gray-400 font-medium mb-2">{gettext("Classification Legend")}</div>
-              <div class="flex flex-wrap gap-x-6 gap-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
-                    {gettext("delay")}
-                  </span>
-                  <span class="text-gray-500">{gettext("30s – 3min stop")}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
-                    {gettext("blockage")}
-                  </span>
-                  <span class="text-gray-500">{gettext("> 3min stop")}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-purple-400">⚡</span>
-                  <span class="text-gray-500">{gettext("priority failure (>120s)")}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-orange-400">⚠️</span>
-                  <span class="text-gray-500">{gettext("near traffic signal")}</span>
-                </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+                  {gettext("blockage")}
+                </span>
+                <span class="text-gray-500">{gettext("> 3min stop")}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-purple-400">⚡</span>
+                <span class="text-gray-500">{gettext("priority failure (>120s)")}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-orange-400">⚠️</span>
+                <span class="text-gray-500">{gettext("near traffic signal")}</span>
               </div>
             </div>
           </div>
@@ -210,7 +171,7 @@ defmodule WawTramsWeb.DashboardLive do
                 <p class="text-gray-500 text-sm mt-1">{gettext("Top 10 by delay count (24h)")}</p>
               </div>
               <.link
-                navigate={~p"/audit"}
+                navigate={~p"/"}
                 class="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 transition-colors"
               >
                 🚨 {gettext("Audit")}
@@ -451,12 +412,10 @@ defmodule WawTramsWeb.DashboardLive do
             </div>
           </div>
         </div>
-
-        <%!-- Footer --%>
-        <div class="mt-8 text-center text-gray-600 text-sm">
-          {gettext("Data source")}: GTFS-RT via mkuran.pl • {gettext("Polling every 10s")}
-        </div>
       </div>
+
+      <%!-- Site Footer --%>
+      <Layouts.site_footer />
     </div>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".LiveTimer">

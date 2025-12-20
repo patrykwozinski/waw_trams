@@ -54,9 +54,12 @@ defmodule WawTramsWeb.LineLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gray-950 text-gray-100">
-      <div class="max-w-[1600px] mx-auto px-6 py-8">
-        <%!-- Header --%>
+    <div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+      <%!-- Site Header --%>
+      <Layouts.site_header active={:line} />
+
+      <div class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
+        <%!-- Page Header --%>
         <div class="mb-8">
           <h1 class="text-3xl font-bold text-amber-400 tracking-tight">
             🚋 {gettext("Line Analysis")}
@@ -294,14 +297,10 @@ defmodule WawTramsWeb.LineLive do
             <p class="text-gray-400">{gettext("Select a tram line to see delay analysis")}</p>
           </div>
         <% end %>
-
-        <%!-- Back link --%>
-        <div class="mt-8 text-center">
-          <.link navigate={~p"/dashboard"} class="text-gray-500 hover:text-white text-sm">
-            ← {gettext("Back to Dashboard")}
-          </.link>
-        </div>
       </div>
+
+      <%!-- Site Footer --%>
+      <Layouts.site_footer />
     </div>
     """
   end

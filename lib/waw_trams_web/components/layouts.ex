@@ -35,40 +35,112 @@ defmodule WawTramsWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
+    {render_slot(@inner_block)}
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
+  Shared header for all pages with navigation.
+  """
+  attr :active, :atom, default: nil, doc: "the active page (:audit, :dashboard, :line)"
+  attr :locale, :string, default: "en", doc: "current locale for language switcher"
+  attr :show_locale_switcher, :boolean, default: false, doc: "whether to show language switcher"
+
+  def site_header(assigns) do
+    ~H"""
+    <header class="bg-gray-900 border-b border-gray-800 px-4 md:px-6 py-3">
+      <div class="flex items-center justify-between max-w-[1600px] mx-auto">
+        <a href="/" class="flex items-center gap-2 group">
+          <span class="text-2xl">🚋</span>
+          <span class="font-bold text-white group-hover:text-amber-400 transition-colors hidden sm:inline">
+            Warsaw Tram Auditor
+          </span>
         </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
+
+        <nav class="flex items-center gap-2 md:gap-4">
+          <.link
+            navigate="/"
+            class={[
+              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+              @active == :audit && "bg-red-500/20 text-red-400",
+              @active != :audit && "text-gray-400 hover:text-white hover:bg-gray-800"
+            ]}
+          >
+            <span class="hidden md:inline">🚨</span> {gettext("Audit")}
+          </.link>
+          <.link
+            navigate="/dashboard"
+            class={[
+              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+              @active == :dashboard && "bg-amber-500/20 text-amber-400",
+              @active != :dashboard && "text-gray-400 hover:text-white hover:bg-gray-800"
+            ]}
+          >
+            <span class="hidden md:inline">📊</span> {gettext("Dashboard")}
+          </.link>
+          <.link
+            navigate="/line"
+            class={[
+              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+              @active == :line && "bg-amber-500/20 text-amber-400",
+              @active != :line && "text-gray-400 hover:text-white hover:bg-gray-800"
+            ]}
+          >
+            <span class="hidden md:inline">🚋</span> {gettext("By Line")}
+          </.link>
+
+          <%= if @show_locale_switcher do %>
+            <div class="flex gap-1 bg-gray-800 rounded-lg p-1 ml-2">
+              <.link
+                patch="?locale=en"
+                class={[
+                  "px-2 py-1 rounded text-xs font-medium transition-colors",
+                  @locale == "en" && "bg-amber-500 text-gray-900",
+                  @locale != "en" && "text-gray-400 hover:text-gray-200"
+                ]}
+              >
+                EN
+              </.link>
+              <.link
+                patch="?locale=pl"
+                class={[
+                  "px-2 py-1 rounded text-xs font-medium transition-colors",
+                  @locale == "pl" && "bg-amber-500 text-gray-900",
+                  @locale != "pl" && "text-gray-400 hover:text-gray-200"
+                ]}
+              >
+                PL
+              </.link>
+            </div>
+          <% end %>
+        </nav>
       </div>
     </header>
+    """
+  end
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
+  @doc """
+  Shared footer for all pages.
+  """
+  def site_footer(assigns) do
+    ~H"""
+    <footer class="bg-gray-900 border-t border-gray-800 py-4 px-4 md:px-6">
+      <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-500">
+        <div>
+          {gettext("Data source")}: GTFS-RT via mkuran.pl • {gettext("Polling every 10s")}
+        </div>
+        <div class="flex items-center gap-4">
+          <a
+            href="https://github.com/patrykwozinski/waw_trams"
+            target="_blank"
+            class="hover:text-white transition-colors"
+          >
+            GitHub
+          </a>
+        </div>
       </div>
-    </main>
-
-    <.flash_group flash={@flash} />
+    </footer>
     """
   end
 

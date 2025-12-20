@@ -39,14 +39,14 @@ mix waw_trams.import_line_terminals  # ~172 line-specific terminals
 mix phx.server
 ```
 
-Visit http://localhost:4000/dashboard
+Visit http://localhost:4000
 
-## Dashboard & Analytics
+## Pages & Navigation
 
 | Route | Description |
 |-------|-------------|
+| `/` | 🚨 **Infrastructure Report Card** — worst intersections ranked by economic cost (homepage) |
 | `/dashboard` | Real-time delays, hot spots, impacted lines |
-| `/audit` | 🚨 **Infrastructure Report Card** — worst intersections ranked by economic cost |
 | `/line/:number` | Per-line analysis with hourly breakdown |
 
 **Language:** Switch between 🇬🇧 English and 🇵🇱 Polish via header buttons.

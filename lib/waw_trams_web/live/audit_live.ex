@@ -206,9 +206,12 @@ defmodule WawTramsWeb.AuditLive do
         </div>
       <% end %>
 
-      <%!-- Header with big numbers --%>
-      <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-900 border-b border-gray-800">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 md:mb-4">
+      <%!-- Site Header --%>
+      <Layouts.site_header active={:audit} />
+
+      <%!-- Content Header with filters and stats --%>
+      <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-900/50 border-b border-gray-800">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 md:mb-4 max-w-[1600px] mx-auto">
           <div>
             <h1 class="text-xl md:text-2xl font-bold text-red-400">
               🚨 {gettext("Infrastructure Report Card")}
@@ -244,18 +247,11 @@ defmodule WawTramsWeb.AuditLive do
                 <% end %>
               </select>
             </form>
-
-            <.link
-              navigate={~p"/dashboard"}
-              class="text-gray-400 hover:text-white text-xs md:text-sm hidden md:inline"
-            >
-              ← {gettext("Back to Dashboard")}
-            </.link>
           </div>
         </div>
 
         <%!-- Big numbers - responsive grid --%>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 max-w-[1600px] mx-auto">
           <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
             <div class="text-xl md:text-3xl font-bold text-red-400">
               {format_cost(@stats.cost.total)}
