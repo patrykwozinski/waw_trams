@@ -89,14 +89,23 @@ defmodule WawTramsWeb.AuditLive do
   def handle_info({:delay_resolved, event}, socket) do
     # Delay resolved - NOW we know the final duration and cost
     if event.near_intersection do
-      # Pulse animation at the resolved location
-      socket = push_event(socket, "pulse", %{lat: event.lat, lon: event.lon})
-
-      # Update stats with final duration and cost
-      stats = socket.assigns.stats
+      # Calculate final cost
       duration = event.duration_seconds || 0
       hour = DateTime.utc_now().hour
       cost = WawTrams.Audit.CostCalculator.calculate(duration, hour)
+
+      # Pulse animation with line and cost info
+      socket =
+        push_event(socket, "pulse", %{
+          lat: event.lat,
+          lon: event.lon,
+          line: event.line,
+          duration: duration,
+          cost: cost.total
+        })
+
+      # Update stats with final duration and cost
+      stats = socket.assigns.stats
 
       updated_stats = %{
         stats

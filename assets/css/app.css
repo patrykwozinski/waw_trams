@@ -199,6 +199,60 @@ a[href],
   }
 }
 
+/* Pulse info popup (shows line, duration, cost) */
+.pulse-info {
+  pointer-events: none;
+}
+
+.pulse-info-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.3);
+  animation: pulse-info-fade 3.5s ease-out forwards;
+}
+
+.pulse-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fbbf24;
+}
+
+.pulse-duration {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.pulse-cost {
+  font-weight: 600;
+  font-size: 12px;
+  color: #ef4444;
+}
+
+@keyframes pulse-info-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
 /* Leaderboard animations */
 .leaderboard-item {
   will-change: transform;

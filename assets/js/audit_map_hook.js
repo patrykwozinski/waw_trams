@@ -59,8 +59,8 @@ const AuditMapHook = {
     })
 
     // Handle pulse event for real-time delay notifications
-    this.handleEvent("pulse", ({ lat, lon }) => {
-      this.createPulse(lat, lon)
+    this.handleEvent("pulse", ({ lat, lon, line, duration, cost }) => {
+      this.createPulse(lat, lon, line, duration, cost)
     })
 
     // Request initial data
@@ -139,7 +139,7 @@ const AuditMapHook = {
     this.map.flyTo([lat, lon], 16, { animate: true, duration: 0.8 })
   },
 
-  createPulse(lat, lon) {
+  createPulse(lat, lon, line, duration, cost) {
     // Create expanding ring animation at the delay location
     const pulseIcon = L.divIcon({
       className: "pulse-marker",
@@ -149,7 +149,31 @@ const AuditMapHook = {
 
     const pulseMarker = L.marker([lat, lon], { icon: pulseIcon, interactive: false }).addTo(this.map)
 
-    // Remove after animation completes
+    // Create info popup with line and cost
+    if (line && cost) {
+      const durationText = this.formatDuration(duration)
+      const costText = this.formatCost(cost)
+      
+      const infoIcon = L.divIcon({
+        className: "pulse-info",
+        html: `<div class="pulse-info-content">
+          <span class="pulse-line">L${line}</span>
+          <span class="pulse-duration">${durationText}</span>
+          <span class="pulse-cost">${costText}</span>
+        </div>`,
+        iconSize: [80, 50],
+        iconAnchor: [40, -10],  // Position above the pulse
+      })
+      
+      const infoMarker = L.marker([lat, lon], { icon: infoIcon, interactive: false }).addTo(this.map)
+      
+      // Fade out info after delay
+      setTimeout(() => {
+        infoMarker.remove()
+      }, 3500)
+    }
+
+    // Remove pulse after animation completes
     setTimeout(() => {
       pulseMarker.remove()
     }, 2500)
@@ -178,6 +202,14 @@ const AuditMapHook = {
         }, 400)
       }
     })
+  },
+
+  formatDuration(seconds) {
+    if (!seconds) return ""
+    if (seconds < 60) return `${seconds}s`
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`
   },
 
   formatCost(amount) {
