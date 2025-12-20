@@ -135,6 +135,9 @@ mix credo
 - [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
 
+### For Deployment
+- [**Fly.io Deployment**](guides/deployment.md) — Deploy for ~$5/month with cost protection
+
 ## License
 
 TBD

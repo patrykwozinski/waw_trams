@@ -1,9 +1,9 @@
 # Dockerfile for Fly.io deployment
 # Based on Phoenix 1.8 recommended setup
 
-ARG ELIXIR_VERSION=1.16.3
-ARG OTP_VERSION=26.2.5
-ARG DEBIAN_VERSION=bookworm-20240701-slim
+ARG ELIXIR_VERSION=1.17.3
+ARG OTP_VERSION=27.1.2
+ARG DEBIAN_VERSION=bookworm-20241016-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -80,4 +80,3 @@ RUN echo '#!/bin/sh\n/app/bin/waw_trams eval "WawTrams.Release.migrate"' > /app/
     chmod +x /app/bin/migrate
 
 CMD ["/app/bin/server"]
-
