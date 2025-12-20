@@ -93,7 +93,7 @@ defmodule WawTramsWeb.DashboardLive do
     ~H"""
     <div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
       <%!-- Site Header --%>
-      <Layouts.site_header active={:dashboard} locale={@locale} show_locale_switcher />
+      <Layouts.site_header active={:dashboard} />
 
       <div class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
         <%!-- Page Header --%>

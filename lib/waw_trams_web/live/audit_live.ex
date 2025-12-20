@@ -209,83 +209,61 @@ defmodule WawTramsWeb.AuditLive do
       <%!-- Site Header --%>
       <Layouts.site_header active={:audit} />
 
-      <%!-- Content Header with filters and stats --%>
-      <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-900/50 border-b border-gray-800">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 md:mb-4 max-w-[1600px] mx-auto">
-          <div>
-            <h1 class="text-xl md:text-2xl font-bold text-red-400">
-              🚨 {gettext("Infrastructure Report Card")}
+      <%!-- Hero Section - The Headline --%>
+      <div class="px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-gray-900 to-gray-950 border-b border-gray-800">
+        <div class="max-w-[1600px] mx-auto">
+          <%!-- Filters row --%>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2 md:gap-4">
+              <form phx-change="change_date_range" class="inline">
+                <select
+                  name="range"
+                  class="bg-gray-800 border border-gray-700 rounded px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-gray-300"
+                >
+                  <option value="24h" selected={@date_range == "24h"}>{gettext("Last 24h")}</option>
+                  <option value="7d" selected={@date_range == "7d"}>{gettext("Last 7 days")}</option>
+                  <option value="30d" selected={@date_range == "30d"}>{gettext("Last 30 days")}</option>
+                </select>
+              </form>
+              <form phx-change="change_line" class="inline">
+                <select
+                  name="line"
+                  class="bg-gray-800 border border-gray-700 rounded px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-gray-300"
+                >
+                  <option value="">{gettext("All lines")}</option>
+                  <%= for line <- 1..79 do %>
+                    <option value={to_string(line)} selected={@line_filter == to_string(line)}>
+                      {line}
+                    </option>
+                  <% end %>
+                </select>
+              </form>
+            </div>
+            <button
+              phx-click="toggle_methodology"
+              class="text-gray-400 hover:text-amber-400 transition-colors flex items-center gap-1 text-sm"
+              title={gettext("How is cost calculated?")}
+            >
+              <.icon name="hero-question-mark-circle" class="w-5 h-5" />
+              <span class="hidden md:inline">{gettext("How is this calculated?")}</span>
+            </button>
+          </div>
+
+          <%!-- Big Headline --%>
+          <div class="text-center">
+            <h1 class="text-3xl md:text-5xl font-bold mb-1">
+              <span class="text-red-400">{format_cost(@stats.cost.total)}</span>
+              <span class="text-white">{gettext("Wasted")}</span>
             </h1>
-            <p class="text-gray-500 text-xs md:text-sm hidden md:block">
-              {gettext("Where is money being wasted on tram delays?")}
+            <p class="text-sm md:text-base text-gray-400">
+              {period_label(@date_range)}
+              <span class="text-gray-600 mx-2">•</span>
+              {format_number(@stats.total_delays)} {gettext("delays")}
+              <span class="text-gray-600 mx-2">•</span>
+              <span class="text-purple-400">{format_number(@stats.multi_cycle_count)}</span> {gettext("priority failures")}
+              <span class="text-gray-600 mx-2">•</span>
+              <span class="text-amber-400">{@stats.total_hours_formatted}</span> {gettext("lost")}
             </p>
-          </div>
-          <div class="flex items-center gap-2 md:gap-4 flex-wrap">
-            <%!-- Date range filter --%>
-            <form phx-change="change_date_range" class="inline">
-              <select
-                name="range"
-                class="bg-gray-800 border border-gray-700 rounded px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-gray-300"
-              >
-                <option value="24h" selected={@date_range == "24h"}>{gettext("Last 24h")}</option>
-                <option value="7d" selected={@date_range == "7d"}>{gettext("Last 7 days")}</option>
-                <option value="30d" selected={@date_range == "30d"}>{gettext("Last 30 days")}</option>
-              </select>
-            </form>
-
-            <%!-- Line filter --%>
-            <form phx-change="change_line" class="inline">
-              <select
-                name="line"
-                class="bg-gray-800 border border-gray-700 rounded px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-gray-300"
-              >
-                <option value="">{gettext("All lines")}</option>
-                <%= for line <- 1..79 do %>
-                  <option value={to_string(line)} selected={@line_filter == to_string(line)}>
-                    {line}
-                  </option>
-                <% end %>
-              </select>
-            </form>
-          </div>
-        </div>
-
-        <%!-- Big numbers - responsive grid --%>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 max-w-[1600px] mx-auto">
-          <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
-            <div class="text-xl md:text-3xl font-bold text-red-400">
-              {format_cost(@stats.cost.total)}
-            </div>
-            <div class="text-gray-500 text-xs md:text-sm flex items-center gap-2">
-              {gettext("Cost at Intersections")}
-              <button
-                phx-click="toggle_methodology"
-                class="text-amber-400 hover:text-amber-300 bg-gray-700 hover:bg-gray-600 rounded-full p-1 transition-colors"
-                title={gettext("How is cost calculated?")}
-              >
-                <.icon name="hero-question-mark-circle" class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
-            <div class="text-xl md:text-3xl font-bold text-amber-400">
-              {@stats.total_hours_formatted}
-            </div>
-            <div class="text-gray-500 text-xs md:text-sm">
-              {gettext("Time Lost at Intersections")}
-            </div>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
-            <div class="text-xl md:text-3xl font-bold text-orange-400">
-              {format_number(@stats.total_delays)}
-            </div>
-            <div class="text-gray-500 text-xs md:text-sm">{gettext("Intersection Delays")}</div>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2 md:p-4 border border-gray-700">
-            <div class="text-xl md:text-3xl font-bold text-purple-400">
-              {format_number(@stats.multi_cycle_count)}
-            </div>
-            <div class="text-gray-500 text-xs md:text-sm">{gettext("Priority Failures")}</div>
           </div>
         </div>
       </div>
@@ -532,14 +510,9 @@ defmodule WawTramsWeb.AuditLive do
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="font-bold text-red-400">
+                  <div class="font-bold text-red-400 text-lg">
                     {format_cost(spot.cost.total)}
                   </div>
-                  <%= if spot.multi_cycle_pct > 0 do %>
-                    <div class="text-xs text-purple-400">
-                      ⚡ {Float.round(spot.multi_cycle_pct, 0)}% {gettext("priority failures")}
-                    </div>
-                  <% end %>
                 </div>
               </div>
             </div>
@@ -692,6 +665,11 @@ defmodule WawTramsWeb.AuditLive do
   end
 
   defp format_duration(_), do: "0s"
+
+  defp period_label("24h"), do: gettext("Today")
+  defp period_label("7d"), do: gettext("This Week")
+  defp period_label("30d"), do: gettext("This Month")
+  defp period_label(_), do: ""
 
   defp severity_class(:red), do: "severity-red"
   defp severity_class(:orange), do: "severity-orange"

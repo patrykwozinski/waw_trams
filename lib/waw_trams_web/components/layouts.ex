@@ -44,8 +44,6 @@ defmodule WawTramsWeb.Layouts do
   Shared header for all pages with navigation.
   """
   attr :active, :atom, default: nil, doc: "the active page (:audit, :dashboard, :line)"
-  attr :locale, :string, default: "en", doc: "current locale for language switcher"
-  attr :show_locale_switcher, :boolean, default: false, doc: "whether to show language switcher"
 
   def site_header(assigns) do
     ~H"""
@@ -90,30 +88,29 @@ defmodule WawTramsWeb.Layouts do
             <span class="hidden md:inline">🚋</span> {gettext("By Line")}
           </.link>
 
-          <%= if @show_locale_switcher do %>
-            <div class="flex gap-1 bg-gray-800 rounded-lg p-1 ml-2">
-              <.link
-                patch="?locale=en"
-                class={[
-                  "px-2 py-1 rounded text-xs font-medium transition-colors",
-                  @locale == "en" && "bg-amber-500 text-gray-900",
-                  @locale != "en" && "text-gray-400 hover:text-gray-200"
-                ]}
-              >
-                EN
-              </.link>
-              <.link
-                patch="?locale=pl"
-                class={[
-                  "px-2 py-1 rounded text-xs font-medium transition-colors",
-                  @locale == "pl" && "bg-amber-500 text-gray-900",
-                  @locale != "pl" && "text-gray-400 hover:text-gray-200"
-                ]}
-              >
-                PL
-              </.link>
-            </div>
-          <% end %>
+          <%!-- Language Switcher --%>
+          <div class="flex gap-1 bg-gray-800 rounded-lg p-1 ml-2">
+            <a
+              href="?locale=en"
+              class={[
+                "px-2 py-1 rounded text-xs font-medium transition-colors",
+                Gettext.get_locale(WawTramsWeb.Gettext) == "en" && "bg-amber-500 text-gray-900",
+                Gettext.get_locale(WawTramsWeb.Gettext) != "en" && "text-gray-400 hover:text-gray-200"
+              ]}
+            >
+              EN
+            </a>
+            <a
+              href="?locale=pl"
+              class={[
+                "px-2 py-1 rounded text-xs font-medium transition-colors",
+                Gettext.get_locale(WawTramsWeb.Gettext) == "pl" && "bg-amber-500 text-gray-900",
+                Gettext.get_locale(WawTramsWeb.Gettext) != "pl" && "text-gray-400 hover:text-gray-200"
+              ]}
+            >
+              PL
+            </a>
+          </div>
         </nav>
       </div>
     </header>
