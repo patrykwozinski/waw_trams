@@ -70,16 +70,18 @@ defmodule WawTrams.HourlyIntersectionStat do
     line = Keyword.get(opts, :line, nil)
 
     # Handle both Date and DateTime inputs
-    {since_date, since_hour} = case since do
-      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
-      %Date{} = d -> {d, 0}
-    end
+    {since_date, since_hour} =
+      case since do
+        %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+        %Date{} = d -> {d, 0}
+      end
 
     # Build query that handles partial days correctly
     # Include: full days after since_date, OR since_date with hour >= since_hour
-    query = from(s in __MODULE__,
-      where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
-    )
+    query =
+      from(s in __MODULE__,
+        where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
+      )
 
     query =
       if line do
@@ -223,14 +225,16 @@ defmodule WawTrams.HourlyIntersectionStat do
     line = Keyword.get(opts, :line, nil)
 
     # Handle both Date and DateTime inputs
-    {since_date, since_hour} = case since do
-      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
-      %Date{} = d -> {d, 0}
-    end
+    {since_date, since_hour} =
+      case since do
+        %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+        %Date{} = d -> {d, 0}
+      end
 
-    query = from(s in __MODULE__,
-      where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
-    )
+    query =
+      from(s in __MODULE__,
+        where: s.date > ^since_date or (s.date == ^since_date and s.hour >= ^since_hour)
+      )
 
     query =
       if line do

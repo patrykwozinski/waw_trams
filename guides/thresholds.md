@@ -161,59 +161,10 @@ Position Update (10s)
 
 ---
 
-## 7. Performance Optimizations
-
-### TramWorker Spatial Cache
-
-| Optimization | Description |
-|--------------|-------------|
-| **Spatial cache** | `at_stop`, `near_intersection`, `at_terminal` cached per stop location |
-| **Cache invalidation** | Cleared when tram moves, recalculated on next stop |
-
-**DB calls per update:**
-- Moving: **1 call** (resolve delay if active)
-- Stopped (first check): **3 calls** (spatial queries, cached)
-- Stopped (subsequent): **0 calls** (using cache)
-- Creating delay: **1 call** (insert)
-
-### Query Cache (ETS)
-
-Expensive aggregation queries are cached to support $5/month hosting:
-
-| Query | TTL | Purpose |
-|-------|-----|---------|
-| Audit stats | 30s | City-wide summary |
-| Audit leaderboard | 60s | Top intersections (spatial clustering) |
-| Dashboard queries | 10s | Stats, hot spots, impacted lines |
-
-**DB calls with 100 concurrent users:**
-- Without cache: ~7,800/min
-- With cache: ~60/min (**99% reduction**)
-
-**Real-time unaffected:** PubSub events update UI instantly without touching the cache or database.
-
----
-
-## 8. Code References
-
-```elixir
-# lib/waw_trams/tram_worker.ex
-@speed_threshold_kmh 3.0
-@idle_timeout_ms 5 * 60 * 1000
-
-# lib/waw_trams/stop.ex
-def near_stop?(lat, lon, radius_meters \\ 50)
-
-# lib/waw_trams/intersection.ex
-def near_intersection?(lat, lon, radius_meters \\ 50)
-
-# lib/waw_trams/tram_worker.ex - classify_delay/2
-180  # seconds at stop → blockage
-30   # seconds not at stop → delay
-```
-
----
-
 **Project:** Warsaw Tram Priority Auditor  
 **Goal:** Identify intersections causing systematic delays for transit priority advocacy  
 **Data:** GTFS-RT (mkuran.pl) + OpenStreetMap intersections
+
+---
+
+*For technical implementation details, see [Performance](performance.md) and [Architecture](architecture.md).*

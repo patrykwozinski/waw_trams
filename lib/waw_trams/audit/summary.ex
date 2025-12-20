@@ -172,10 +172,11 @@ defmodule WawTrams.Audit.Summary do
     line = Keyword.get(opts, :line, nil)
 
     # Extract date and hour for proper partial-day filtering
-    {since_date, since_hour} = case since do
-      %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
-      %Date{} = d -> {d, 0}
-    end
+    {since_date, since_hour} =
+      case since do
+        %DateTime{} = dt -> {DateTime.to_date(dt), dt.hour}
+        %Date{} = d -> {d, 0}
+      end
 
     # Use spatial clustering to group nearby points (~55m radius)
     # This handles cases where the same physical intersection has slightly different coordinates
@@ -248,7 +249,8 @@ defmodule WawTrams.Audit.Summary do
     """
 
     # Params: $1=since_date, $2=limit, $3=since_hour, $4=line (optional)
-    params = if line, do: [since_date, limit, since_hour, line], else: [since_date, limit, since_hour]
+    params =
+      if line, do: [since_date, limit, since_hour, line], else: [since_date, limit, since_hour]
 
     case Repo.query(query, params) do
       {:ok, %{rows: rows}} ->

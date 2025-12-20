@@ -21,7 +21,7 @@ defmodule WawTrams.Cache do
 
   - Audit stats: 30 seconds
   - Audit leaderboard: 60 seconds
-  - Dashboard queries: 10 seconds (needs to feel more live)
+  - Dashboard queries: 30 seconds (matches refresh interval)
 
   Real-time delay events update the UI instantly via PubSub,
   so slightly stale aggregate numbers are acceptable.
@@ -33,7 +33,7 @@ defmodule WawTrams.Cache do
   @table_name :waw_trams_cache
   @audit_stats_ttl_ms 30_000
   @audit_leaderboard_ttl_ms 60_000
-  @dashboard_ttl_ms 10_000
+  @dashboard_ttl_ms 30_000
   @cleanup_interval_ms 60_000
 
   # --- Client API ---
@@ -100,21 +100,23 @@ defmodule WawTrams.Cache do
 
   @doc """
   Get cached dashboard hot spots.
+  Uses the fast aggregated version for ~15x better performance.
   """
   def get_dashboard_hot_spots(opts \\ []) do
     key = {:dashboard_hot_spots, opts[:limit]}
 
     fetch_cached(key, @dashboard_ttl_ms, fn ->
-      WawTrams.Queries.HotSpots.hot_spots(opts)
+      WawTrams.Queries.HotSpots.hot_spots_fast(opts)
     end)
   end
 
   @doc """
   Get cached dashboard hot spot summary.
+  Uses the fast aggregated version for better performance.
   """
   def get_dashboard_hot_spot_summary do
     fetch_cached(:dashboard_hot_spot_summary, @dashboard_ttl_ms, fn ->
-      WawTrams.Queries.HotSpots.hot_spot_summary()
+      WawTrams.Queries.HotSpots.hot_spot_summary_fast()
     end)
   end
 

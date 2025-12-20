@@ -117,8 +117,9 @@ mix credo
 
 ### For Developers
 - [Architecture](guides/architecture.md) — OTP supervision tree, data flow
+- [Performance](guides/performance.md) — Caching, optimization, scaling
 - [Data Sources](guides/data_sources.md) — How to import stops, intersections, terminals
-- [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation for performance
+- [Data Aggregation](guides/data_aggregation.md) — Hourly aggregation strategy
 - [API Reference](guides/api.md) — Query functions and Mix tasks
 
 ## License

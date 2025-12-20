@@ -25,19 +25,7 @@ GenServer that fetches GTFS-Realtime vehicle positions every 10 seconds from mku
 
 ### Cache
 
-GenServer managing an ETS-based query cache. Reduces database load by caching expensive aggregation queries with TTL:
-
-| Query Type | TTL | Purpose |
-|------------|-----|---------|
-| Audit stats | 30s | Summary statistics for audit page |
-| Audit leaderboard | 60s | Top intersections (expensive spatial query) |
-| Dashboard stats | 10s | Period stats, hot spots, impacted lines |
-
-**Key features:**
-- Zero external dependencies (uses built-in ETS)
-- Auto-cleanup of expired entries every 60s
-- Invalidated when HourlyAggregator runs
-- Graceful handling of startup race conditions
+GenServer managing an ETS-based query cache. Reduces database load by caching expensive aggregation queries (30-60s TTL). See [Performance](performance.md) for details.
 
 ### HourlyAggregator
 
@@ -142,11 +130,7 @@ Database (aggregated tables)
 
 ### Query Caching Strategy
 
-Real-time updates via PubSub are **NOT cached** — they update the UI instantly without touching the database.
+Real-time updates via PubSub are **NOT cached** — they update the UI instantly without touching the database. Periodic refreshes use cached data (TTL 10-60s) to reduce database load.
 
-Cached queries (on page load, periodic refresh):
-- Audit: `stats/1`, `leaderboard/1` — 30-60s TTL
-- Dashboard: `for_period/0`, `hot_spots/1`, `impacted_lines/1` — 10s TTL
-
-**Impact:** With 100 concurrent users, DB queries reduced from ~7,800/min to ~60/min (~99% reduction).
+See [Performance](performance.md) for detailed cache configuration and scaling analysis.
 
