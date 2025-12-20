@@ -28,7 +28,7 @@ defmodule WawTramsWeb.AuditLive do
     socket =
       socket
       |> assign(:page_title, gettext("Infrastructure Report Card"))
-      |> assign(:date_range, "7d")
+      |> assign(:date_range, "24h")
       |> assign(:line_filter, nil)
       |> assign(:selected, nil)
       |> assign(:loading, true)
@@ -292,7 +292,7 @@ defmodule WawTramsWeb.AuditLive do
   defp get_since("24h"), do: DateTime.add(DateTime.utc_now(), -1, :day)
   defp get_since("7d"), do: DateTime.add(DateTime.utc_now(), -7, :day)
   defp get_since("30d"), do: DateTime.add(DateTime.utc_now(), -30, :day)
-  defp get_since(_), do: DateTime.add(DateTime.utc_now(), -7, :day)
+  defp get_since(_), do: DateTime.add(DateTime.utc_now(), -1, :day)
 
   @impl true
   def render(assigns) do
