@@ -77,29 +77,22 @@ defmodule WawTrams.Queries.HotSpots do
       h.total_delay_seconds,
       h.avg_delay_seconds,
       h.affected_lines,
-      COALESCE(
-        (
-          SELECT i.name
-          FROM intersections i
-          WHERE i.name IS NOT NULL AND i.name != ''
-            AND ST_DWithin(i.geom::geography, h.centroid::geography, 100)
-          ORDER BY i.geom::geography <-> h.centroid::geography
-          LIMIT 1
-        ),
-        (
-          SELECT s.name
-          FROM stops s
-          WHERE NOT s.is_terminal
-          ORDER BY s.geom::geography <-> h.centroid::geography
-          LIMIT 1
-        )
-      ) as location_name,
-      EXISTS (
-        SELECT 1 FROM intersections i
-        WHERE i.name IS NOT NULL AND i.name != ''
-          AND ST_DWithin(i.geom::geography, h.centroid::geography, 100)
-      ) as is_intersection
+      COALESCE(loc.intersection_name, loc.stop_name) as location_name,
+      loc.intersection_name IS NOT NULL as is_intersection
     FROM hot_spot_data h
+    CROSS JOIN LATERAL (
+      SELECT
+        (SELECT i.name FROM intersections i
+         WHERE i.name IS NOT NULL AND i.name != ''
+           AND ST_DWithin(i.geom::geography, h.centroid::geography, 100)
+         ORDER BY i.geom::geography <-> h.centroid::geography
+         LIMIT 1) as intersection_name,
+        (SELECT s.name FROM stops s
+         WHERE NOT s.is_terminal
+           AND ST_DWithin(s.geom::geography, h.centroid::geography, 500)
+         ORDER BY s.geom::geography <-> h.centroid::geography
+         LIMIT 1) as stop_name
+    ) loc
     ORDER BY h.delay_count DESC, h.total_delay_seconds DESC
     LIMIT $3
     """
@@ -137,6 +130,12 @@ defmodule WawTrams.Queries.HotSpots do
     end
   end
 
+  @spec hot_spot_summary() :: %{
+          intersection_count: any(),
+          total_delay_minutes: integer(),
+          total_delay_seconds: false | nil | integer(),
+          total_delays: any()
+        }
   @doc """
   Returns summary of hot spot data for quick overview.
   Counts clustered intersections (not individual OSM nodes).

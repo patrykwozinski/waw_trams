@@ -195,26 +195,22 @@ defmodule WawTrams.Audit.Summary do
       cs.multi_cycle_count,
       cs.total_seconds,
       cs.cost_pln,
-      COALESCE(
-        -- First try: intersection street name from OSM (within 100m)
-        (
-          SELECT i.name
-          FROM intersections i
-          WHERE i.name IS NOT NULL AND i.name != ''
-            AND ST_DWithin(i.geom::geography, ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography, 100)
-          ORDER BY i.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
-          LIMIT 1
-        ),
-        -- Fallback: nearest tram stop name
-        (
-          SELECT s.name
-          FROM stops s
-          WHERE NOT s.is_terminal
-          ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
-          LIMIT 1
-        )
-      ) as location_name
+      COALESCE(loc.intersection_name, loc.stop_name) as location_name,
+      loc.intersection_name IS NOT NULL as is_intersection
     FROM cluster_stats cs
+    CROSS JOIN LATERAL (
+      SELECT
+        (SELECT i.name FROM intersections i
+         WHERE i.name IS NOT NULL AND i.name != ''
+           AND ST_DWithin(i.geom::geography, ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography, 100)
+         ORDER BY i.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
+         LIMIT 1) as intersection_name,
+        (SELECT s.name FROM stops s
+         WHERE NOT s.is_terminal
+           AND ST_DWithin(s.geom::geography, ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography, 500)
+         ORDER BY s.geom::geography <-> ST_SetSRID(ST_MakePoint(cs.lon, cs.lat), 4326)::geography
+         LIMIT 1) as stop_name
+    ) loc
     ORDER BY cs.cost_pln DESC
     LIMIT $2
     """
@@ -225,7 +221,8 @@ defmodule WawTrams.Audit.Summary do
       {:ok, %{rows: rows}} ->
         rows
         |> Enum.with_index(1)
-        |> Enum.map(fn {[lat, lon, count, multi, total_sec, cost, stop_name], rank} ->
+        |> Enum.map(fn {[lat, lon, count, multi, total_sec, cost, stop_name, is_intersection],
+                        rank} ->
           count = count || 0
           multi = multi || 0
 
@@ -241,6 +238,7 @@ defmodule WawTrams.Audit.Summary do
             total_seconds: total_sec || 0,
             cost: %{total: Float.round((cost || 0) * 1.0, 2)},
             location_name: stop_name,
+            is_intersection: is_intersection,
             severity: severity_from_rank(rank)
           }
         end)

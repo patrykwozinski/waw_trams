@@ -166,29 +166,22 @@ defmodule WawTrams.Queries.LineAnalysis do
       cs.blockage_count,
       cs.total_seconds,
       cs.avg_seconds,
-      COALESCE(
-        (
-          SELECT i.name
-          FROM intersections i
-          WHERE i.name IS NOT NULL AND i.name != ''
-            AND ST_DWithin(i.geom::geography, cs.centroid::geography, 100)
-          ORDER BY i.geom::geography <-> cs.centroid::geography
-          LIMIT 1
-        ),
-        (
-          SELECT s.name
-          FROM stops s
-          WHERE NOT s.is_terminal
-          ORDER BY s.geom::geography <-> cs.centroid::geography
-          LIMIT 1
-        )
-      ) as location_name,
-      EXISTS (
-        SELECT 1 FROM intersections i
-        WHERE i.name IS NOT NULL AND i.name != ''
-          AND ST_DWithin(i.geom::geography, cs.centroid::geography, 100)
-      ) as is_intersection
+      COALESCE(loc.intersection_name, loc.stop_name) as location_name,
+      loc.intersection_name IS NOT NULL as is_intersection
     FROM cluster_stats cs
+    CROSS JOIN LATERAL (
+      SELECT
+        (SELECT i.name FROM intersections i
+         WHERE i.name IS NOT NULL AND i.name != ''
+           AND ST_DWithin(i.geom::geography, cs.centroid::geography, 100)
+         ORDER BY i.geom::geography <-> cs.centroid::geography
+         LIMIT 1) as intersection_name,
+        (SELECT s.name FROM stops s
+         WHERE NOT s.is_terminal
+           AND ST_DWithin(s.geom::geography, cs.centroid::geography, 500)
+         ORDER BY s.geom::geography <-> cs.centroid::geography
+         LIMIT 1) as stop_name
+    ) loc
     ORDER BY cs.total_seconds DESC, cs.event_count DESC
     LIMIT $3
     """
