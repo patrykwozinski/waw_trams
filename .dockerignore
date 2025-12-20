@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Elixir/Phoenix
+_build
+deps
+.elixir_ls
+*.ez
+*.beam
+erl_crash.dump
+
+# Node
+node_modules
+
+# Generated
+/assets/node_modules
+/priv/static/assets
+
+# Test
+/cover
+/test
+
+# Dev
+.env
+.env.local
+*.pem
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docs
+/doc
+/guides
+
+# CI/CD
+.github
+
+# Misc
+README.md
+CHANGELOG.md
+.formatter.exs
+.credo.exs
+fly.toml
+

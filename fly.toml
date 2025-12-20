@@ -1,0 +1,41 @@
+app = 'waw-trams'
+primary_region = 'ams'
+
+[build]
+
+[deploy]
+  release_command = '/app/bin/migrate'
+  strategy = 'rolling'
+
+[env]
+  PHX_HOST = 'waw-trams.fly.dev'
+  PORT = '8080'
+  POOL_SIZE = '5'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 1000
+    soft_limit = 1000
+
+  # Health check - Fly waits for this before routing traffic
+  [http_service.checks]
+    [http_service.checks.health]
+      interval = '10s'
+      timeout = '2s'
+      grace_period = '30s'
+      method = 'GET'
+      path = '/'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
