@@ -8,6 +8,8 @@ defmodule WawTramsWeb.AuditLive do
   use WawTramsWeb, :live_view
 
   alias WawTrams.Audit.{Summary, Intersection}
+  alias WawTramsWeb.Components.Audit.{MethodologyModal, Leaderboard, ReportCard}
+  import WawTramsWeb.Helpers.Formatters
 
   @refresh_interval :timer.seconds(30)
 
@@ -48,15 +50,17 @@ defmodule WawTramsWeb.AuditLive do
     {:noreply, socket |> load_data() |> assign(:loading, false)}
   end
 
+  @impl true
   def handle_info(:refresh, socket) do
     {:noreply, load_data(socket)}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    # Handle locale changes
-    if params["locale"] do
-      Gettext.put_locale(WawTramsWeb.Gettext, params["locale"])
+    locale = params["locale"]
+
+    if locale in ["en", "pl"] do
+      Gettext.put_locale(WawTramsWeb.Gettext, locale)
     end
 
     {:noreply, socket}
@@ -188,11 +192,6 @@ defmodule WawTramsWeb.AuditLive do
   def render(assigns) do
     ~H"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-      .severity-red { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
-      .severity-orange { background: rgba(249, 115, 22, 0.2); border-color: #f97316; }
-      .severity-yellow { background: rgba(234, 179, 8, 0.2); border-color: #eab308; }
-    </style>
 
     <div class="h-screen flex flex-col bg-gray-950 text-gray-100">
       <%!-- Loading overlay --%>
@@ -309,325 +308,24 @@ defmodule WawTramsWeb.AuditLive do
         <%!-- Sidebar (right 1/3 on desktop, full on mobile list/detail tab) --%>
         <div class={"w-full md:w-[28rem] bg-gray-900 md:border-l border-gray-800 overflow-y-auto #{if @mobile_tab == "map", do: "hidden md:block"}"}>
           <%= if @selected != nil and (@mobile_tab == "detail" or @mobile_tab != "list") do %>
-            <.report_card selected={@selected} heatmap={@selected_heatmap} />
+            <ReportCard.report_card selected={@selected} heatmap={@selected_heatmap} />
           <% else %>
-            <.leaderboard data={@leaderboard} coverage_pct={@leaderboard_coverage_pct} />
+            <Leaderboard.leaderboard data={@leaderboard} coverage_pct={@leaderboard_coverage_pct} />
           <% end %>
         </div>
       </div>
 
       <%!-- Methodology Modal --%>
       <%= if @show_methodology do %>
-        <.methodology_modal />
+        <MethodologyModal.methodology_modal />
       <% end %>
     </div>
     """
   end
 
-  # Cost Methodology Modal
-  defp methodology_modal(assigns) do
-    ~H"""
-    <div
-      class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70"
-      phx-click="toggle_methodology"
-    >
-      <div
-        class="bg-gray-900 border border-gray-700 rounded-xl max-w-xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-        phx-click-away="toggle_methodology"
-      >
-        <div class="p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-white">📊 {gettext("How We Calculate Cost")}</h2>
-            <button phx-click="toggle_methodology" class="text-gray-400 hover:text-white cursor-pointer">
-              <.icon name="hero-x-mark" class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="space-y-4 text-gray-300 text-sm">
-            <%!-- What is a delay --%>
-            <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-              <div class="font-semibold text-orange-400 mb-1">{gettext("What is a delay?")}</div>
-              <p class="text-gray-300">
-                {gettext("Tram stopped >30 seconds away from any platform.")}
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                {gettext("We ignore platform stops, terminals, and stops under 30s.")}
-              </p>
-            </div>
-
-            <%!-- Formula --%>
-            <div>
-              <div class="font-semibold text-amber-400 mb-2">{gettext("Cost Formula")}</div>
-              <div class="bg-gray-800/50 rounded-lg p-3 space-y-3">
-                <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-red-400 font-medium">{gettext("Passenger Time")}</span>
-                    <span class="text-gray-500">=</span>
-                    <span class="text-gray-400 text-xs">{gettext("hours")} × {gettext("passengers")} × 22 PLN/h</span>
-                  </div>
-                  <p class="text-xs text-gray-500 ml-4">{gettext("22 PLN/h = value of commuter time (Polish studies)")}</p>
-                </div>
-                <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-amber-400 font-medium">{gettext("Operations")}</span>
-                    <span class="text-gray-500">=</span>
-                    <span class="text-gray-400 text-xs">{gettext("hours")} × 85 PLN/h</span>
-                  </div>
-                  <p class="text-xs text-gray-500 ml-4">{gettext("Driver wage")}: 80 PLN/h • {gettext("Energy (HVAC, systems)")}: 5 PLN/h</p>
-                </div>
-              </div>
-            </div>
-
-            <%!-- Passengers per time --%>
-            <div>
-              <div class="font-semibold text-amber-400 mb-2">{gettext("Passengers per Tram")}</div>
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
-                  <span>🌅 {gettext("Rush")} <span class="text-gray-500">7–9, 15–18</span></span>
-                  <span class="text-red-400 font-semibold">150</span>
-                </div>
-                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
-                  <span>☀️ {gettext("Day")} <span class="text-gray-500">6–7, 9–15</span></span>
-                  <span class="text-amber-400 font-semibold">50</span>
-                </div>
-                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
-                  <span>🌙 {gettext("Evening")} <span class="text-gray-500">18–22</span></span>
-                  <span class="text-amber-400 font-semibold">50</span>
-                </div>
-                <div class="bg-gray-800/50 rounded p-2 flex justify-between">
-                  <span>🌃 {gettext("Night")} <span class="text-gray-500">22–6</span></span>
-                  <span class="text-gray-400 font-semibold">10</span>
-                </div>
-              </div>
-            </div>
-
-            <%!-- Example --%>
-            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-              <div class="font-semibold text-amber-400 mb-1">💡 {gettext("Example")}</div>
-              <p class="text-gray-300 mb-2">{gettext("5 min delay during morning rush:")}</p>
-              <div class="font-mono text-xs">
-                <span class="text-gray-400">(0.08h × 150 × 22) + (0.08h × 85) =</span>
-                <span class="text-white font-bold ml-1">271 PLN</span>
-              </div>
-            </div>
-
-            <%!-- Sources --%>
-            <p class="text-xs text-gray-500 text-center">
-              {gettext("Value of Time: Polish commuter studies")} • {gettext("Capacity: Pesa Jazz 134N")}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  # Leaderboard component (default sidebar state)
-  defp leaderboard(assigns) do
-    ~H"""
-    <div class="p-4">
-      <div class="flex items-baseline justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-200">🔥 {gettext("Top Worst Intersections")}</h2>
-        <%= if @coverage_pct > 0 do %>
-          <span class="text-xs text-gray-500">
-            {trunc(@coverage_pct)}% {gettext("of total cost")}
-          </span>
-        <% end %>
-      </div>
-
-      <%= if @data == [] do %>
-        <div class="text-gray-500 text-center py-8">
-          {gettext("No data available for this period")}
-        </div>
-      <% else %>
-        <div class="space-y-1.5">
-          <%= for {spot, idx} <- Enum.with_index(@data) do %>
-            <div
-              phx-click="select_intersection"
-              phx-value-lat={spot.lat}
-              phx-value-lon={spot.lon}
-              class={[
-                "p-2.5 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition",
-                if(idx < 3, do: "border-gray-700 bg-gray-800/30", else: "border-gray-800/50 bg-transparent")
-              ]}
-            >
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class={[
-                    "text-sm font-medium w-5 flex-shrink-0",
-                    if(idx < 3, do: "text-red-400", else: "text-gray-600")
-                  ]}>
-                    {idx + 1}
-                  </span>
-                  <div class="min-w-0">
-                    <div class="font-medium text-gray-300 text-sm truncate">
-                      {spot.location_name || gettext("Unknown location")}
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {spot.delay_count} {gettext("delays")} · {format_duration(spot.total_seconds)}
-                    </div>
-                  </div>
-                </div>
-                <div class={[
-                  "font-semibold text-sm flex-shrink-0",
-                  if(idx < 3, do: "text-red-400", else: "text-gray-400")
-                ]}>
-                  {format_cost(spot.cost.total)}
-                </div>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-    """
-  end
-
-  # Report Card component (selected intersection)
-  defp report_card(assigns) do
-    ~H"""
-    <div class="p-4">
-      <button
-        phx-click="deselect"
-        class="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1 cursor-pointer"
-      >
-        ← {gettext("Back to Leaderboard")}
-      </button>
-
-      <%!-- Location --%>
-      <div class="mb-6">
-        <div class="text-xs text-gray-500 uppercase tracking-wide">{gettext("Location")}</div>
-        <h2 class="text-xl font-bold text-gray-200">
-          📍 {@selected.location_name || gettext("Unknown")}
-        </h2>
-        <a
-          href={"https://www.google.com/maps?q=#{@selected.lat},#{@selected.lon}"}
-          target="_blank"
-          class="text-xs text-gray-500 hover:text-gray-400"
-        >
-          {Float.round(@selected.lat, 5)}, {Float.round(@selected.lon, 5)} ↗
-        </a>
-      </div>
-
-      <%!-- Stats --%>
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div class="bg-gray-800/50 rounded-lg p-3 border border-red-900/50">
-          <div class="text-2xl font-bold text-red-400">
-            {format_cost(@selected.cost.total)}
-          </div>
-          <div class="text-xs text-gray-500">{gettext("Cost")}</div>
-        </div>
-        <div class="bg-gray-800/50 rounded-lg p-3 border border-amber-900/50">
-          <div class="text-2xl font-bold text-amber-400">
-            {format_duration(@selected.total_seconds)}
-          </div>
-          <div class="text-xs text-gray-500">{gettext("Time Lost")}</div>
-        </div>
-        <div class="bg-gray-800/50 rounded-lg p-3 border border-orange-900/50">
-          <div class="text-2xl font-bold text-orange-400">
-            {@selected.delay_count}
-          </div>
-          <div class="text-xs text-gray-500">{gettext("Delays")}</div>
-        </div>
-      </div>
-
-      <%!-- Mini heatmap --%>
-      <div class="mb-6">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">
-          📊 {gettext("When It Fails")}
-        </div>
-        <.mini_heatmap heatmap={@heatmap} />
-      </div>
-
-      <%!-- Affected lines --%>
-      <div class="mb-6">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">
-          🚋 {gettext("Affected Lines")}
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <%= for line <- @selected.affected_lines do %>
-            <.link
-              navigate={~p"/line/#{line}"}
-              class="px-2 py-1 bg-gray-800 rounded text-sm text-gray-300 hover:bg-gray-700"
-            >
-              {line}
-            </.link>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  # Mini heatmap component
-  defp mini_heatmap(assigns) do
-    days = ["M", "T", "W", "T", "F", "S", "S"]
-
-    assigns = assign(assigns, :days, days)
-
-    ~H"""
-    <div class="bg-gray-800/30 rounded-lg p-3">
-      <div class="grid grid-cols-8 gap-1">
-        <%!-- Header row --%>
-        <div></div>
-        <%= for day <- @days do %>
-          <div class="text-gray-500 text-xs text-center font-medium">{day}</div>
-        <% end %>
-
-        <%!-- Data rows --%>
-        <%= for %{hour: hour, cells: cells} <- @heatmap.grid do %>
-          <div class="text-gray-500 text-xs text-right pr-1">{hour}</div>
-          <%= for cell <- cells do %>
-            <div
-              class="w-5 h-5 rounded-sm"
-              style={"background: #{heatmap_color(cell.intensity)}"}
-              title={"#{cell.count} delays"}
-            >
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  # Helper functions
-  defp format_cost(amount) when is_number(amount) do
-    cond do
-      amount >= 1_000_000 -> "#{Float.round(amount / 1_000_000, 1)}M PLN"
-      amount >= 1_000 -> "#{Float.round(amount / 1_000, 1)}k PLN"
-      amount > 0 -> "#{trunc(amount)} PLN"
-      true -> "0 PLN"
-    end
-  end
-
-  defp format_cost(_), do: "0 PLN"
-
-  defp format_number(n) when is_integer(n) and n >= 1000 do
-    "#{div(n, 1000)}.#{rem(n, 1000) |> div(100)}k"
-  end
-
-  defp format_number(n), do: to_string(n || 0)
-
-  defp format_duration(seconds) when is_integer(seconds) do
-    cond do
-      seconds < 60 -> "#{seconds}s"
-      seconds < 3600 -> "#{div(seconds, 60)}m"
-      true -> "#{div(seconds, 3600)}h #{rem(seconds, 3600) |> div(60)}m"
-    end
-  end
-
-  defp format_duration(_), do: "0s"
-
+  # Helper for period labels
   defp period_label("24h"), do: gettext("Today")
   defp period_label("7d"), do: gettext("This Week")
   defp period_label("30d"), do: gettext("This Month")
   defp period_label(_), do: ""
-
-  defp heatmap_color(intensity) when intensity > 0.8, do: "rgba(239, 68, 68, 0.9)"
-  defp heatmap_color(intensity) when intensity > 0.6, do: "rgba(239, 68, 68, 0.7)"
-  defp heatmap_color(intensity) when intensity > 0.4, do: "rgba(249, 115, 22, 0.6)"
-  defp heatmap_color(intensity) when intensity > 0.2, do: "rgba(234, 179, 8, 0.5)"
-  defp heatmap_color(intensity) when intensity > 0, do: "rgba(234, 179, 8, 0.3)"
-  defp heatmap_color(_), do: "rgba(55, 65, 81, 0.3)"
 end
