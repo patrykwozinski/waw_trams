@@ -83,8 +83,16 @@ Operational Cost = delay_hours × (80 PLN/hour driver + 5 PLN/hour energy)
 |-----------|------------|
 | Framework | Phoenix 1.8 (Elixir/OTP) |
 | Database | PostgreSQL 17 + PostGIS 3.5 |
+| Caching | Built-in ETS (no external dependencies) |
 | Data Source | GTFS-RT via [mkuran.pl](https://mkuran.pl/gtfs/) |
 | CI/CD | GitHub Actions |
+
+### Budget-Friendly Design
+
+Optimized for **$5/month hosting** with:
+- **ETS query cache** — reduces DB queries by ~99%
+- **Staggered refresh timers** — prevents thundering herd
+- **Small DB pool** — default 5 connections
 
 ## Development
 

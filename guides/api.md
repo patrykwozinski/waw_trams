@@ -8,6 +8,7 @@ After Clean Architecture refactoring, queries are organized by domain:
 
 ```
 lib/waw_trams/
+├── cache.ex               # ETS-based query cache (no external deps)
 ├── queries/
 │   ├── active_delays.ex   # Real-time delay tracking
 │   ├── hot_spots.ex       # Intersection analysis
@@ -16,7 +17,7 @@ lib/waw_trams/
 ├── analytics/
 │   └── stats.ex           # Summary statistics
 └── audit/
-    ├── summary.ex         # City-wide audit stats
+    ├── summary.ex         # City-wide audit stats (uses cache)
     ├── intersection.ex    # Single intersection detail
     └── cost_calculator.ex # Economic cost formulas
 ```
@@ -133,6 +134,39 @@ WawTrams.Intersection.near_intersection?(52.2297, 21.0122)
 WawTrams.LineTerminal.terminal_for_line?("25", 52.2297, 21.0122)
 # => true if line 25 terminates here, false otherwise
 ```
+
+### Query Cache
+
+ETS-based cache for expensive queries. Uses zero external dependencies.
+
+```elixir
+# Audit page queries (auto-cached via Summary module)
+WawTrams.Audit.Summary.stats()      # Uses cache (30s TTL)
+WawTrams.Audit.Summary.leaderboard() # Uses cache (60s TTL)
+
+# Direct cache access (for Dashboard)
+WawTrams.Cache.get_dashboard_stats()
+WawTrams.Cache.get_dashboard_hot_spots(limit: 10)
+WawTrams.Cache.get_dashboard_hot_spot_summary()
+WawTrams.Cache.get_dashboard_impacted_lines(limit: 10)
+WawTrams.Cache.get_dashboard_multi_cycle()
+
+# Generic cache with custom TTL
+WawTrams.Cache.fetch_cached(:my_key, 30_000, fn ->
+  # Expensive computation here
+end)
+
+# Cache management
+WawTrams.Cache.invalidate_all()  # Clear all cached data
+WawTrams.Cache.cache_stats()     # => %{size: 12, hits: 450, misses: 23}
+```
+
+**TTL Strategy:**
+- Audit stats: 30s (balance freshness vs load)
+- Audit leaderboard: 60s (expensive spatial query)
+- Dashboard queries: 10s (needs to feel more "live")
+
+**Note:** Real-time updates via PubSub are NOT cached — they update the UI instantly.
 
 ## Mix Tasks
 

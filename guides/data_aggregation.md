@@ -151,9 +151,11 @@ config :waw_trams,
   aggregation_precision: 4
 ```
 
-## Query Routing
+## Query Routing & Caching
 
 All analytics use **aggregated data + real-time additions** for consistent freshness (~5 min delay max).
+
+Expensive queries are cached in ETS to reduce database load:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -162,14 +164,31 @@ All analytics use **aggregated data + real-time additions** for consistent fresh
 │  Dashboard / Map / Line Analysis                                │
 │              │                                                  │
 │              ▼                                                  │
+│          Cache (ETS)  ←── TTL: 10-60 seconds                   │
+│              │                                                  │
+│        Cache Miss?                                              │
+│              │                                                  │
+│              ▼                                                  │
 │        QueryRouter                                              │
 │              │                                                  │
 │              ├──► Aggregated data (from :05 of current hour)   │
 │              │         + Events since :05 (real-time)          │
 │              │                                                  │
-│              └──► Result: Data up to ~5 minutes old            │
+│              └──► Result cached, returned                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Cache TTLs
+
+| Page | Query | TTL | Rationale |
+|------|-------|-----|-----------|
+| Audit | `stats` | 30s | Balance freshness vs load |
+| Audit | `leaderboard` | 60s | Expensive spatial clustering |
+| Dashboard | All stats | 10s | Needs to feel more "live" |
+
+### Thundering Herd Prevention
+
+LiveView refresh timers include random jitter (0-30s for Audit, 0-5s for Dashboard) to spread database load across time instead of all users refreshing simultaneously.
 
 | Query | Source |
 |-------|--------|

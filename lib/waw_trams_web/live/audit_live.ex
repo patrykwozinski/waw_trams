@@ -11,7 +11,9 @@ defmodule WawTramsWeb.AuditLive do
   alias WawTramsWeb.Components.Audit.{MethodologyModal, Leaderboard, ReportCard}
   import WawTramsWeb.Helpers.Formatters
 
-  @refresh_interval :timer.minutes(5)
+  # Base refresh interval with jitter to prevent thundering herd
+  @refresh_interval_base :timer.minutes(5)
+  @refresh_jitter_max :timer.seconds(30)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -40,7 +42,8 @@ defmodule WawTramsWeb.AuditLive do
     if connected?(socket) do
       # Subscribe to real-time delay updates
       Phoenix.PubSub.subscribe(WawTrams.PubSub, "delays")
-      :timer.send_interval(@refresh_interval, :refresh)
+      # Add random jitter to prevent all users refreshing at exactly the same time
+      schedule_refresh()
       send(self(), :load_initial_data)
     end
 
@@ -54,6 +57,7 @@ defmodule WawTramsWeb.AuditLive do
 
   @impl true
   def handle_info(:refresh, socket) do
+    schedule_refresh()
     {:noreply, load_data(socket)}
   end
 
@@ -70,10 +74,12 @@ defmodule WawTramsWeb.AuditLive do
       event_cost = WawTrams.Audit.CostCalculator.calculate(event.duration_seconds || 60, hour)
 
       stats = socket.assigns.stats
-      updated_stats = %{stats |
-        total_delays: stats.total_delays + 1,
-        total_seconds: stats.total_seconds + (event.duration_seconds || 60),
-        cost: %{stats.cost | total: stats.cost.total + event_cost.total}
+
+      updated_stats = %{
+        stats
+        | total_delays: stats.total_delays + 1,
+          total_seconds: stats.total_seconds + (event.duration_seconds || 60),
+          cost: %{stats.cost | total: stats.cost.total + event_cost.total}
       }
 
       {:noreply, assign(socket, :stats, updated_stats)}
@@ -94,9 +100,10 @@ defmodule WawTramsWeb.AuditLive do
         hour = DateTime.utc_now().hour
         extra_cost = WawTrams.Audit.CostCalculator.calculate(extra_seconds, hour)
 
-        updated_stats = %{stats |
-          total_seconds: stats.total_seconds + extra_seconds,
-          cost: %{stats.cost | total: stats.cost.total + extra_cost.total}
+        updated_stats = %{
+          stats
+          | total_seconds: stats.total_seconds + extra_seconds,
+            cost: %{stats.cost | total: stats.cost.total + extra_cost.total}
         }
 
         {:noreply, assign(socket, :stats, updated_stats)}
@@ -106,6 +113,12 @@ defmodule WawTramsWeb.AuditLive do
     else
       {:noreply, socket}
     end
+  end
+
+  # Schedules next refresh with random jitter to spread DB load
+  defp schedule_refresh do
+    jitter = :rand.uniform(@refresh_jitter_max)
+    Process.send_after(self(), :refresh, @refresh_interval_base + jitter)
   end
 
   @impl true
@@ -274,7 +287,9 @@ defmodule WawTramsWeb.AuditLive do
                 >
                   <option value="24h" selected={@date_range == "24h"}>{gettext("Last 24h")}</option>
                   <option value="7d" selected={@date_range == "7d"}>{gettext("Last 7 days")}</option>
-                  <option value="30d" selected={@date_range == "30d"}>{gettext("Last 30 days")}</option>
+                  <option value="30d" selected={@date_range == "30d"}>
+                    {gettext("Last 30 days")}
+                  </option>
                 </select>
               </form>
               <form phx-change="change_line" class="inline">

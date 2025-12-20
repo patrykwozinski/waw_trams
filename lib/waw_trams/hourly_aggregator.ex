@@ -58,6 +58,8 @@ defmodule WawTrams.HourlyAggregator do
 
       {:ok, count} ->
         Logger.info("[HourlyAggregator] Caught up #{count} missed hours on startup")
+        # Invalidate cache after catch-up
+        WawTrams.Cache.invalidate_all()
     end
 
     {:noreply, %{state | catching_up: false}}
@@ -74,6 +76,9 @@ defmodule WawTrams.HourlyAggregator do
         Logger.info(
           "[HourlyAggregator] Aggregated #{stats.event_count} events for hour #{format_hour(previous_hour)}"
         )
+
+        # Invalidate cache so next requests get fresh data
+        WawTrams.Cache.invalidate_all()
 
         schedule_next_aggregation()
         {:noreply, %{state | last_aggregated: previous_hour}}

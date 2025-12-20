@@ -18,6 +18,9 @@ defmodule WawTrams.Application do
       WawTrams.TramSupervisor,
       WawTrams.Poller,
 
+      # Caching layer for expensive queries
+      WawTrams.Cache,
+
       # Hourly aggregation (runs at minute 5 of each hour)
       WawTrams.HourlyAggregator,
 

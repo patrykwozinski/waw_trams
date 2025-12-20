@@ -16,7 +16,8 @@ defmodule WawTrams.Audit.Summary do
   @doc """
   Returns aggregate statistics for the header display.
 
-  Uses aggregated data for historical periods, plus raw events for current hour.
+  Uses the cache layer to reduce database load. For uncached access,
+  use `stats_uncached/1`.
 
   ## Parameters
   - `opts` - Options:
@@ -34,6 +35,13 @@ defmodule WawTrams.Audit.Summary do
   - `:intersection_count` - Number of affected intersections
   """
   def stats(opts \\ []) do
+    WawTrams.Cache.get_audit_stats(opts)
+  end
+
+  @doc """
+  Uncached version of stats/1. Used by the cache layer.
+  """
+  def stats_uncached(opts \\ []) do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
     line = Keyword.get(opts, :line, nil)
     since_date = DateTime.to_date(since)
@@ -132,7 +140,8 @@ defmodule WawTrams.Audit.Summary do
   @doc """
   Returns leaderboard of worst intersections by cost.
 
-  Uses aggregated data for historical periods, plus raw events for current hour.
+  Uses the cache layer to reduce database load. For uncached access,
+  use `leaderboard_uncached/1`.
 
   ## Parameters
   - `opts` - Options:
@@ -152,6 +161,13 @@ defmodule WawTrams.Audit.Summary do
   - `:severity` - :red, :orange, or :yellow based on multi_cycle_pct
   """
   def leaderboard(opts \\ []) do
+    WawTrams.Cache.get_audit_leaderboard(opts)
+  end
+
+  @doc """
+  Uncached version of leaderboard/1. Used by the cache layer.
+  """
+  def leaderboard_uncached(opts \\ []) do
     since = Keyword.get(opts, :since, DateTime.add(DateTime.utc_now(), -7, :day))
     limit = Keyword.get(opts, :limit, 10)
     line = Keyword.get(opts, :line, nil)

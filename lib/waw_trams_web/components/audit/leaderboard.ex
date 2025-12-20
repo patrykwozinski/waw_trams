@@ -40,7 +40,10 @@ defmodule WawTramsWeb.Components.Audit.Leaderboard do
               phx-value-lon={spot.lon}
               class={[
                 "p-2.5 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition",
-                if(idx < 3, do: "border-gray-700 bg-gray-800/30", else: "border-gray-800/50 bg-transparent")
+                if(idx < 3,
+                  do: "border-gray-700 bg-gray-800/30",
+                  else: "border-gray-800/50 bg-transparent"
+                )
               ]}
             >
               <div class="flex items-center justify-between gap-3">

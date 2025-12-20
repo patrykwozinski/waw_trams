@@ -1,13 +1,14 @@
 defmodule WawTramsWeb.DashboardLive do
   use WawTramsWeb, :live_view
 
-  alias WawTrams.Queries.{ActiveDelays, HotSpots}
-  alias WawTrams.Analytics.Stats
+  alias WawTrams.Queries.ActiveDelays
+  alias WawTrams.Cache
   alias WawTrams.WarsawTime
   import WawTramsWeb.Helpers.Formatters
 
-  # 5 seconds
-  @refresh_interval 5_000
+  # 30 seconds base + jitter (still feels live, but 6x less DB load)
+  @refresh_interval_base 30_000
+  @refresh_jitter_max 5_000
 
   @impl true
   def mount(_params, session, socket) do
@@ -51,17 +52,21 @@ defmodule WawTramsWeb.DashboardLive do
   end
 
   defp schedule_refresh do
-    Process.send_after(self(), :refresh, @refresh_interval)
+    jitter = :rand.uniform(@refresh_jitter_max)
+    Process.send_after(self(), :refresh, @refresh_interval_base + jitter)
   end
 
   defp assign_data(socket) do
+    # Active delays are NOT cached - they're truly real-time
     active_delays = ActiveDelays.active()
     recent_resolved = ActiveDelays.recent_resolved(20)
-    stats = Stats.for_period()
-    hot_spots = HotSpots.hot_spots(limit: 10)
-    hot_spot_summary = HotSpots.hot_spot_summary()
-    impacted_lines = HotSpots.impacted_lines(limit: 10)
-    multi_cycle_count = Stats.multi_cycle_count()
+
+    # These use cache (10s TTL) to reduce DB load
+    stats = Cache.get_dashboard_stats()
+    hot_spots = Cache.get_dashboard_hot_spots(limit: 10)
+    hot_spot_summary = Cache.get_dashboard_hot_spot_summary()
+    impacted_lines = Cache.get_dashboard_impacted_lines(limit: 10)
+    multi_cycle_count = Cache.get_dashboard_multi_cycle()
 
     # Summarize stats for cleaner display
     stats_summary = summarize_stats(stats, multi_cycle_count)

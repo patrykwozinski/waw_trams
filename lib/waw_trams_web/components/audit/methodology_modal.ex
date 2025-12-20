@@ -26,7 +26,10 @@ defmodule WawTramsWeb.Components.Audit.MethodologyModal do
         <div class="p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-white">📊 {gettext("How We Calculate Cost")}</h2>
-            <button phx-click="toggle_methodology" class="text-gray-400 hover:text-white cursor-pointer">
+            <button
+              phx-click="toggle_methodology"
+              class="text-gray-400 hover:text-white cursor-pointer"
+            >
               <.icon name="hero-x-mark" class="w-5 h-5" />
             </button>
           </div>
@@ -107,7 +110,9 @@ defmodule WawTramsWeb.Components.Audit.MethodologyModal do
 
             <%!-- Sources --%>
             <p class="text-xs text-gray-500 text-center">
-              {gettext("Value of Time: Polish commuter studies")} • {gettext("Capacity: Pesa Jazz 134N")}
+              {gettext("Value of Time: Polish commuter studies")} • {gettext(
+                "Capacity: Pesa Jazz 134N"
+              )}
             </p>
           </div>
         </div>
@@ -115,5 +120,4 @@ defmodule WawTramsWeb.Components.Audit.MethodologyModal do
     </div>
     """
   end
-
 end

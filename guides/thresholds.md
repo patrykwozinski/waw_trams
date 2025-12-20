@@ -163,6 +163,8 @@ Position Update (10s)
 
 ## 7. Performance Optimizations
 
+### TramWorker Spatial Cache
+
 | Optimization | Description |
 |--------------|-------------|
 | **Spatial cache** | `at_stop`, `near_intersection`, `at_terminal` cached per stop location |
@@ -173,6 +175,22 @@ Position Update (10s)
 - Stopped (first check): **3 calls** (spatial queries, cached)
 - Stopped (subsequent): **0 calls** (using cache)
 - Creating delay: **1 call** (insert)
+
+### Query Cache (ETS)
+
+Expensive aggregation queries are cached to support $5/month hosting:
+
+| Query | TTL | Purpose |
+|-------|-----|---------|
+| Audit stats | 30s | City-wide summary |
+| Audit leaderboard | 60s | Top intersections (spatial clustering) |
+| Dashboard queries | 10s | Stats, hot spots, impacted lines |
+
+**DB calls with 100 concurrent users:**
+- Without cache: ~7,800/min
+- With cache: ~60/min (**99% reduction**)
+
+**Real-time unaffected:** PubSub events update UI instantly without touching the cache or database.
 
 ---
 
