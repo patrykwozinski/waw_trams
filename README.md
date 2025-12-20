@@ -1,6 +1,6 @@
 # Warsaw Tram Priority Auditor
 
-[![CI](https://github.com/YOUR_USERNAME/waw_trams/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/waw_trams/actions/workflows/ci.yml)
+[![CI](https://github.com/patrykwozinski/waw_trams/actions/workflows/ci.yml/badge.svg)](https://github.com/patrykwozinski/waw_trams/actions/workflows/ci.yml)
 
 Real-time detection and analysis of delays in the Warsaw tram network (ZTM), identifying intersections where traffic signal priority fails.
 
