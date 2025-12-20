@@ -181,59 +181,25 @@ All analytics use **aggregated data + real-time additions** for consistent fresh
 
 ---
 
-## Implementation Phases
+## How It Works
 
-### Phase 1: Schema & Tables ✅ COMPLETE
+### Automatic Aggregation (HourlyAggregator)
 
-Create the aggregation tables.
+A GenServer runs at minute 5 of each hour, aggregating the previous hour's events:
 
-**Tasks:**
-- [x] Create migration for `daily_intersection_stats`
-- [x] Create migration for `daily_line_stats`
-- [x] Create migration for `hourly_patterns` (pre-populated with 168 rows)
-- [x] Create Ecto schemas for all three
-- [x] Add configuration options to `config.exs`
-
-**Files created:**
-- `priv/repo/migrations/20251218155009_create_daily_intersection_stats.exs`
-- `priv/repo/migrations/20251218155011_create_daily_line_stats.exs`
-- `priv/repo/migrations/20251218155013_create_hourly_patterns.exs`
-- `lib/waw_trams/daily_intersection_stat.ex`
-- `lib/waw_trams/daily_line_stat.ex`
-- `lib/waw_trams/hourly_pattern.ex`
-
-### Phase 2: Aggregation ✅ COMPLETE
-
-Two aggregation mechanisms:
-
-#### A. HourlyAggregator (Automatic)
-
-GenServer that runs at minute 5 of each hour, aggregating the previous hour.
-
-**File created:**
-- `lib/waw_trams/hourly_aggregator.ex`
-
-**Features:**
-- Auto-starts with application (in supervision tree)
-- Aggregates previous hour into daily_* tables (additive)
-- Updates hourly_patterns (cumulative counters)
-- Logs progress: `[HourlyAggregator] Aggregated 45 events for hour 2025-12-18 15:00`
-
-**Manual trigger:**
 ```elixir
-# In IEx
+# Auto-starts with application (in supervision tree)
+# Logs progress: [HourlyAggregator] Aggregated 45 events for 2025-12-18 15:00
+
+# Manual trigger (if needed)
 WawTrams.HourlyAggregator.aggregate_now()
 WawTrams.HourlyAggregator.status()
 ```
 
-#### B. Mix Task (Manual/Backfill)
+### Manual Aggregation (Mix Task)
 
-For backfilling historical data or manual runs.
+For backfilling historical data or manual runs:
 
-**File created:**
-- `lib/mix/tasks/waw_trams.aggregate_daily.ex`
-
-**Usage:**
 ```bash
 # Aggregate yesterday (default)
 mix waw_trams.aggregate_daily
@@ -248,123 +214,19 @@ mix waw_trams.aggregate_daily --backfill 7
 mix waw_trams.aggregate_daily --dry-run
 ```
 
-### Phase 3: Query Migration ✅ COMPLETE
+### Cleanup Workflow
 
-Update existing queries to use aggregated data + real-time additions.
-
-**Tasks:**
-- [x] Create `QueryRouter` module for smart data source routing
-- [x] Update `hot_spots/1` — aggregated + events since :05
-- [x] Update `impacted_lines/1` — aggregated + events since :05
-- [x] Update `delays_by_hour/2` — aggregated + events since :05
-- [x] Update `line_summary/2` — aggregated + events since :05
-- [x] Update `heatmap_grid/0` — uses cumulative `HourlyPattern`
-- [x] Update LiveViews to use `QueryRouter`
-
-**File created:**
-- `lib/waw_trams/query_router.ex`
-
-**Strategy:** Aggregated data + real-time additions for consistent ~5min freshness:
-
-```elixir
-def hot_spots(opts) do
-  aggregated = DailyIntersectionStat.hot_spots(to_date_opts(opts))
-  
-  if aggregated == [] do
-    DelayEvent.hot_spots(opts)  # Fallback if no aggregated data
-  else
-    recent = get_recent_hot_spots()  # Events since :05
-    merge_hot_spots(aggregated, recent)
-  end
-end
-```
-
-**Aggregated + Real-time (consistent freshness):**
-- `hot_spots/1` — aggregated + events since :05
-- `impacted_lines/1` — aggregated + events since :05
-- `delays_by_hour/2` — aggregated + events since :05
-- `line_summary/2` — aggregated + events since :05
-- `heatmap_grid/0` — cumulative (all-time)
-
-**Always raw (truly real-time):**
-- `active/0` — live delays (currently happening)
-- `recent/1` — recently resolved
-- `stats/1` — 24h classification counts
-- `line_hot_spots/2` — spatial clustering precision
-
-### Phase 4: Cleanup Integration ✅ COMPLETE
-
-Update cleanup task to work safely with aggregation.
-
-**Tasks:**
-- [x] Update `mix waw_trams.cleanup` to read `raw_retention_days` config
-- [x] **Dry-run by default** — requires `--execute` to delete anything
-- [x] **Aggregation check** — won't delete unaggregated dates
-- [x] Detailed preview showing what would be deleted
-- [x] Document recommended cron schedule
-
-**Safety features:**
-```bash
-# Preview only (DEFAULT - no deletion)
-mix waw_trams.cleanup
-
-# Actually delete (requires explicit flag)
-mix waw_trams.cleanup --execute
-
-# Output shows:
-#   📦 Aggregated (safe to delete): dates with ✓
-#   ⚠️  NOT aggregated (would lose data): dates with ✗
-```
-
-**Recommended workflow:**
 ```bash
 # 1. Aggregate first
 mix waw_trams.aggregate_daily --backfill 7
 
-# 2. Preview cleanup
+# 2. Preview cleanup (DRY RUN by default)
 mix waw_trams.cleanup
 
 # 3. Execute if preview looks correct
 mix waw_trams.cleanup --execute
 ```
 
-**Cron setup (optional):**
-```bash
-# Aggregate at 00:05 daily
-5 0 * * * cd /app && mix waw_trams.aggregate_daily
-
-# Cleanup at 01:00 daily (manual review recommended initially)
-# 0 1 * * * cd /app && mix waw_trams.cleanup --execute
-```
-
-### Phase 5: Future Enhancements ⬜ (Optional)
-
-Potential future improvements using aggregated data:
-
-- [ ] Trend charts (delays over time) using `daily_line_stats`
-- [ ] Month-over-month comparison
-- [ ] Extended date range options (30d, 90d)
-
----
-
-## Testing Plan
-
-1. **Unit tests** for aggregation logic (rounding, grouping)
-2. **Integration test** for full aggregation cycle
-3. **Comparison test**: Verify aggregated results match raw query results
-4. **Performance test**: Benchmark queries before/after migration
-
-## Rollback Plan
-
-If issues arise:
-1. Aggregated tables are additive (don't modify raw data)
-2. Can revert query functions to use raw data only
-3. Can re-run aggregation with `--backfill` if data is wrong
-
-## Success Metrics
-
-- [ ] `hot_spots` query < 50ms for 30d range (vs current ~500ms+)
-- [ ] `heatmap_data` query < 10ms (vs current ~100ms)
-- [ ] Storage stays under 50 MB/year
-- [ ] Raw event cleanup runs without data loss
-
+Output shows aggregation status:
+- ✓ Aggregated (safe to delete)
+- ✗ NOT aggregated (would lose data)
