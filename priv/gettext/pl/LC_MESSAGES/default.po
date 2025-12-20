@@ -555,6 +555,9 @@ msgstr "awaria priorytetu (>120s)"
 msgid "priority failures"
 msgstr "awarii priorytetu"
 
+msgid "of total cost"
+msgstr "całkowitego kosztu"
+
 #: lib/waw_trams_web/live/audit_live.ex:233
 #, elixir-autogen, elixir-format
 msgid "Cost at Intersections"

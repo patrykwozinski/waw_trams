@@ -31,6 +31,7 @@ defmodule WawTramsWeb.AuditLive do
       |> assign(:mobile_tab, "map")
       |> assign(:stats, empty_stats)
       |> assign(:leaderboard, [])
+      |> assign(:leaderboard_coverage_pct, 0)
       |> assign(:selected_heatmap, %{grid: [], max_count: 0, total_delays: 0})
 
     if connected?(socket) do
@@ -152,9 +153,20 @@ defmodule WawTramsWeb.AuditLive do
     stats = Summary.stats(opts)
     leaderboard = Summary.leaderboard(opts ++ [limit: 20])
 
+    # Calculate what % of total cost the top 20 represents
+    leaderboard_cost = Enum.reduce(leaderboard, 0, fn spot, acc -> acc + spot.cost.total end)
+
+    coverage_pct =
+      if stats.cost.total > 0 do
+        Float.round(leaderboard_cost / stats.cost.total * 100, 0)
+      else
+        0
+      end
+
     socket
     |> assign(:stats, stats)
     |> assign(:leaderboard, leaderboard)
+    |> assign(:leaderboard_coverage_pct, coverage_pct)
   end
 
   defp get_since("24h"), do: DateTime.add(DateTime.utc_now(), -1, :day)
@@ -298,7 +310,7 @@ defmodule WawTramsWeb.AuditLive do
           <%= if @selected != nil and (@mobile_tab == "detail" or @mobile_tab != "list") do %>
             <.report_card selected={@selected} heatmap={@selected_heatmap} />
           <% else %>
-            <.leaderboard data={@leaderboard} />
+            <.leaderboard data={@leaderboard} coverage_pct={@leaderboard_coverage_pct} />
           <% end %>
         </div>
       </div>
@@ -310,7 +322,12 @@ defmodule WawTramsWeb.AuditLive do
   defp leaderboard(assigns) do
     ~H"""
     <div class="p-4">
-      <h2 class="text-lg font-bold text-red-400 mb-4">🔥 {gettext("Top Worst Intersections")}</h2>
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="text-lg font-bold text-red-400">🔥 {gettext("Top Worst Intersections")}</h2>
+        <%= if @coverage_pct > 0 do %>
+          <span class="text-xs text-gray-500">{trunc(@coverage_pct)}% {gettext("of total cost")}</span>
+        <% end %>
+      </div>
 
       <%= if @data == [] do %>
         <div class="text-gray-500 text-center py-8">
