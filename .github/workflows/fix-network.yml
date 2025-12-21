@@ -1,9 +1,9 @@
-name: Fix Network & Deploy
+name: Nuclear Fix & Deploy
 on: workflow_dispatch
 
 jobs:
   fix_and_deploy:
-    name: Allocate IP and Deploy
+    name: Detach, Fix Network, Re-Attach, Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -12,9 +12,31 @@ jobs:
       - name: Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: 1. Allocate Private IP (Fix NXDOMAIN)
+      # 1. CLEANUP: Detach the DB
+      # We map your custom secret name to the env var 'FLY_API_TOKEN' which flyctl expects.
+      # '--yes' bypasses the prompt. '|| true' ignores errors if it's already detached.
+      - name: 1. Detach Database
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
-        # This command creates the private IPv6 needed for .flycast to work.
-        # "|| true" ensures it doesn't fail if the IP was somehow already created.
+        run: flyctl postgres detach waw-trams-db -a waw-trams --yes || true
+
+      # 2. NETWORK FIX: Allocate Private IP
+      # This fixes the NXDOMAIN error by creating the internal IPv6 address.
+      - name: 2. Allocate Private IP
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
         run: flyctl ips allocate-v6 --private -a waw-trams-db || true
+
+      # 3. RE-CONNECT: Attach Database
+      # This generates a FRESH username/password and automatically sets the DATABASE_URL.
+      - name: 3. Attach Database
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl postgres attach waw-trams-db -a waw-trams --yes
+
+      # 4. DEPLOY
+      # Deploys the code and runs the migration with the new, correct connection string.
+      - name: 4. Deploy App
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl deploy --remote-only -a waw-trams
