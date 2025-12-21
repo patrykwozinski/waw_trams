@@ -14,6 +14,9 @@ kill_signal = 'SIGTERM'
   release_command = '/app/bin/migrate'
   strategy = 'rolling'
 
+[processes]
+  app = '/app/bin/waw_trams start'
+
 [env]
   PHX_HOST = 'waw-trams.fly.dev'
   PORT = '8080'
