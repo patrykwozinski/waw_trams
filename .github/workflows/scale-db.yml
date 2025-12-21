@@ -1,0 +1,27 @@
+name: Scale DB & Deploy
+on: workflow_dispatch
+
+jobs:
+  scale_and_deploy:
+    name: Scale DB to 512MB and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # 1. SCALE UP
+      # We scale the DB VM to 'shared-cpu-2x' (512MB RAM) to handle PostGIS.
+      - name: 1. Scale Database Memory
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl scale vm shared-cpu-2x -a waw-trams-db --yes
+
+      # 2. DEPLOY
+      # Now that the DB has more RAM, the migration should pass.
+      - name: 2. Deploy App
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl deploy --remote-only -a waw-trams
