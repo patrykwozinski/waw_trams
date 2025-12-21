@@ -1,0 +1,28 @@
+name: Nuclear Fix
+on: workflow_dispatch
+
+jobs:
+  fix_and_deploy:
+    name: Fix Network, Re-Attach, and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: 1. Detach Database
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl postgres detach waw-trams-db -a waw-trams || true
+
+      - name: 2. Allocate Private IP
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl ips allocate-v6 --private -a waw-trams-db || true
+
+      - name: 3. Attach Database
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
+        run: flyctl postgres attach waw-trams-db -a waw-trams --yes
