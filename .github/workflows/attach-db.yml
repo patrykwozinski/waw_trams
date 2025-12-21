@@ -7,6 +7,6 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Attach Postgres
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
         run: |
           flyctl postgres attach waw-trams-db -a waw-trams --yes
