@@ -25,7 +25,7 @@ jobs:
           flyctl postgres create \
             --name waw-trams-db \
             --region ams \
-            --vm-size shared-cpu-1x \
+            --vm-size shared-cpu-2x \
             --initial-cluster-size 1 \
             --volume-size 1 \
             --org personal \
