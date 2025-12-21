@@ -86,4 +86,4 @@ USER nobody
 RUN echo '#!/bin/sh\n/app/bin/waw_trams eval "WawTrams.Release.migrate"' > /app/bin/migrate && \
     chmod +x /app/bin/migrate
 
-CMD ["/app/bin/server"]
+CMD ["/app/bin/waw_trams"]
