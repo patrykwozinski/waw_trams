@@ -13,14 +13,15 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       # 1. SCALE UP
-      # We scale the DB VM to 'shared-cpu-2x' (512MB RAM) to handle PostGIS.
+      # REMOVED the '--yes' flag which caused the error.
+      # This scales the VM to 512MB RAM (shared-cpu-2x)
       - name: 1. Scale Database Memory
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
-        run: flyctl scale vm shared-cpu-2x -a waw-trams-db --yes
+        run: flyctl scale vm shared-cpu-2x -a waw-trams-db
 
       # 2. DEPLOY
-      # Now that the DB has more RAM, the migration should pass.
+      # With 512MB RAM, the PostGIS extension should install without crashing.
       - name: 2. Deploy App
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_ORG_API_SECRET }}
