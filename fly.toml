@@ -38,6 +38,6 @@ kill_signal = 'SIGTERM'
     path = '/'
 
 [[vm]]
-  memory = '256mb'      # Fits in Fly.io free tier
+  memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
