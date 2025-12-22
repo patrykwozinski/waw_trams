@@ -15,6 +15,9 @@ defmodule WawTramsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Health check endpoint (no SSL redirect, no CSRF protection)
+  get "/health", WawTramsWeb.HealthController, :check
+
   scope "/", WawTramsWeb do
     pipe_through :browser
 

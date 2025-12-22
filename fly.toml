@@ -36,7 +36,7 @@ kill_signal = 'SIGTERM'
     timeout = '2s'
     grace_period = '30s'
     method = 'GET'
-    path = '/'
+    path = '/health'
 
 [[vm]]
   memory = '512mb'
