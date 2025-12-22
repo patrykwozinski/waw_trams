@@ -12,6 +12,7 @@ kill_signal = 'SIGTERM'
 
 [env]
   PHX_HOST = 'waw-trams.fly.dev'
+  PHX_SERVER = 'true'
   PORT = '8080'
   POOL_SIZE = '5'
   # Enable IPv6 for internal Fly networking
